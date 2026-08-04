@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: esgagents
+Version: 0.1.0
+Summary: ESG qualitative report agents built on LangGraph
+Requires-Python: >=3.10
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: langchain-core>=0.3.0
+Requires-Dist: langchain-openai>=0.3.0
+Requires-Dist: langgraph>=0.4.0
+Requires-Dist: langgraph-checkpoint-sqlite>=2.0.0
+Requires-Dist: openpyxl>=3.1.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: pytest>=8.0.0
+Requires-Dist: requests>=2.32.0
+Requires-Dist: temporalio<1.31.0,>=1.30.0
+Requires-Dist: tzdata>=2024.1
+Requires-Dist: typer>=0.12.0
+Requires-Dist: uvicorn[standard]>=0.30.0

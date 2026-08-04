@@ -1,0 +1,104 @@
+from __future__ import annotations
+
+from typing import Any
+
+from esgagents.schemas import (
+    AnswerRecord,
+    NormalizedCompany,
+    QuantitativeResult,
+    RunArtifacts,
+    model_to_dict,
+)
+from esgagents.quality import classify_answer_quality
+from esgagents.provenance import verify_runtime_provenance
+
+
+class ReportManagerAgent:
+    def __init__(self, config: dict[str, Any]):
+        self.config = config
+
+    def run(self, state: dict[str, Any]) -> dict[str, Any]:
+        company: NormalizedCompany = state["company"]
+        records = []
+        stats = {"answered": 0, "empty": 0, "weak": 0, "failed": 0}
+        rag_results = state["rag_results"]
+        accepted_statuses = {str(s).lower() for s in self.config["accepted_answer_statuses"]}
+        for planned in state["planned_questions"]:
+            rag = rag_results.get(planned.id)
+            qa = state["qa_results"][planned.id]
+            final_answer = state["final_answers"].get(planned.id, "")
+            gate = state["evidence_gate"].get(planned.id, {})
+            if final_answer:
+                result_bucket = "answered"
+            elif qa.status == "failed":
+                result_bucket = "failed"
+            elif "weak" in gate.get("reason", "") or (rag and rag.answer_status.lower() not in accepted_statuses):
+                result_bucket = "weak"
+            else:
+                result_bucket = "empty"
+            stats[result_bucket] += 1
+
+            normalized = state["normalized_evidence"].get(planned.id, {})
+            quality_flags = state.get("quality_flags", {}).get(planned.id, [])
+            revision_count = int(state.get("revision_counts", {}).get(planned.id, 0))
+            selection = state.get("skill_selections", {}).get(planned.id, {})
+            record = AnswerRecord(
+                qid=planned.id,
+                source_id=planned.source_id,
+                category=planned.category_ko,
+                question=rag.question_ko if rag and rag.question_ko else planned.item_ko,
+                answer_status=rag.answer_status if rag else "missing",
+                rag_pillar=rag.pillar if rag and rag.pillar else "",
+                rag_retrieval_confidence=rag.retrieval_confidence if rag else None,
+                rag_coverage_status=rag.coverage_status if rag and rag.coverage_status else "",
+                rag_answerable=rag.answerable if rag else None,
+                rag_covered_facets=list(rag.covered_facets) if rag else [],
+                rag_missing_facets=list(rag.missing_facets) if rag else [],
+                rag_coverage=model_to_dict(rag.coverage) if rag and rag.is_v3 else {},
+                rag_failure_code=rag.failure_code if rag and rag.failure_code else "",
+                rag_failure_reason=rag.failure_reason if rag else "",
+                rag_retrieval_notes=list(rag.retrieval_notes) if rag else [],
+                rag_contract_violations=list(rag.client_contract_violations) if rag else [],
+                result_bucket=result_bucket,
+                draft_answer=state.get("draft_answers", {}).get(planned.id, ""),
+                final_answer=final_answer,
+                last_rejected_answer=state.get("last_rejected_answers", {}).get(planned.id, ""),
+                qa_failure_stage=state.get("qa_failure_stages", {}).get(planned.id, ""),
+                sanitizer_actions=state.get("sanitizer_actions", {}).get(planned.id, []),
+                evidence_summary=normalized.get("evidence_summary", ""),
+                sources=normalized.get("sources", []),
+                qa=qa,
+                agent_profile=state.get("agent_profiles", {}).get(planned.id, "general_section"),
+                skill_key=selection.get("skill_key", state.get("agent_profiles", {}).get(planned.id, "general_section")),
+                skill_name=selection.get("skill_name", ""),
+                skill_version=selection.get("skill_version", ""),
+                skill_source_path=selection.get("skill_source_path", ""),
+                skill_selection_reason=selection.get("skill_selection_reason", ""),
+                skill_checks=state.get("skill_checks", {}).get(planned.id, []),
+                disclosure_flags=state.get("disclosure_flags", {}).get(planned.id, []),
+                hard_failures=state.get("hard_failures", {}).get(planned.id, []),
+                quality_flags=quality_flags,
+                revision_count=revision_count,
+                retrieval_attempts=state.get("retrieval_attempts", {}).get(planned.id, []),
+                raw_rag_result=model_to_dict(rag) if rag else {},
+            )
+            quality = classify_answer_quality(record)
+            record.qa_grade = quality.grade
+            record.coverage_reason = quality.reason
+            record.coverage_issues = list(quality.issues)
+            records.append(record)
+        artifacts = RunArtifacts(
+            run_id=company.run_id,
+            company=model_to_dict(company),
+            template_selection=state["template_selection"],
+            answers=records,
+            stats=stats,
+            quantitative_results=[
+                QuantitativeResult.model_validate(item)
+                for item in state.get("quantitative_results", [])
+            ],
+            quantitative_stats=dict(state.get("quantitative_stats", {})),
+            provenance=verify_runtime_provenance(),
+            rag_request_traces=list(state.get("rag_request_traces", [])),
+        )
+        return {"artifacts": artifacts}

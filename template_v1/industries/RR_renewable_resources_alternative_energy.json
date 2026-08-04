@@ -1,0 +1,31 @@
+{
+  "id": "RR",
+  "name_en": "Renewable Resources and Alternative Energy",
+  "name_ko": "신재생 및 대체에너지",
+  "name_vi": "Tài nguyên tái tạo và năng lượng thay thế",
+  "material_topics": [
+    "renewable resource management",
+    "land use",
+    "biodiversity",
+    "water",
+    "supply-chain traceability",
+    "climate benefits"
+  ],
+  "priority_categories_ko": [
+    "생물다양성",
+    "물 관리",
+    "기후행동",
+    "공급망 책임 관리",
+    "자원선순환"
+  ],
+  "metric_focus": [
+    "renewable output",
+    "resource efficiency",
+    "certified sourcing",
+    "land restoration",
+    "water intensity",
+    "avoided emissions"
+  ],
+  "risk_lens": "Focus on responsible resource use, ecosystem impact, supply traceability, and credible climate benefit claims.",
+  "answer_guidance": "Balance positive transition impact with controls for land, biodiversity, water, and supply-chain risks."
+}

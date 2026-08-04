@@ -1,0 +1,30 @@
+{
+  "id": "RT",
+  "name_en": "Resource Transformation",
+  "name_ko": "자원전환",
+  "name_vi": "Chuyển đổi tài nguyên và sản xuất vật liệu",
+  "material_topics": [
+    "energy intensity",
+    "emissions",
+    "materials efficiency",
+    "hazardous substances",
+    "worker safety",
+    "product lifecycle"
+  ],
+  "priority_categories_ko": [
+    "기후행동",
+    "오염 및 배출 관리",
+    "자원선순환",
+    "안전 보건",
+    "제품 책임"
+  ],
+  "metric_focus": [
+    "energy intensity",
+    "Scope 1 and 2 emissions",
+    "waste recycling rate",
+    "hazardous waste",
+    "process safety incidents"
+  ],
+  "risk_lens": "Focus on manufacturing footprint, process safety, emissions regulation, chemical/material handling, and circularity.",
+  "answer_guidance": "Prioritize operational controls, efficiency investments, process safety, and measurable resource-reduction outcomes."
+}

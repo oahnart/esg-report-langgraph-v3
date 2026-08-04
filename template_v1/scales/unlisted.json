@@ -1,0 +1,26 @@
+{
+  "id": "unlisted",
+  "name_en": "Unlisted Company",
+  "name_ko": "비상장기업",
+  "name_vi": "Doanh nghiệp chưa niêm yết",
+  "company_profile": {
+    "typical_scope": "Private or non-listed company preparing ESG disclosure for customers, investors, lenders, or supply-chain requirements.",
+    "disclosure_maturity": "basic_to_developing",
+    "expected_evidence_depth": "owner, process, policy/practice, available records, and planned disclosure improvement"
+  },
+  "answer_guidance": {
+    "detail_level": "medium",
+    "writing_style": "Clear, conservative, and suitable for voluntary disclosure or partner due diligence.",
+    "metrics_policy": "Use available operational data; distinguish measured metrics from future reporting plans.",
+    "governance_expectation": "Focus on executive or owner-led oversight and internal responsibility.",
+    "risk_management_expectation": "Explain compliance controls, operational risks, and practical mitigation activities.",
+    "supply_chain_expectation": "Emphasize customer requirements, procurement rules, and direct supplier controls where applicable.",
+    "assurance_expectation": "Avoid listed-company assumptions; cite certifications, audits, or customer reviews only when present.",
+    "fallback_when_evidence_missing": "State that public disclosure or formalized evidence is limited and keep claims conservative."
+  },
+  "question_adaptation_rules": [
+    "Do not assume public-reporting infrastructure, investor relations processes, or board committees.",
+    "For Metrics questions, separate internal management records from externally disclosed indicators.",
+    "For Strategy questions, connect ESG to customer, finance, compliance, or market-access needs."
+  ]
+}

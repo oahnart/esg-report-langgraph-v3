@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="vi" data-lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Báo cáo tổng quan dự án ESG Report LangGraph">
+  <title>ESG Report LangGraph — Tổng quan dự án</title>
+  <style>
+    :root {
+      --bg: #f4f6f3;
+      --panel: #ffffff;
+      --ink: #17251f;
+      --ink-soft: #526159;
+      --ink-faint: #849189;
+      --line: #dce3de;
+      --green: #18745a;
+      --green-soft: #e4f2ec;
+      --blue: #315f91;
+      --blue-soft: #e8f0f8;
+      --amber: #9a6917;
+      --amber-soft: #f8efd9;
+      --violet: #6156a6;
+      --violet-soft: #eeebfa;
+      --red: #a84734;
+      --red-soft: #f8e9e5;
+      --ok: #1a7745;
+      --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: "Inter", "Noto Sans", "Segoe UI", Arial, sans-serif;
+      --radius: 12px;
+      --shadow: 0 14px 32px rgba(24, 48, 38, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(24, 116, 90, 0.08), transparent 30rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    html[data-lang="vi"] [lang="ko"] { display: none !important; }
+    html[data-lang="ko"] [lang="vi"] { display: none !important; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, a:focus-visible {
+      outline: 3px solid rgba(49, 95, 145, 0.35);
+      outline-offset: 2px;
+    }
+
+    .masthead {
+      background:
+        linear-gradient(120deg, rgba(24, 116, 90, 0.18), transparent 42%),
+        #142820;
+      color: #eaf3ee;
+      padding: 48px 24px 38px;
+    }
+    .masthead-inner { max-width: 1120px; margin: 0 auto; position: relative; }
+    .eyebrow {
+      color: #8fcbb7;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+    }
+    .masthead h1 {
+      font-size: clamp(28px, 4.5vw, 44px);
+      letter-spacing: -0.025em;
+      line-height: 1.18;
+      max-width: 840px;
+    }
+    .masthead h1 em { color: #84d5b9; font-style: normal; }
+    .lede { color: #bfd0c7; font-size: 15.5px; margin-top: 16px; max-width: 850px; }
+    .period {
+      align-items: center;
+      border: 1px solid #3b574a;
+      border-radius: 999px;
+      color: #a9bbb1;
+      display: inline-flex;
+      font-family: var(--mono);
+      font-size: 12px;
+      gap: 9px;
+      margin-top: 22px;
+      padding: 7px 14px;
+    }
+    .period .dot {
+      background: #84d5b9;
+      border-radius: 50%;
+      box-shadow: 0 0 0 5px rgba(132, 213, 185, 0.12);
+      height: 7px;
+      width: 7px;
+    }
+    .lang-switch {
+      border: 1px solid #3b574a;
+      border-radius: 999px;
+      display: flex;
+      overflow: hidden;
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+    .lang-switch button {
+      background: transparent;
+      border: 0;
+      color: #a9bbb1;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 15px;
+    }
+    .lang-switch button:hover { background: #213d32; color: #f2f8f5; }
+    .lang-switch button.active { background: #84d5b9; color: #10231b; }
+
+    nav.tabs {
+      backdrop-filter: blur(10px);
+      background: rgba(244, 246, 243, 0.93);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .tabs-inner {
+      display: flex;
+      gap: 5px;
+      margin: 0 auto;
+      max-width: 1120px;
+      overflow-x: auto;
+      padding: 10px 24px;
+      scrollbar-width: thin;
+    }
+    .tab-btn {
+      align-items: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      display: flex;
+      flex-shrink: 0;
+      font-family: var(--sans);
+      font-size: 13.5px;
+      font-weight: 700;
+      gap: 8px;
+      padding: 9px 16px;
+    }
+    .tab-btn:hover { background: #e8ede9; }
+    .tab-btn.active { background: var(--ink); color: #fff; }
+    .chip { background: var(--ink-faint); border-radius: 3px; height: 9px; width: 9px; }
+    .chip.green { background: var(--green); }
+    .chip.blue { background: var(--blue); }
+    .chip.violet { background: var(--violet); }
+    .chip.amber { background: var(--amber); }
+    .tab-btn.active .chip { background: #8ed6bd; }
+
+    main { margin: 0 auto; max-width: 1120px; padding: 38px 24px 88px; }
+    section.view { display: none; }
+    section.view.active { animation: fade-in 0.28s ease; display: block; }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .track-head {
+      align-items: baseline;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 7px;
+    }
+    .track-head h2 { font-size: 25px; letter-spacing: -0.02em; }
+    .track-tag {
+      border-radius: 5px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 4px 9px;
+      text-transform: uppercase;
+    }
+    .track-tag.green { background: var(--green-soft); color: var(--green); }
+    .track-tag.blue { background: var(--blue-soft); color: var(--blue); }
+    .track-tag.violet { background: var(--violet-soft); color: var(--violet); }
+    .track-tag.amber { background: var(--amber-soft); color: var(--amber); }
+    .track-sub { color: var(--ink-soft); margin-bottom: 26px; max-width: 880px; }
+
+    .metrics {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+      margin-bottom: 36px;
+    }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      padding: 19px 19px 16px;
+      position: relative;
+    }
+    .metric::before { bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 4px; }
+    .metric.green::before { background: var(--green); }
+    .metric.blue::before { background: var(--blue); }
+    .metric.violet::before { background: var(--violet); }
+    .metric.amber::before { background: var(--amber); }
+    .metric .label { color: var(--ink-faint); font-size: 12.5px; font-weight: 600; margin-bottom: 7px; }
+    .metric .value {
+      font-family: var(--mono);
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+    .metric .note { color: var(--ink-soft); font-size: 12px; line-height: 1.5; margin-top: 8px; }
+    .good { color: var(--ok); }
+
+    h3.section-title {
+      align-items: center;
+      display: flex;
+      font-size: 17px;
+      gap: 10px;
+      margin: 38px 0 15px;
+    }
+    h3.section-title::before {
+      background: var(--green);
+      border-radius: 2px;
+      content: "";
+      height: 3px;
+      width: 20px;
+    }
+    .blue-view h3.section-title::before { background: var(--blue); }
+    .violet-view h3.section-title::before { background: var(--violet); }
+    .amber-view h3.section-title::before { background: var(--amber); }
+
+    .summary-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .summary-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .summary-card h4 { font-size: 15px; margin-bottom: 9px; }
+    .summary-card p { color: var(--ink-soft); font-size: 13.3px; }
+    .go {
+      border-bottom: 1.5px solid currentColor;
+      color: var(--green);
+      cursor: pointer;
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 14px;
+      padding-bottom: 1px;
+    }
+    .go:hover { opacity: 0.7; }
+
+    .flow {
+      align-items: stretch;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .flow-stage {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      min-height: 132px;
+      padding: 17px;
+      position: relative;
+    }
+    .flow-stage:not(:last-child)::after {
+      color: var(--ink-faint);
+      content: "→";
+      font-family: var(--mono);
+      font-size: 18px;
+      position: absolute;
+      right: -17px;
+      top: 50px;
+      z-index: 2;
+    }
+    .stage-no { color: var(--blue); font-family: var(--mono); font-size: 11px; font-weight: 700; }
+    .flow-stage h4 { font-size: 14px; margin: 6px 0; }
+    .flow-stage p { color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
+
+    .table-scroll {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+    table { border-collapse: collapse; font-size: 12.8px; min-width: 750px; width: 100%; }
+    th {
+      background: #f9fbf9;
+      border-bottom: 2px solid var(--line);
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 10.8px;
+      letter-spacing: 0.055em;
+      padding: 11px 14px;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td { border-bottom: 1px solid #edf1ee; color: var(--ink-soft); padding: 11px 14px; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { color: var(--ink); font-weight: 700; }
+    code {
+      background: #eef2ef;
+      border-radius: 4px;
+      color: #315444;
+      font-family: var(--mono);
+      font-size: 0.92em;
+      padding: 2px 5px;
+    }
+
+    .cards { display: grid; gap: 11px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-head {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      gap: 13px;
+      padding: 16px 19px;
+      user-select: none;
+    }
+    .card-head:hover { background: #fafcfb; }
+    .card-title { flex: 1; font-size: 14px; font-weight: 700; }
+    .badge {
+      border-radius: 999px;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+    }
+    .badge.done { background: var(--green-soft); color: var(--green); }
+    .badge.rule { background: var(--violet-soft); color: var(--violet); }
+    .badge.todo { background: var(--amber-soft); color: var(--amber); }
+    .badge.issue { background: var(--red-soft); color: var(--red); }
+    .caret {
+      border-bottom: 2px solid var(--ink-faint);
+      border-right: 2px solid var(--ink-faint);
+      flex-shrink: 0;
+      height: 9px;
+      transform: rotate(45deg);
+      transition: transform 0.2s;
+      width: 9px;
+    }
+    .card.open .caret { transform: rotate(-135deg); }
+    .card-body { border-top: 1px dashed var(--line); display: none; padding: 2px 19px 19px; }
+    .card.open .card-body { animation: fade-in 0.2s ease; display: block; }
+    .card-body p { color: var(--ink-soft); font-size: 13.5px; margin-top: 12px; }
+    .card-body ul { list-style: none; margin-top: 10px; }
+    .card-body li {
+      color: var(--ink-soft);
+      font-size: 13.5px;
+      padding: 4px 0 4px 19px;
+      position: relative;
+    }
+    .card-body li::before {
+      background: var(--violet-soft);
+      border: 1px solid var(--violet);
+      border-radius: 2px;
+      content: "";
+      height: 7px;
+      left: 2px;
+      position: absolute;
+      top: 12px;
+      width: 7px;
+    }
+
+    .callout {
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      line-height: 1.62;
+      margin-top: 14px;
+      padding: 16px 18px;
+    }
+    .callout.info { background: var(--blue-soft); border: 1px solid #cfdeed; color: #2b4f74; }
+    .callout.warning { background: var(--amber-soft); border: 1px solid #ead9af; color: #765116; }
+    .callout.success { background: var(--green-soft); border: 1px solid #c8e2d6; color: #205f49; }
+    .cmp-note { color: var(--ink-faint); font-size: 12px; }
+
+    .check-list { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); }
+    .check-item {
+      align-items: flex-start;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      display: flex;
+      gap: 11px;
+      padding: 15px 16px;
+    }
+    .check-icon {
+      align-items: center;
+      background: var(--green-soft);
+      border-radius: 50%;
+      color: var(--green);
+      display: flex;
+      flex: 0 0 24px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 800;
+      height: 24px;
+      justify-content: center;
+    }
+    .check-item h4 { font-size: 13.5px; margin-bottom: 3px; }
+    .check-item p { color: var(--ink-soft); font-size: 12.4px; }
+
+    .code-block {
+      background: #14251e;
+      border: 1px solid #294437;
+      border-radius: var(--radius);
+      color: #d7e6de;
+      font-family: var(--mono);
+      font-size: 12.2px;
+      line-height: 1.7;
+      overflow-x: auto;
+      padding: 17px 19px;
+      white-space: pre;
+    }
+    .code-block .muted { color: #88a397; }
+    .code-block .accent { color: #8fdbbf; }
+
+    .output-banner {
+      background:
+        linear-gradient(125deg, rgba(49, 95, 145, 0.09), transparent 46%),
+        var(--panel);
+      border: 1px solid #cfdce9;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-bottom: 24px;
+      padding: 21px;
+    }
+    .output-banner .run-kicker {
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+    .output-banner h3 { font-size: 20px; letter-spacing: -0.015em; }
+    .run-id {
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 11.5px;
+      margin-top: 7px;
+      overflow-wrap: anywhere;
+    }
+    .run-meta {
+      color: var(--ink-soft);
+      display: flex;
+      flex-wrap: wrap;
+      font-size: 12.5px;
+      gap: 7px 14px;
+      margin-top: 12px;
+    }
+    .run-meta span::before { color: var(--blue); content: "◆"; font-size: 7px; margin-right: 7px; }
+    .file-actions { align-content: center; display: grid; gap: 9px; min-width: 190px; }
+    .file-link {
+      align-items: center;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 8px;
+      color: #fff;
+      display: flex;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      gap: 8px;
+      justify-content: center;
+      padding: 10px 13px;
+      text-decoration: none;
+    }
+    .file-link.secondary { background: #fff; color: var(--ink); }
+    .file-link:hover { opacity: 0.82; }
+
+    .bar-list { display: grid; gap: 13px; }
+    .bar-item {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 13px 15px;
+    }
+    .bar-meta {
+      align-items: baseline;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .bar-meta b { font-size: 13px; }
+    .bar-meta span { color: var(--ink-soft); font-family: var(--mono); font-size: 12px; }
+    .bar-track { background: #e9eeeb; border-radius: 99px; height: 10px; overflow: hidden; }
+    .bar-fill { border-radius: 99px; height: 100%; min-width: 3px; }
+    .bar-fill.green { background: var(--green); }
+    .bar-fill.amber { background: var(--amber); }
+    .bar-fill.red { background: var(--red); }
+    .bar-fill.blue { background: var(--blue); }
+    .bar-fill.violet { background: var(--violet); }
+    .bar-fill.gray { background: #87958d; }
+
+    .split-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 19px;
+    }
+    .panel h4 { font-size: 14.5px; margin-bottom: 4px; }
+    .panel > p { color: var(--ink-soft); font-size: 12.7px; margin-bottom: 14px; }
+    .mini-stats {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .mini-stat { background: #f7f9f7; border-radius: 8px; padding: 12px; }
+    .mini-stat .n { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+    .mini-stat .t { color: var(--ink-soft); font-size: 11.5px; margin-top: 2px; }
+
+    .rank-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+    .rank-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .rank-card h4 {
+      background: #f8faf8;
+      border-bottom: 1px solid var(--line);
+      font-size: 13.5px;
+      padding: 12px 15px;
+    }
+    .rank-card ul { list-style: none; padding: 7px 15px 12px; }
+    .rank-card li {
+      align-items: center;
+      border-bottom: 1px solid #edf1ee;
+      color: var(--ink-soft);
+      display: flex;
+      font-size: 12.7px;
+      gap: 10px;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .rank-card li:last-child { border-bottom: 0; }
+    .rank-card li b { color: var(--ink); font-family: var(--mono); font-size: 12px; }
+    .status-dot { border-radius: 50%; flex: 0 0 8px; height: 8px; width: 8px; }
+    .status-dot.good { background: var(--green); }
+    .status-dot.warn { background: var(--amber); }
+    .status-dot.bad { background: var(--red); }
+    .rank-label { align-items: center; display: flex; gap: 8px; }
+
+    .delta { font-family: var(--mono); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .delta.positive { color: var(--green); }
+    .delta.negative { color: var(--red); }
+    .issue-box {
+      background: var(--red-soft);
+      border: 1px solid #e9c9c2;
+      border-radius: var(--radius);
+      color: #733528;
+      padding: 17px 18px;
+    }
+    .issue-box h4 { font-size: 14px; margin-bottom: 7px; }
+    .issue-box p { font-size: 13px; }
+    .issue-box code { background: rgba(255, 255, 255, 0.65); color: #733528; }
+
+    .compare-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .compare-column {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .compare-column.legacy { border-top: 4px solid var(--amber); }
+    .compare-column.current { border-top: 4px solid var(--green); }
+    .compare-head { border-bottom: 1px solid var(--line); padding: 17px 19px 14px; }
+    .compare-head .version {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .legacy .compare-head .version { color: var(--amber); }
+    .current .compare-head .version { color: var(--green); }
+    .compare-head h4 { font-size: 16px; }
+    .compare-head p { color: var(--ink-soft); font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+    .process-list { list-style: none; padding: 10px 19px 17px; }
+    .process-step {
+      border-left: 2px solid var(--line);
+      color: var(--ink-soft);
+      font-size: 12.8px;
+      margin-left: 8px;
+      padding: 7px 0 7px 23px;
+      position: relative;
+    }
+    .process-step::before {
+      background: #fff;
+      border: 2px solid var(--ink-faint);
+      border-radius: 50%;
+      content: "";
+      height: 10px;
+      left: -7px;
+      position: absolute;
+      top: 12px;
+      width: 10px;
+    }
+    .legacy .process-step::before { border-color: var(--amber); }
+    .current .process-step::before { border-color: var(--green); }
+    .process-step b { color: var(--ink); display: block; font-size: 13px; }
+    .process-step:last-child { border-left-color: transparent; }
+
+    .recommendation {
+      background:
+        linear-gradient(120deg, rgba(24, 116, 90, 0.08), rgba(49, 95, 145, 0.06)),
+        var(--panel);
+      border: 1px solid #cadfd5;
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .recommendation h4 { font-size: 16px; margin-bottom: 7px; }
+    .recommendation > p { color: var(--ink-soft); font-size: 13px; max-width: 880px; }
+    .hybrid-flow {
+      align-items: stretch;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(5, 1fr);
+      margin-top: 16px;
+    }
+    .hybrid-step {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 11px;
+      text-align: center;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 11.5px;
+      padding: 27px 24px 44px;
+      text-align: center;
+    }
+
+    @media (max-width: 840px) {
+      .summary-grid, .flow { grid-template-columns: repeat(2, 1fr); }
+      .flow-stage:not(:last-child)::after { display: none; }
+      .output-banner { grid-template-columns: 1fr; }
+      .file-actions { grid-template-columns: repeat(2, 1fr); min-width: 0; }
+      .hybrid-flow { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .masthead { padding-top: 32px; }
+      .lang-switch { margin-bottom: 19px; position: static; width: max-content; }
+      .summary-grid, .flow, .check-list, .split-grid, .rank-grid, .compare-grid, .hybrid-flow { grid-template-columns: 1fr; }
+      .file-actions { grid-template-columns: 1fr; }
+      .card-head { align-items: flex-start; }
+      .badge { display: none; }
+      main { padding-left: 16px; padding-right: 16px; }
+      .tabs-inner { padding-left: 16px; padding-right: 16px; }
+    }
+    @media print {
+      nav.tabs, .lang-switch, .go, .caret { display: none !important; }
+      body { background: #fff; font-size: 12px; }
+      .masthead { background: #142820 !important; print-color-adjust: exact; }
+      section.view { display: block !important; break-before: page; }
+      section.view:first-child { break-before: auto; }
+      .card-body { display: block !important; }
+      .metric, .summary-card { box-shadow: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      section.view.active, .card.open .card-body { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-set-lang="vi" class="active">VI</button>
+        <button type="button" data-set-lang="ko">한국어</button>
+      </div>
+      <div class="eyebrow">Project Brief · ESG Agents · LangGraph · 2026-07-31</div>
+      <h1 lang="vi">ESG Report LangGraph — <em>từ Evidence đến báo cáo có thể kiểm toán</em></h1>
+      <h1 lang="ko">ESG Report LangGraph — <em>Evidence에서 감사 가능한 보고서까지</em></h1>
+      <p class="lede" lang="vi">
+        Hệ thống agent tạo câu trả lời định tính cho báo cáo ESG. Pipeline chọn template theo doanh nghiệp,
+        truy xuất Evidence từ Team RAG, kiểm tra điều kiện sử dụng, viết và phản biện câu trả lời, sau đó xuất
+        JSON cùng Excel audit có đầy đủ dấu vết.
+      </p>
+      <p class="lede" lang="ko">
+        기업별 템플릿을 선택하고 Team RAG에서 Evidence를 검색한 뒤, 사용 가능성을 검증하고 답변 작성·검토·수정을
+        수행하여 JSON과 Excel 감사 파일로 내보내는 ESG 정성 보고서 에이전트 시스템입니다.
+      </p>
+      <div class="period">
+        <span class="dot"></span>
+        <span lang="vi">Run mới nhất · 54 answered · 40 weak · 1 failed · 26/26 test pass</span>
+        <span lang="ko">최신 실행 · answered 54 · weak 40 · failed 1 · 테스트 26/26 통과</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Report sections">
+    <div class="tabs-inner">
+      <button type="button" class="tab-btn active" data-view="overview">
+        <span class="chip green"></span><span lang="vi">Tổng quan</span><span lang="ko">개요</span>
+      </button>
+      <button type="button" class="tab-btn" data-view="latest-output">
+        <span class="chip blue"></span><span lang="vi">Output mới nhất</span><span lang="ko">최신 Output</span>
+      </button>
+      <button type="button" class="tab-btn" data-view="process-compare">
+        <span class="chip amber"></span><span lang="vi">Quy trình cũ ↔ mới</span><span lang="ko">기존 ↔ 현재 프로세스</span>
+      </button>
+      <button type="button" class="tab-btn" data-view="architecture">
+        <span class="chip blue"></span><span lang="vi">Kiến trúc · Skills</span><span lang="ko">아키텍처 · Skills</span>
+      </button>
+      <button type="button" class="tab-btn" data-view="evidence">
+        <span class="chip violet"></span><span lang="vi">Evidence & QA</span><span lang="ko">Evidence & QA</span>
+      </button>
+      <button type="button" class="tab-btn" data-view="operations">
+        <span class="chip amber"></span><span lang="vi">Vận hành & kế hoạch</span><span lang="ko">운영 & 계획</span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <section class="view active" id="view-overview">
+      <div class="track-head">
+        <h2 lang="vi">Tổng quan dự án</h2>
+        <h2 lang="ko">프로젝트 개요</h2>
+        <span class="track-tag green">Project Scope</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        Mục tiêu cốt lõi là tạo câu trả lời ESG có căn cứ: không có Evidence phù hợp thì không sinh nội dung,
+        có Evidence thì mọi claim quan trọng phải truy vết được về nguồn.
+      </p>
+      <p class="track-sub" lang="ko">
+        핵심 목표는 근거 기반 ESG 답변입니다. 적합한 Evidence가 없으면 내용을 생성하지 않고, Evidence가 있으면
+        주요 claim을 원문 출처까지 추적할 수 있어야 합니다.
+      </p>
+
+      <div class="metrics">
+        <div class="metric green">
+          <div class="label"><span lang="vi">Bộ câu hỏi ESG</span><span lang="ko">ESG 질문 세트</span></div>
+          <div class="value">95</div>
+          <div class="note"><span lang="vi">Template định tính có QID và source ID</span><span lang="ko">QID와 source ID를 포함한 정성 템플릿</span></div>
+        </div>
+        <div class="metric blue">
+          <div class="label"><span lang="vi">Workflow LangGraph</span><span lang="ko">LangGraph 워크플로</span></div>
+          <div class="value">12 <small>nodes</small></div>
+          <div class="note"><span lang="vi">Từ company intake đến report assembly</span><span lang="ko">기업 입력부터 보고서 조립까지</span></div>
+        </div>
+        <div class="metric violet">
+          <div class="label"><span lang="vi">Profile doanh nghiệp</span><span lang="ko">기업 프로필</span></div>
+          <div class="value">4 × 11</div>
+          <div class="note"><span lang="vi">4 quy mô và 11 nhóm ngành</span><span lang="ko">4개 기업 규모와 11개 산업군</span></div>
+        </div>
+        <div class="metric amber">
+          <div class="label"><span lang="vi">Kiểm thử offline</span><span lang="ko">오프라인 테스트</span></div>
+          <div class="value good">26/26</div>
+          <div class="note"><span lang="vi">Pass ngày 31/07/2026</span><span lang="ko">2026-07-31 전체 통과</span></div>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Ba lớp giá trị</span><span lang="ko">세 가지 핵심 가치</span></h3>
+      <div class="summary-grid">
+        <article class="summary-card">
+          <h4 lang="vi">Cá nhân hóa theo doanh nghiệp</h4>
+          <h4 lang="ko">기업별 맞춤화</h4>
+          <p lang="vi">Chuẩn hóa thông tin công ty, sau đó kết hợp bộ câu hỏi với guideline theo quy mô và ngành.</p>
+          <p lang="ko">기업 정보를 정규화한 뒤 질문 세트에 규모별·산업별 가이드라인을 결합합니다.</p>
+          <span class="go" data-goto="architecture"><span lang="vi">Xem kiến trúc →</span><span lang="ko">아키텍처 보기 →</span></span>
+        </article>
+        <article class="summary-card">
+          <h4 lang="vi">Evidence-first, không bịa dữ liệu</h4>
+          <h4 lang="ko">Evidence 우선, 데이터 추정 금지</h4>
+          <p lang="vi">Evidence yếu, không liên quan hoặc thiếu nguồn sẽ bị gate; câu trả lời cuối để trống khi chưa đủ căn cứ.</p>
+          <p lang="ko">약하거나 무관하거나 출처가 부족한 Evidence는 gate에서 제외하며, 근거가 부족하면 최종 답변을 비웁니다.</p>
+          <span class="go" data-goto="evidence"><span lang="vi">Xem policy →</span><span lang="ko">정책 보기 →</span></span>
+        </article>
+        <article class="summary-card">
+          <h4 lang="vi">Đầu ra phục vụ audit</h4>
+          <h4 lang="ko">감사 대응형 출력</h4>
+          <p lang="vi">Mỗi run tạo JSON đầy đủ và Excel audit gồm nguồn, QA notes, skill, quality flag và số lần sửa.</p>
+          <p lang="ko">각 실행은 출처, QA 메모, skill, 품질 flag, 수정 횟수를 포함한 JSON과 Excel 감사 파일을 생성합니다.</p>
+          <span class="go" data-goto="operations"><span lang="vi">Xem vận hành →</span><span lang="ko">운영 보기 →</span></span>
+        </article>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Trạng thái hiện tại</span><span lang="ko">현재 상태</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Hạng mục</span><span lang="ko">항목</span></th>
+              <th><span lang="vi">Đã có</span><span lang="ko">구현 상태</span></th>
+              <th><span lang="vi">Ý nghĩa</span><span lang="ko">의미</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Template</td>
+              <td><span lang="vi">95 câu hỏi, 4 scale, 11 industry</span><span lang="ko">95개 질문, 4개 규모, 11개 산업</span></td>
+              <td><span lang="vi">Phạm vi định tính đã được cấu trúc hóa.</span><span lang="ko">정성 보고 범위가 구조화되어 있습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Execution</td>
+              <td><span lang="vi">CLI và FastAPI</span><span lang="ko">CLI 및 FastAPI</span></td>
+              <td><span lang="vi">Có thể chạy thủ công hoặc tích hợp thành service.</span><span lang="ko">수동 실행 또는 서비스 통합이 가능합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Quality control</td>
+              <td><span lang="vi">Evidence gate, critic, revision loop</span><span lang="ko">Evidence gate, critic, revision loop</span></td>
+              <td><span lang="vi">Tách rõ kiểm tra nguồn, kiểm tra nội dung và sửa lỗi.</span><span lang="ko">근거 검증, 내용 검토, 수정 단계를 분리합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Outputs</td>
+              <td><code>qualitative_run.json</code> + <code>qualitative_audit.xlsx</code></td>
+              <td><span lang="vi">Vừa dùng cho hệ thống, vừa tiện cho người kiểm toán.</span><span lang="ko">시스템 연동과 사람의 감사 검토를 모두 지원합니다.</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view blue-view" id="view-latest-output">
+      <div class="track-head">
+        <h2 lang="vi">Output báo cáo mới nhất</h2>
+        <h2 lang="ko">최신 보고서 Output</h2>
+        <span class="track-tag blue">Latest Run · 95 QIDs</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        Phân tích trực tiếp từ <code>qualitative_run.json</code> mới nhất trong thư mục output.
+        Run đã xử lý toàn bộ 95 câu hỏi cho ILJIN Hysolus và tạo đồng thời file Excel audit.
+      </p>
+      <p class="track-sub" lang="ko">
+        output 디렉터리의 최신 <code>qualitative_run.json</code>을 직접 분석한 결과입니다.
+        ILJIN Hysolus의 95개 질문 전체를 처리했으며 Excel 감사 파일도 함께 생성했습니다.
+      </p>
+
+      <div class="output-banner">
+        <div>
+          <div class="run-kicker">Latest completed run</div>
+          <h3>ILJIN Hysolus · ESG Qualitative Report 2025</h3>
+          <div class="run-id">run_20260731T041423948643Z_2ca824d3</div>
+          <div class="run-meta">
+            <span><span lang="vi">Tạo lúc 11:14 ICT · 31/07/2026</span><span lang="ko">2026-07-31 11:14 ICT 생성</span></span>
+            <span>scale: large_enterprise</span>
+            <span>industry: TR</span>
+            <span>language: Korean</span>
+            <span>top_k: 5</span>
+          </div>
+        </div>
+        <div class="file-actions">
+          <a class="file-link" href="../data/outputs/iljinhysolus/2025/run_20260731T041423948643Z_2ca824d3/qualitative_run.json">
+            <span>↗</span> qualitative_run.json
+          </a>
+          <a class="file-link secondary" href="../data/outputs/iljinhysolus/2025/run_20260731T041423948643Z_2ca824d3/qualitative_audit.xlsx">
+            <span>↗</span> qualitative_audit.xlsx
+          </a>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric blue">
+          <div class="label"><span lang="vi">Tổng câu hỏi đã xử lý</span><span lang="ko">전체 처리 질문</span></div>
+          <div class="value">95/95</div>
+          <div class="note"><span lang="vi">100% phạm vi template_v1</span><span lang="ko">template_v1 범위 100%</span></div>
+        </div>
+        <div class="metric green">
+          <div class="label"><span lang="vi">Answered</span><span lang="ko">Answered</span></div>
+          <div class="value good">54 <small>· 56.8%</small></div>
+          <div class="note"><span lang="vi">Có Final Answer và QA passed</span><span lang="ko">Final Answer 존재 및 QA 통과</span></div>
+        </div>
+        <div class="metric amber">
+          <div class="label"><span lang="vi">Weak / cần review</span><span lang="ko">Weak / 검토 필요</span></div>
+          <div class="value">40 <small>· 42.1%</small></div>
+          <div class="note"><span lang="vi">19 insufficient + 21 thin_but_usable</span><span lang="ko">insufficient 19 + thin_but_usable 21</span></div>
+        </div>
+        <div class="metric violet">
+          <div class="label"><span lang="vi">Failed</span><span lang="ko">Failed</span></div>
+          <div class="value" style="color: var(--red)">1 <small>· 1.1%</small></div>
+          <div class="note"><span lang="vi">Q083 · unsupported numeric claims</span><span lang="ko">Q083 · 미지원 수치 claim</span></div>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Phân bố kết quả</span><span lang="ko">결과 분포</span></h3>
+      <div class="bar-list">
+        <div class="bar-item">
+          <div class="bar-meta"><b>Answered</b><span>54 / 95 · 56.8%</span></div>
+          <div class="bar-track"><div class="bar-fill green" style="width: 56.8%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><b>Weak</b><span>40 / 95 · 42.1%</span></div>
+          <div class="bar-track"><div class="bar-fill amber" style="width: 42.1%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-meta"><b>Failed</b><span>1 / 95 · 1.1%</span></div>
+          <div class="bar-track"><div class="bar-fill red" style="width: 1.1%"></div></div>
+        </div>
+      </div>
+      <div class="callout info">
+        <b lang="vi">Kết luận nhanh:</b><b lang="ko">요약:</b>
+        <span lang="vi"> pipeline đã tạo được câu trả lời đã qua QA cho hơn một nửa phạm vi. Nút thắt hiện tại không còn là lỗi hệ thống hàng loạt mà là <b>độ mạnh của Evidence</b>: 40 câu weak vẫn giữ nguyên qua các run gần nhất.</span>
+        <span lang="ko"> 전체 범위의 절반 이상에서 QA 통과 답변을 생성했습니다. 현재 병목은 대규모 시스템 오류가 아니라 <b>Evidence 강도</b>이며, 최근 실행에서도 weak 40개가 그대로 유지됩니다.</span>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Funnel Evidence → Final Answer</span><span lang="ko">Evidence → Final Answer Funnel</span></h3>
+      <div class="split-grid">
+        <div class="panel">
+          <h4 lang="vi">Độ phủ và khả năng sử dụng Evidence</h4>
+          <h4 lang="ko">Evidence 범위 및 사용 가능성</h4>
+          <p lang="vi">Số câu đi qua từng lớp kiểm soát của latest run.</p>
+          <p lang="ko">최신 실행에서 각 품질 단계를 통과한 질문 수입니다.</p>
+          <div class="bar-list">
+            <div class="bar-item">
+              <div class="bar-meta"><b><span lang="vi">Có source</span><span lang="ko">source 보유</span></b><span>76 · 80.0%</span></div>
+              <div class="bar-track"><div class="bar-fill blue" style="width: 80%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta"><b>High confidence</b><span>55 · 57.9%</span></div>
+              <div class="bar-track"><div class="bar-fill violet" style="width: 57.9%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta"><b><span lang="vi">Có Final Answer</span><span lang="ko">Final Answer 보유</span></b><span>54 · 56.8%</span></div>
+              <div class="bar-track"><div class="bar-fill green" style="width: 56.8%"></div></div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-meta"><b>QA passed</b><span>54 · 56.8%</span></div>
+              <div class="bar-track"><div class="bar-fill green" style="width: 56.8%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h4 lang="vi">Tín hiệu kiểm soát chất lượng</h4>
+          <h4 lang="ko">품질 관리 신호</h4>
+          <p lang="vi">Flag là thông tin audit; có flag không đồng nghĩa câu trả lời bị loại.</p>
+          <p lang="ko">flag는 감사 정보이며 flag 존재가 곧 답변 제외를 의미하지는 않습니다.</p>
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <div class="n">86</div>
+              <div class="t"><span lang="vi">câu có quality flag</span><span lang="ko">quality flag 보유</span></div>
+            </div>
+            <div class="mini-stat">
+              <div class="n">41</div>
+              <div class="t"><span lang="vi">câu có hard failure</span><span lang="ko">hard failure 보유</span></div>
+            </div>
+            <div class="mini-stat">
+              <div class="n">10</div>
+              <div class="t"><span lang="vi">câu đã revision một lần</span><span lang="ko">1회 revision 수행</span></div>
+            </div>
+            <div class="mini-stat">
+              <div class="n">41</div>
+              <div class="t"><span lang="vi">câu needs_review</span><span lang="ko">needs_review 상태</span></div>
+            </div>
+          </div>
+          <div class="callout warning">
+            <span lang="vi"><b>Điểm cần đọc đúng:</b> 55 câu high confidence nhưng chỉ 54 câu thành answered vì Q083 bị critic chặn sau khi phát hiện claim số không được hỗ trợ.</span>
+            <span lang="ko"><b>해석 주의:</b> high confidence는 55개지만 Q083이 미지원 수치 claim으로 critic에서 차단되어 answered는 54개입니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Confidence và specialist routing</span><span lang="ko">Confidence 및 specialist routing</span></h3>
+      <div class="split-grid">
+        <div class="panel">
+          <h4>Answer status</h4>
+          <p lang="vi">Phân loại do tầng RAG/Evidence trả về trước Final Answer.</p>
+          <p lang="ko">Final Answer 이전 RAG/Evidence 단계의 분류입니다.</p>
+          <div class="bar-list">
+            <div class="bar-item"><div class="bar-meta"><b>high_confidence</b><span>55 · 57.9%</span></div><div class="bar-track"><div class="bar-fill green" style="width:57.9%"></div></div></div>
+            <div class="bar-item"><div class="bar-meta"><b>thin_but_usable</b><span>21 · 22.1%</span></div><div class="bar-track"><div class="bar-fill amber" style="width:22.1%"></div></div></div>
+            <div class="bar-item"><div class="bar-meta"><b>insufficient</b><span>19 · 20.0%</span></div><div class="bar-track"><div class="bar-fill red" style="width:20%"></div></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h4>Agent profile / skill</h4>
+          <p lang="vi">Phân bố 95 câu theo specialist được router lựa chọn.</p>
+          <p lang="ko">router가 선택한 specialist별 95개 질문 분포입니다.</p>
+          <div class="bar-list">
+            <div class="bar-item"><div class="bar-meta"><b>general_section</b><span>64 · 67.4%</span></div><div class="bar-track"><div class="bar-fill blue" style="width:67.4%"></div></div></div>
+            <div class="bar-item"><div class="bar-meta"><b>commitment</b><span>18 · 18.9%</span></div><div class="bar-track"><div class="bar-fill violet" style="width:18.9%"></div></div></div>
+            <div class="bar-item"><div class="bar-meta"><b>materiality</b><span>10 · 10.5%</span></div><div class="bar-track"><div class="bar-fill amber" style="width:10.5%"></div></div></div>
+            <div class="bar-item"><div class="bar-meta"><b>carbon</b><span>3 · 3.2%</span></div><div class="bar-track"><div class="bar-fill green" style="width:3.2%"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Độ phủ theo nhóm nội dung</span><span lang="ko">주제별 커버리지</span></h3>
+      <div class="rank-grid">
+        <div class="rank-card">
+          <h4><span lang="vi">Nhóm có độ phủ tốt nhất</span><span lang="ko">커버리지 우수 주제</span></h4>
+          <ul>
+            <li><span class="rank-label"><span class="status-dot good"></span><span lang="vi">Quản lý trách nhiệm chuỗi cung ứng</span><span lang="ko">공급망 책임 관리</span></span><b>4/4</b></li>
+            <li><span class="rank-label"><span class="status-dot good"></span><span lang="vi">Đa dạng và hòa nhập</span><span lang="ko">다양성 및 포용성</span></span><b>4/4</b></li>
+            <li><span class="rank-label"><span class="status-dot good"></span><span lang="vi">An toàn sức khỏe</span><span lang="ko">안전 보건</span></span><b>3/4</b></li>
+            <li><span class="rank-label"><span class="status-dot good"></span><span lang="vi">Hành động khí hậu</span><span lang="ko">기후행동</span></span><b>3/4</b></li>
+            <li><span class="rank-label"><span class="status-dot good"></span><span lang="vi">Bảo mật thông tin</span><span lang="ko">정보보호</span></span><b>3/4</b></li>
+          </ul>
+        </div>
+        <div class="rank-card">
+          <h4><span lang="vi">Khoảng trống Evidence ưu tiên</span><span lang="ko">우선 Evidence 공백</span></h4>
+          <ul>
+            <li><span class="rank-label"><span class="status-dot bad"></span><span lang="vi">Đa dạng sinh học</span><span lang="ko">생물다양성</span></span><b>0/4</b></li>
+            <li><span class="rank-label"><span class="status-dot bad"></span><span lang="vi">Tác động cộng đồng</span><span lang="ko">지역사회 임팩트</span></span><b>0/4</b></li>
+            <li><span class="rank-label"><span class="status-dot bad"></span><span lang="vi">Quản trị ESG</span><span lang="ko">ESG 경영</span></span><b>0/3</b></li>
+            <li><span class="rank-label"><span class="status-dot warn"></span><span lang="vi">Quản lý nước</span><span lang="ko">물 관리</span></span><b>1/4</b></li>
+            <li><span class="rank-label"><span class="status-dot warn"></span><span lang="vi">Cấu trúc hội đồng quản trị</span><span lang="ko">이사회 구성</span></span><b>1/4</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Lỗi duy nhất cần xử lý</span><span lang="ko">처리가 필요한 단일 실패</span></h3>
+      <div class="issue-box">
+        <h4>Q083 · ESG 운영 성과 및 목표 이행 현황</h4>
+        <p lang="vi">
+          Critic từ chối câu trả lời vì phát hiện các claim số không được Evidence hỗ trợ:
+          <code>1</code>, <code>2</code>, <code>2024</code>, <code>3</code>.
+          Hướng xử lý là loại hoặc gắn nguồn rõ cho từng số, sau đó chạy lại riêng Q083 trước khi chạy full report.
+        </p>
+        <p lang="ko">
+          critic이 Evidence로 뒷받침되지 않은 수치 <code>1</code>, <code>2</code>, <code>2024</code>, <code>3</code>을
+          감지해 답변을 거부했습니다. 각 수치를 제거하거나 명확한 출처를 연결한 뒤 Q083만 먼저 재실행해야 합니다.
+        </p>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Xu hướng các full run</span><span lang="ko">전체 실행 추이</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Mốc chạy</span><span lang="ko">실행 시점</span></th>
+              <th>Answered</th>
+              <th>Weak</th>
+              <th>Failed</th>
+              <th><span lang="vi">Thay đổi chính</span><span lang="ko">주요 변화</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>24/07 · 15:08 ICT<br><code>run_20260724T080853…</code></td>
+              <td>26</td><td>40</td><td>29</td>
+              <td><span lang="vi">Baseline full run</span><span lang="ko">기준 전체 실행</span></td>
+            </tr>
+            <tr>
+              <td>31/07 · 10:19 ICT<br><code>run_20260731T031951…</code></td>
+              <td>52</td><td>40</td><td>3</td>
+              <td><span class="delta positive">+26 answered</span> · <span class="delta positive">−26 failed</span></td>
+            </tr>
+            <tr>
+              <td>31/07 · 11:14 ICT<br><code>run_20260731T041423…</code></td>
+              <td>54</td><td>40</td><td>1</td>
+              <td><span class="delta positive">+2 answered</span> · <span class="delta positive">−2 failed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout success">
+        <b lang="vi">Tiến bộ so với baseline 24/07:</b><b lang="ko">07-24 기준 대비 개선:</b>
+        <span lang="vi"> answered tăng từ 26 lên 54 (<b>+28</b>), failed giảm từ 29 xuống 1 (<b>−28</b>). Weak vẫn là 40, cho thấy bước tối ưu tiếp theo nên tập trung vào coverage/chất lượng Evidence thay vì tiếp tục tối ưu routing chung.</span>
+        <span lang="ko"> answered는 26에서 54로 <b>+28</b>, failed는 29에서 1로 <b>−28</b> 개선되었습니다. weak는 40으로 유지되어 다음 최적화는 일반 routing보다 Evidence 범위와 품질에 집중해야 합니다.</span>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">File output và mức độ kiểm chứng</span><span lang="ko">Output 파일 및 검증 수준</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">File</span><span lang="ko">파일</span></th>
+              <th><span lang="vi">Kích thước</span><span lang="ko">크기</span></th>
+              <th><span lang="vi">Nội dung</span><span lang="ko">내용</span></th>
+              <th><span lang="vi">Trạng thái kiểm tra</span><span lang="ko">검증 상태</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>qualitative_run.json</code></td>
+              <td>1,052,852 bytes</td>
+              <td><span lang="vi">95 answer records, stats, source, QA, skill, flag và raw RAG result</span><span lang="ko">95개 답변, 통계, 출처, QA, skill, flag, raw RAG 결과</span></td>
+              <td><span class="badge done"><span lang="vi">Đã phân tích</span><span lang="ko">분석 완료</span></span></td>
+            </tr>
+            <tr>
+              <td><code>qualitative_audit.xlsx</code></td>
+              <td>83,342 bytes</td>
+              <td><span lang="vi">Excel audit được OutputWriter tạo cùng run; contract hiện tại định nghĩa 21 cột</span><span lang="ko">동일 실행에서 생성된 Excel 감사 파일; 현재 contract는 21개 열 정의</span></td>
+              <td><span class="badge todo"><span lang="vi">Đã xác nhận file/metadata</span><span lang="ko">파일/metadata 확인</span></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cmp-note" style="margin-top: 8px;">
+        <span lang="vi">Nguồn số liệu dashboard: nội dung JSON mới nhất. Excel đã được xác nhận tồn tại cùng timestamp 11:16:32 ICT; nội dung workbook chưa được render trong lần cập nhật này.</span>
+        <span lang="ko">dashboard 수치 출처: 최신 JSON 내용. Excel은 동일한 11:16:32 ICT timestamp로 존재함을 확인했으며 이번 업데이트에서는 workbook 내용을 render하지 않았습니다.</span>
+      </p>
+
+      <h3 class="section-title"><span lang="vi">Ưu tiên hành động từ latest run</span><span lang="ko">최신 실행 기반 우선 조치</span></h3>
+      <div class="cards">
+        <article class="card open">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="true">
+            <span class="card-title"><span lang="vi">P0 · Sửa Q083 và chạy lại subset</span><span lang="ko">P0 · Q083 수정 후 subset 재실행</span></span>
+            <span class="badge issue">1 failed</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Loại các số không có grounding hoặc gắn đúng nguồn; chạy riêng <code>--item-ids Q083</code> và chỉ full run khi Q083 đạt QA.</p>
+            <p lang="ko">grounding 없는 수치를 제거하거나 정확한 출처를 연결하고 <code>--item-ids Q083</code>으로 먼저 검증한 뒤 전체 실행합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">P1 · Bổ sung Evidence cho 19 câu insufficient</span><span lang="ko">P1 · insufficient 19개 Evidence 보강</span></span>
+            <span class="badge todo">Coverage</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Ưu tiên tài liệu cho đa dạng sinh học, tác động cộng đồng và ESG management vì các nhóm này hiện chưa có câu answered.</p>
+            <p lang="ko">answered가 없는 생물다양성, 지역사회 임팩트, ESG 경영 관련 문서를 우선 보강합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">P2 · Nâng 21 câu thin_but_usable lên high confidence</span><span lang="ko">P2 · thin_but_usable 21개를 high confidence로 개선</span></span>
+            <span class="badge todo">Quality</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Kiểm tra top_k, chunk chất lượng thấp và độ khớp câu hỏi; theo dõi thay đổi trực tiếp ở bucket weak thay vì chỉ nhìn tổng số run thành công.</p>
+            <p lang="ko">top_k, 저품질 chunk, 질문 적합도를 점검하고 실행 성공 여부보다 weak bucket 변화를 직접 추적합니다.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view amber-view" id="view-process-compare">
+      <div class="track-head">
+        <h2 lang="vi">So sánh quy trình cũ và hiện tại</h2>
+        <h2 lang="ko">기존 프로세스와 현재 프로세스 비교</h2>
+        <span class="track-tag amber">Migration Analysis</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        So sánh dựa trên mã nguồn, tài liệu kiến trúc, cấu hình và test suite của hai repo.
+        Quy trình mới là một hướng chuyên môn hóa cho báo cáo định tính, không phải bản thay thế đầy đủ mọi năng lực của quy trình cũ.
+      </p>
+      <p class="track-sub" lang="ko">
+        두 저장소의 소스 코드, 아키텍처 문서, 설정, 테스트를 기준으로 비교했습니다.
+        현재 프로세스는 정성 보고에 특화된 구조이며 기존 프로세스의 모든 기능을 완전히 대체하는 것은 아닙니다.
+      </p>
+
+      <div class="metrics">
+        <div class="metric amber">
+          <div class="label"><span lang="vi">Phạm vi quy trình cũ</span><span lang="ko">기존 프로세스 범위</span></div>
+          <div class="value">95 <small>QIDs</small></div>
+          <div class="note"><span lang="vi">Luồng định tính được dùng để so sánh</span><span lang="ko">비교 대상 정성 프로세스</span></div>
+        </div>
+        <div class="metric blue">
+          <div class="label"><span lang="vi">Phạm vi hiện tại</span><span lang="ko">현재 프로세스 범위</span></div>
+          <div class="value">95</div>
+          <div class="note"><span lang="vi">Chuyên sâu báo cáo định tính</span><span lang="ko">정성 보고 전문화</span></div>
+        </div>
+        <div class="metric violet">
+          <div class="label"><span lang="vi">Topology graph</span><span lang="ko">Graph topology</span></div>
+          <div class="value">6+8 → 12</div>
+          <div class="note"><span lang="vi">Hai graph lồng nhau → một workflow chính</span><span lang="ko">중첩 graph 2개 → 단일 main workflow</span></div>
+        </div>
+        <div class="metric green">
+          <div class="label"><span lang="vi">Test offline</span><span lang="ko">Offline 테스트</span></div>
+          <div class="value good">28/28 ↔ 26/26</div>
+          <div class="note"><span lang="vi">Cả hai test suite đều pass</span><span lang="ko">두 test suite 모두 통과</span></div>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <b lang="vi">Cách đọc đúng:</b><b lang="ko">올바른 해석:</b>
+        <span lang="vi"> “6+8 → 12 node” là thay đổi cách phân rã workflow, không có nghĩa quy trình mới ít chức năng hơn theo đúng tỷ lệ node. Quy trình cũ đặt nhiều logic bên trong node <code>generate_qualitative</code>; quy trình hiện tại đưa RAG, Evidence gate, skill routing và context thành node độc lập.</span>
+        <span lang="ko"> “6+8 → 12 node”는 workflow 분해 방식의 변화이며 node 수만으로 기능량을 판단할 수 없습니다. 기존 프로세스는 <code>generate_qualitative</code> 내부에 많은 로직을 포함했고, 현재 프로세스는 RAG, Evidence gate, skill routing, context를 독립 node로 분리했습니다.</span>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Hai luồng xử lý đặt cạnh nhau</span><span lang="ko">두 처리 흐름 비교</span></h3>
+      <div class="compare-grid">
+        <article class="compare-column legacy">
+          <div class="compare-head">
+            <div class="version">Legacy · Full Report</div>
+            <h4 lang="vi">Quy trình cũ</h4><h4 lang="ko">기존 프로세스</h4>
+            <p>F:\GOBIT_PROJECT\esg-langgraph-report-agents</p>
+          </div>
+          <ol class="process-list">
+            <li class="process-step">
+              <b>1. Initialize run & resolve sector</b>
+              <span lang="vi">Tạo workspace, chọn một trong 44 rule kết hợp ngành–quy mô.</span>
+              <span lang="ko">workspace 생성, 44개 산업–규모 조합 rule 중 선택.</span>
+            </li>
+            <li class="process-step">
+              <b>2. Load file/API input</b>
+              <span lang="vi">Đọc qualitative_raw từ file hoặc qualitative snapshot từ API.</span>
+              <span lang="ko">qualitative raw 파일 또는 API snapshot 로드.</span>
+            </li>
+            <li class="process-step">
+              <b>3. Normalize local evidence pool</b>
+              <span lang="vi">Chuẩn hóa toàn bộ Evidence trước khi đi vào từng item.</span>
+              <span lang="ko">각 item 처리 전에 전체 Evidence pool 정규화.</span>
+            </li>
+            <li class="process-step">
+              <b>4. Per-item subgraph × 95</b>
+              <span lang="vi">Match → draft → postprocess → deterministic QA → LLM judge → rewrite.</span>
+              <span lang="ko">match → draft → postprocess → deterministic QA → LLM judge → rewrite.</span>
+            </li>
+            <li class="process-step">
+              <b>5. Batch style review/rewrite</b>
+              <span lang="vi">Rà trùng lặp, opening pattern và style trên toàn bộ batch.</span>
+              <span lang="ko">전체 batch의 중복, opening pattern, style 검토 및 재작성.</span>
+            </li>
+          </ol>
+        </article>
+
+        <article class="compare-column current">
+          <div class="compare-head">
+            <div class="version">Current · Evidence-first Qualitative</div>
+            <h4 lang="vi">Quy trình hiện tại</h4><h4 lang="ko">현재 프로세스</h4>
+            <p>F:\MY_PROJECT\esg-report-langgraph</p>
+          </div>
+          <ol class="process-list">
+            <li class="process-step">
+              <b>1. Normalize company & compose template</b>
+              <span lang="vi">Kết hợp 95 câu hỏi với 4 scale profile và 11 industry profile.</span>
+              <span lang="ko">95개 질문에 4개 규모 및 11개 산업 프로필 결합.</span>
+            </li>
+            <li class="process-step">
+              <b>2. Plan full/subset QIDs</b>
+              <span lang="vi">Chọn toàn bộ 95 câu hoặc subset rõ ràng từ request.</span>
+              <span lang="ko">요청에서 전체 95개 또는 명시적 subset 선택.</span>
+            </li>
+            <li class="process-step">
+              <b>3. Team RAG batch retrieval</b>
+              <span lang="vi">Gọi endpoint v2 theo batch 20, concurrency 4, top_k 5.</span>
+              <span lang="ko">batch 20, concurrency 4, top_k 5로 v2 endpoint 호출.</span>
+            </li>
+            <li class="process-step">
+              <b>4. Evidence gate & normalization</b>
+              <span lang="vi">Tách riêng eligibility, status/label policy, deduplicate và rank nguồn.</span>
+              <span lang="ko">eligibility, status/label 정책, 중복 제거, 출처 순위화를 분리.</span>
+            </li>
+            <li class="process-step">
+              <b>5. Specialist routing & context</b>
+              <span lang="vi">Chọn carbon, materiality, commitment hoặc general_section.</span>
+              <span lang="ko">carbon, materiality, commitment, general_section 중 선택.</span>
+            </li>
+            <li class="process-step">
+              <b>6. Draft → critic → selective revision</b>
+              <span lang="vi">Chỉ sửa QID fail còn Evidence hợp lệ và chưa vượt giới hạn revision.</span>
+              <span lang="ko">유효 Evidence가 있고 revision 한도 미만인 실패 QID만 수정.</span>
+            </li>
+          </ol>
+        </article>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Ma trận khác biệt chi tiết</span><span lang="ko">상세 차이 매트릭스</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Khía cạnh</span><span lang="ko">비교 항목</span></th>
+              <th><span lang="vi">Quy trình cũ</span><span lang="ko">기존 프로세스</span></th>
+              <th><span lang="vi">Quy trình hiện tại</span><span lang="ko">현재 프로세스</span></th>
+              <th><span lang="vi">Ý nghĩa / trade-off</span><span lang="ko">의미 / trade-off</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span lang="vi">Phạm vi nghiệp vụ</span><span lang="ko">업무 범위</span></td>
+              <td>95 qualitative QIDs</td>
+              <td>95 qualitative</td>
+              <td><span lang="vi">Hai bên được so sánh trên cùng phạm vi 95 câu định tính.</span><span lang="ko">두 프로세스를 동일한 95개 정성 질문 범위에서 비교합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Input</td>
+              <td><span lang="vi">File hoặc API snapshot định tính</span><span lang="ko">정성 file 또는 API snapshot</span></td>
+              <td><span lang="vi">Company request + Team RAG live</span><span lang="ko">기업 request + Team RAG live</span></td>
+              <td><span lang="vi">Mới giảm phụ thuộc chuẩn bị raw file; cũ linh hoạt khi chạy offline/air-gapped.</span><span lang="ko">현재는 raw file 준비 부담이 적고, 기존은 offline/air-gapped 실행에 유리합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Template model</td>
+              <td><span lang="vi">44 file rule đã kết hợp sẵn ngành × quy mô</span><span lang="ko">산업 × 규모 조합 44개 rule 파일</span></td>
+              <td><span lang="vi">95 câu + 4 scale profile + 11 industry profile</span><span lang="ko">95개 질문 + 4개 규모 + 11개 산업 프로필</span></td>
+              <td><span lang="vi">Mới giảm duplication cấu hình và dễ cập nhật profile độc lập.</span><span lang="ko">현재는 설정 중복을 줄이고 프로필을 독립적으로 수정하기 쉽습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Graph topology</td>
+              <td><span lang="vi">Main graph 6 node + item subgraph 8 node</span><span lang="ko">main 6 node + item subgraph 8 node</span></td>
+              <td><span lang="vi">Một workflow 12 node có conditional revision</span><span lang="ko">조건부 revision을 포함한 단일 12 node workflow</span></td>
+              <td><span lang="vi">Mới quan sát pipeline end-to-end dễ hơn; cũ cô lập từng item tốt hơn.</span><span lang="ko">현재는 end-to-end 관찰이 쉽고, 기존은 item 단위 격리가 강합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Evidence acquisition</td>
+              <td><span lang="vi">Normalize local pool rồi match per item, limit 5</span><span lang="ko">local pool 정규화 후 item별 match, limit 5</span></td>
+              <td><span lang="vi">RAG batch → eligibility gate → normalize/rank</span><span lang="ko">RAG batch → eligibility gate → normalize/rank</span></td>
+              <td><span lang="vi">Mới có policy boundary rõ trước khi writer nhận Evidence.</span><span lang="ko">현재는 writer 전에 명확한 Evidence policy boundary가 있습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Specialization</td>
+              <td><span lang="vi">SkillRegistry theo capability kỹ thuật</span><span lang="ko">기술 capability 기반 SkillRegistry</span></td>
+              <td><span lang="vi">SkillRegistry nghiệp vụ: carbon/materiality/commitment/general</span><span lang="ko">업무 전문 skill: carbon/materiality/commitment/general</span></td>
+              <td><span lang="vi">Mới làm rõ policy theo nhóm nội dung ESG.</span><span lang="ko">현재는 ESG 주제별 정책이 더 명확합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Per-item QA</td>
+              <td><span lang="vi">Deterministic checklist + LLM judge + tối đa 2 rewrite</span><span lang="ko">deterministic checklist + LLM judge + 최대 2회 rewrite</span></td>
+              <td><span lang="vi">Grounding critic + tối đa 1 selective revision</span><span lang="ko">grounding critic + 최대 1회 선택적 revision</span></td>
+              <td><span lang="vi">Mới tiết kiệm hơn; cũ có nhiều cơ hội sửa và judge độc lập.</span><span lang="ko">현재는 비용 효율적이고, 기존은 수정 기회와 독립 judge가 더 많습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Batch-level QA</td>
+              <td><span lang="vi">Có style review/rewrite toàn batch, tối đa 20 item/vòng</span><span lang="ko">전체 batch style review/rewrite, 회당 최대 20개</span></td>
+              <td><span lang="vi">Chưa có pass riêng cho duplication/opening/style toàn report</span><span lang="ko">전체 보고서 중복/opening/style 전용 pass 없음</span></td>
+              <td><span lang="vi">Đây là năng lực cũ nên đưa lại vào quy trình hiện tại.</span><span lang="ko">현재 프로세스로 이전할 가치가 높은 기존 기능입니다.</span></td>
+            </tr>
+            <tr>
+              <td>Reliability & observability</td>
+              <td><span lang="vi">Retry/timeout mọi skill, structured log, answer log, tracing, LangSmith-ready</span><span lang="ko">skill retry/timeout, structured log, answer log, tracing, LangSmith-ready</span></td>
+              <td><span lang="vi">RAG retry/timeout + audit artifacts; runtime tracing chưa tương đương</span><span lang="ko">RAG retry/timeout + audit artifact; runtime tracing은 기존보다 제한적</span></td>
+              <td><span lang="vi">Nên port reliability boundary của SkillRegistry cũ.</span><span lang="ko">기존 SkillRegistry의 reliability boundary를 이전할 가치가 있습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Deployment</td>
+              <td><span lang="vi">CLI, FastAPI, Dockerfile và docker-compose</span><span lang="ko">CLI, FastAPI, Dockerfile, docker-compose</span></td>
+              <td><span lang="vi">CLI và FastAPI; chưa có Docker packaging trong repo</span><span lang="ko">CLI 및 FastAPI; Docker packaging 없음</span></td>
+              <td><span lang="vi">Cũ sẵn sàng đóng gói môi trường hơn.</span><span lang="ko">기존이 환경 패키징 측면에서 더 준비되어 있습니다.</span></td>
+            </tr>
+            <tr>
+              <td>LLM integration</td>
+              <td><span lang="vi">Offline, OpenAI, HallMDR; chat_completions/responses</span><span lang="ko">Offline, OpenAI, HallMDR; chat_completions/responses</span></td>
+              <td><span lang="vi">OpenAI-compatible factory + offline fallback</span><span lang="ko">OpenAI-compatible factory + offline fallback</span></td>
+              <td><span lang="vi">Cũ hỗ trợ provider/endpoint đa dạng hơn; mới có factory đơn giản hơn.</span><span lang="ko">기존은 provider/endpoint 범위가 넓고, 현재는 factory가 단순합니다.</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="architecture-deep-dive">
+      <h3 class="section-title"><span lang="vi">Cơ chế chọn và xử lý 4 skills</span><span lang="ko">4개 skill 선택 및 처리 방식</span></h3>
+      <div class="recommendation">
+        <h4 lang="vi">Skill không chỉ là nhãn routing — mỗi skill trở thành policy ràng buộc cho Writer và Critic</h4>
+        <h4 lang="ko">skill은 단순 routing label이 아니라 Writer와 Critic을 구속하는 정책입니다</h4>
+        <p lang="vi">
+          Router tạo một chuỗi chọn từ QID, source ID, area, category, pillar, item, description, example và material topics.
+          Kết quả chọn được dùng để nạp file Markdown tương ứng, dựng system prompt, tạo context Evidence, sinh câu trả lời
+          và kích hoạt các kiểm tra QA đặc thù của skill.
+        </p>
+        <p lang="ko">
+          Router는 QID, source ID, area, category, pillar, item, description, example, material topic을 결합해 선택 문자열을 만듭니다.
+          선택 결과는 Markdown skill 로드, system prompt 구성, Evidence context 생성, 답변 작성, skill별 QA 검사에 사용됩니다.
+        </p>
+        <div class="hybrid-flow">
+          <div class="hybrid-step">Question fields<br>+ material topics</div>
+          <div class="hybrid-step">Priority router<br>QID → keywords → default</div>
+          <div class="hybrid-step">Load SkillSpec<br>rules + checklist</div>
+          <div class="hybrid-step">Context + Writer<br>Evidence only</div>
+          <div class="hybrid-step">Skill-aware<br>Critic</div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b lang="vi">Thứ tự ưu tiên rất quan trọng:</b><b lang="ko">우선순위가 중요합니다:</b>
+        <span lang="vi"> ① Q029/Q030/Q031 luôn vào <code>carbon</code>; ② nếu không phải ba QID này, router kiểm tra keyword theo thứ tự <code>materiality → commitment → carbon</code>; ③ không match thì vào <code>general_section</code>. Vì vậy khi một câu chứa keyword chồng lấn, skill đứng trước sẽ thắng.</span>
+        <span lang="ko"> ① Q029/Q030/Q031은 항상 <code>carbon</code>; ② 나머지는 <code>materiality → commitment → carbon</code> 순서로 keyword 검사; ③ match가 없으면 <code>general_section</code>입니다. keyword가 겹치면 앞선 skill이 선택됩니다.</span>
+      </div>
+
+      <div class="table-scroll" style="margin-top: 14px;">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Skill</span><span lang="ko">Skill</span></th>
+              <th><span lang="vi">Điều kiện chọn</span><span lang="ko">선택 조건</span></th>
+              <th><span lang="vi">Policy đi vào Writer</span><span lang="ko">Writer 정책</span></th>
+              <th><span lang="vi">Kiểm tra riêng tại Critic</span><span lang="ko">Critic 전용 검사</span></th>
+              <th><span lang="vi">Latest run</span><span lang="ko">최신 실행</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>carbon</b><br><code>Carbon Narrative Writer</code></td>
+              <td>
+                <span lang="vi"><b>Ưu tiên tuyệt đối:</b> Q029–Q031. Sau đó là keyword carbon footprint, GHG, Scope 1/2/3, TCFD, net-zero, tCO2, greenhouse gas.</span>
+                <span lang="ko"><b>최우선:</b> Q029–Q031. 이후 carbon footprint, GHG, Scope 1/2/3, TCFD, net-zero, tCO2 keyword.</span>
+              </td>
+              <td><span lang="vi">Viết narrative phát thải/khí hậu; không tự tạo số liệu, mục tiêu, chứng nhận, offset hay cam kết net-zero.</span><span lang="ko">배출/기후 narrative 작성; 수치, 목표, 인증, offset, net-zero 약속 생성 금지.</span></td>
+              <td><span lang="vi">Chặn <code>unsupported offset</code>, <code>unsupported net-zero</code>; thêm check <code>net_zero_supported</code>, <code>offset_supported</code> và assurance flag khi cần.</span><span lang="ko">unsupported offset/net-zero 차단, net_zero_supported/offset_supported 및 assurance flag 검사.</span></td>
+              <td><b>3</b> QIDs<br><span class="cmp-note">2 answered · 1 weak</span></td>
+            </tr>
+            <tr>
+              <td><b>materiality</b><br><code>Materiality Assessment Writer</code></td>
+              <td><span lang="vi">Keyword materiality, material topic, double materiality, stakeholder consultation, prioritisation/prioritization và các từ tương ứng tiếng Hàn.</span><span lang="ko">materiality, material topic, double materiality, stakeholder consultation, prioritisation/prioritization 및 한국어 keyword.</span></td>
+              <td><span lang="vi">Tập trung quy trình trọng yếu và stakeholder; chỉ mô tả double materiality khi Evidence nói rõ.</span><span lang="ko">중대성 및 stakeholder 프로세스에 집중; Evidence가 명시할 때만 double materiality 서술.</span></td>
+              <td><span lang="vi">Chặn <code>unsupported double-materiality claim</code>; ghi <code>double_materiality_supported</code> và assurance recommendation.</span><span lang="ko">unsupported double-materiality claim 차단, double_materiality_supported 및 assurance 권고 기록.</span></td>
+              <td><b>10</b> QIDs<br><span class="cmp-note">10.5% phạm vi</span></td>
+            </tr>
+            <tr>
+              <td><b>commitment</b><br><code>ESG Commitment Tracker</code></td>
+              <td><span lang="vi">Keyword commitment, pledge, target date, on track, at risk, behind target, progress status, SBTi, mục tiêu/tiến độ/cam kết.</span><span lang="ko">commitment, pledge, target date, on track, at risk, behind target, progress status, SBTi, 목표/진척/약속 keyword.</span></td>
+              <td><span lang="vi">Phân biệt mục tiêu, trạng thái và bằng chứng tiến độ; không suy luận “on track” hoặc “behind target”.</span><span lang="ko">목표, 상태, 진행 근거를 구분하며 on track/behind target을 추정하지 않습니다.</span></td>
+              <td><span lang="vi">Chặn trạng thái <code>on track</code>/<code>behind target</code> không có Evidence; ghi check <code>status_supported</code>.</span><span lang="ko">Evidence 없는 on track/behind target 상태를 차단하고 status_supported를 기록합니다.</span></td>
+              <td><b>18</b> QIDs<br><span class="cmp-note">18.9% phạm vi</span></td>
+            </tr>
+            <tr>
+              <td><b>general_section</b><br><code>ESG Report Section Writer</code></td>
+              <td><span lang="vi">Fallback khi không match ba skill chuyên biệt; reason được lưu là <code>default=general_section</code>.</span><span lang="ko">세 전문 skill과 match되지 않을 때 fallback; reason은 default=general_section으로 저장.</span></td>
+              <td><span lang="vi">Viết section ESG chung, vẫn bắt buộc chỉ dùng Evidence trong prompt và trả rỗng nếu Evidence không đủ.</span><span lang="ko">일반 ESG section 작성; prompt의 Evidence만 사용하고 부족하면 빈 답변 반환.</span></td>
+              <td><span lang="vi">Áp dụng kiểm tra chung: câu hỏi bị lặp vào answer, source metadata, số liệu, chứng nhận, promotional language và delivery metadata.</span><span lang="ko">질문 누출, source metadata, 수치, 인증, 홍보 문구, delivery metadata 공통 검사.</span></td>
+              <td><b>64</b> QIDs<br><span class="cmp-note">67.4% phạm vi</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Một QID đi qua skill như thế nào</span><span lang="ko">QID가 skill을 통과하는 방식</span></h3>
+      <div class="cards">
+        <article class="card open">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="true">
+            <span class="card-title"><span lang="vi">1 · Router ghi lại quyết định có thể audit</span><span lang="ko">1 · Router가 감사 가능한 선택 기록</span></span>
+            <span class="badge rule">Selection</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Mỗi QID nhận <code>skill_key</code>, tên, version, source path và <code>skill_selection_reason</code> như <code>qid=Q029</code>, <code>keyword=materiality</code> hoặc <code>default=general_section</code>. Nếu skill file lỗi/không tồn tại, registry dùng general fallback và thêm <code>skill_fallback_used</code>.</p>
+            <p lang="ko">각 QID에 skill key/name/version/source path/selection reason을 기록합니다. skill 파일 문제 시 general fallback과 skill_fallback_used를 기록합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">2 · Skill Markdown được biên dịch thành system policy</span><span lang="ko">2 · Skill Markdown를 system policy로 변환</span></span>
+            <span class="badge rule">Policy</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Loader đọc frontmatter, Instructions, rule lines, checklist, language policy và legal note. Sau đó bổ sung global Evidence policy: chỉ dùng Evidence, thiếu/yếu thì trả rỗng, không bịa metric/target/certification/status/commitment.</p>
+            <p lang="ko">loader는 frontmatter, instruction, rule, checklist, language/legal policy를 읽고 Evidence 전용 사용, 부족 시 빈 답변, metric/target/certification/status/commitment 생성 금지 정책을 추가합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">3 · Context Builder chỉ mở đường khi Gate accepted</span><span lang="ko">3 · Gate accepted일 때만 Context Builder 진행</span></span>
+            <span class="badge done">Evidence</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Context chứa company, year, language, question, mô tả, gate reason và tối đa 5 Evidence đã normalize. Trường <code>accepted</code> chỉ true khi gate accepted và có evidence line thực tế; nếu false, Writer không gọi LLM và để draft rỗng.</p>
+            <p lang="ko">context는 company/year/language/question/gate reason 및 최대 5개 normalized Evidence를 포함합니다. gate accepted와 실제 evidence line이 모두 있어야 accepted=true이며, 아니면 Writer는 LLM을 호출하지 않고 빈 draft를 남깁니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">4 · Critic dùng cả kiểm tra chung và kiểm tra riêng của skill</span><span lang="ko">4 · Critic이 공통 및 skill 전용 검사 수행</span></span>
+            <span class="badge issue">QA</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Mọi skill đều qua kiểm tra grounding số liệu, source, chứng nhận, promotional/delivery metadata. Sau đó Critic thêm rule riêng cho carbon, materiality hoặc commitment và quyết định QA passed/failed/empty, disclosure flags, hard failures và Final Answer.</p>
+            <p lang="ko">모든 skill은 수치 grounding, source, 인증, 홍보/delivery metadata 검사를 거친 뒤 carbon/materiality/commitment 전용 rule을 추가 적용해 QA 및 Final Answer를 결정합니다.</p>
+          </div>
+        </article>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Điều kiện Revision — phải thỏa đồng thời 6 guard</span><span lang="ko">Revision 조건 — 6개 guard를 모두 충족</span></h3>
+      <div class="callout warning">
+        <b lang="vi">Revision không áp dụng cho mọi câu fail:</b><b lang="ko">모든 실패 답변이 Revision 대상은 아닙니다:</b>
+        <span lang="vi"> hàm <code>eligible_revision_qids</code> chỉ trả về QID khi cả sáu điều kiện dưới đây cùng đúng. Chỉ cần một điều kiện sai, graph bỏ qua Revision và chuyển tới Report Assembly.</span>
+        <span lang="ko"> <code>eligible_revision_qids</code>는 아래 6개 조건이 모두 참일 때만 QID를 반환합니다. 하나라도 거짓이면 Revision을 건너뛰고 Report Assembly로 이동합니다.</span>
+      </div>
+
+      <div class="table-scroll" style="margin-top: 14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th><span lang="vi">Guard bắt buộc</span><span lang="ko">필수 guard</span></th>
+              <th><span lang="vi">Điều kiện trong state</span><span lang="ko">state 조건</span></th>
+              <th><span lang="vi">Vì sao cần</span><span lang="ko">필요 이유</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><b>Critic thực sự fail</b></td>
+              <td><code>qa.status == "failed"</code></td>
+              <td><span lang="vi">Câu passed hoặc empty không được sửa vô ích.</span><span lang="ko">passed 또는 empty 답변의 불필요한 수정 방지.</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><b>Còn quota Revision</b></td>
+              <td><code>revision_count &lt; max_revision_rounds</code></td>
+              <td><span lang="vi">Ngăn loop vô hạn; mặc định tối đa <b>1 vòng/QID</b>.</span><span lang="ko">무한 loop 방지; 기본 <b>QID당 최대 1회</b>.</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><b>Evidence Gate accepted</b></td>
+              <td><code>evidence_gate[qid].accepted == true</code></td>
+              <td><span lang="vi">Không dùng LLM để “cứu” câu vốn không đủ điều kiện Evidence.</span><span lang="ko">Evidence 자격이 없는 답변을 LLM으로 억지 수정하지 않음.</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><b>Draft hiện tại không rỗng</b></td>
+              <td><code>draft_answer.strip() != ""</code></td>
+              <td><span lang="vi">Revision là sửa nội dung đã có, không phải sinh mới từ rỗng.</span><span lang="ko">Revision은 기존 답변 수정이며 빈 답변 신규 생성이 아님.</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><b>Có normalized Evidence items</b></td>
+              <td><code>bool(normalized_evidence.items)</code></td>
+              <td><span lang="vi">Writer sửa phải có đoạn Evidence cụ thể để bám.</span><span lang="ko">수정 writer가 사용할 구체적 Evidence 항목 보장.</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><b>Có source metadata</b></td>
+              <td><code>bool(normalized_evidence.sources)</code></td>
+              <td><span lang="vi">Câu sau sửa vẫn phải truy vết được về file nguồn.</span><span lang="ko">수정 답변도 원본 파일로 추적 가능해야 함.</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Vòng đời của một Revision</span><span lang="ko">Revision lifecycle</span></h3>
+      <div class="flow">
+        <div class="flow-stage">
+          <div class="stage-no">01 · SELECT</div>
+          <h4 lang="vi">Lọc QID đủ điều kiện</h4><h4 lang="ko">적격 QID 선택</h4>
+          <p lang="vi">Áp dụng đồng thời 6 guard; chỉ danh sách eligible được gửi sang RevisionAgent.</p>
+          <p lang="ko">6개 guard를 모두 적용하고 eligible 목록만 RevisionAgent에 전달.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">02 · REWRITE</div>
+          <h4 lang="vi">Deep LLM structured rewrite</h4><h4 lang="ko">Deep LLM structured rewrite</h4>
+          <p lang="vi">Prompt gồm skill đã chọn, draft hiện tại, toàn bộ QA failures, Evidence items và sources.</p>
+          <p lang="ko">선택 skill, 현재 draft, QA failure, Evidence item, source를 prompt에 포함.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">03 · RE-CRITIC</div>
+          <h4 lang="vi">Kiểm tra lại từ đầu</h4><h4 lang="ko">처음부터 재검토</h4>
+          <p lang="vi">Draft mới quay lại cùng Critic, gồm cả kiểm tra chung và kiểm tra riêng của skill.</p>
+          <p lang="ko">새 draft가 공통 및 skill 전용 검사를 포함한 동일 Critic으로 돌아감.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">04 · EXIT</div>
+          <h4 lang="vi">Pass hoặc dừng an toàn</h4><h4 lang="ko">통과 또는 안전 종료</h4>
+          <p lang="vi">Pass thì giữ Final Answer; fail sau khi hết quota thì Final Answer rỗng và assembly tiếp tục.</p>
+          <p lang="ko">pass면 Final Answer 유지; quota 소진 후 fail이면 빈 답변으로 assembly 계속.</p>
+        </div>
+      </div>
+
+      <div class="split-grid" style="margin-top: 14px;">
+        <div class="panel">
+          <h4 lang="vi">Dữ liệu Revision Writer nhận</h4><h4 lang="ko">Revision Writer 입력 데이터</h4>
+          <p lang="vi">Prompt có đủ context để sửa đúng lỗi nhưng không được phép thêm dữ kiện mới.</p>
+          <p lang="ko">오류 수정에 필요한 context를 제공하지만 새로운 사실 추가는 금지됩니다.</p>
+          <ul style="list-style: none; color: var(--ink-soft); font-size: 12.8px;">
+            <li>• Company và output language</li>
+            <li>• QID, question và selected skill</li>
+            <li>• Current Final Answer</li>
+            <li>• Từng QA failure từ Critic</li>
+            <li>• Evidence summary + Evidence items</li>
+            <li>• Source name + source path</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h4 lang="vi">Ba kết quả có thể xảy ra</h4><h4 lang="ko">가능한 세 가지 결과</h4>
+          <p lang="vi">Revision count được tăng trước khi gọi writer.</p>
+          <p lang="ko">writer 호출 전에 revision count가 증가합니다.</p>
+          <div class="mini-stats">
+            <div class="mini-stat"><div class="n good">✓</div><div class="t"><span lang="vi">Có draft mới: <code>revision_applied</code></span><span lang="ko">새 draft: revision_applied</span></div></div>
+            <div class="mini-stat"><div class="n" style="color: var(--amber)">∅</div><div class="t"><span lang="vi">Trả rỗng: <code>revision_returned_empty</code></span><span lang="ko">빈 결과: revision_returned_empty</span></div></div>
+            <div class="mini-stat"><div class="n" style="color: var(--red)">!</div><div class="t"><span lang="vi">Lỗi writer: <code>revision_error</code></span><span lang="ko">writer 오류: revision_error</span></div></div>
+            <div class="mini-stat"><div class="n">↺</div><div class="t"><span lang="vi">Có draft mới luôn quay lại Critic</span><span lang="ko">새 draft는 항상 Critic 재실행</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-box" style="margin-top: 14px;">
+        <h4 lang="vi">Ví dụ thực tế · Q083 đã Revision nhưng vẫn bị chặn</h4>
+        <h4 lang="ko">실제 사례 · Q083은 Revision 후에도 차단됨</h4>
+        <p lang="vi">
+          Q083 được router chọn vào <code>commitment</code>, có Evidence hợp lệ và draft nên đủ 6 guard.
+          Revision chạy một lần và gắn <code>revision_applied</code>. Tuy nhiên Critic lần hai vẫn tìm thấy các numeric claim
+          <code>1</code>, <code>2</code>, <code>2024</code>, <code>3</code> không có trong Evidence.
+          Vì <code>revision_count = 1</code> đã bằng giới hạn mặc định, Q083 không được sửa lần hai và Final Answer bị để trống.
+        </p>
+        <p lang="ko">
+          Q083은 commitment skill로 선택되고 유효 Evidence와 draft가 있어 6개 guard를 모두 충족했습니다.
+          1회 Revision 후 revision_applied가 기록되었지만 두 번째 Critic에서 Evidence에 없는 숫자 1, 2, 2024, 3을 다시 발견했습니다.
+          revision_count가 기본 한도 1에 도달했으므로 두 번째 수정 없이 Final Answer가 비워졌습니다.
+        </p>
+      </div>
+
+      <div class="callout success">
+        <b lang="vi">Latest run:</b><b lang="ko">최신 실행:</b>
+        <span lang="vi"> 10/95 QID đã đi qua Revision một lần; 85 QID không Revision. Điều này cho thấy Revision đang được dùng có chọn lọc, không phải một vòng LLM bắt buộc cho toàn bộ báo cáo.</span>
+        <span lang="ko"> 95개 중 10개 QID만 1회 Revision을 거쳤고 85개는 Revision하지 않았습니다. 즉 모든 답변에 강제되는 LLM 단계가 아니라 선택적 재시도입니다.</span>
+      </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Kiểm thử hai repo</span><span lang="ko">두 저장소 테스트</span></h3>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4 lang="vi">Quy trình cũ · 28/28 pass</h4><h4 lang="ko">기존 프로세스 · 28/28 통과</h4>
+            <p lang="vi">Chạy lại ngày 31/07/2026. Cần redirect <code>ESG_LOG_FILE</code> vào workspace ghi được; mặc định đang phụ thuộc path môi trường cũ.</p>
+            <p lang="ko">2026-07-31 재실행. 기본 log path가 기존 환경에 의존해 <code>ESG_LOG_FILE</code>을 쓰기 가능한 workspace로 변경했습니다.</p>
+          </div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4 lang="vi">Quy trình hiện tại · 26/26 pass</h4><h4 lang="ko">현재 프로세스 · 26/26 통과</h4>
+            <p lang="vi">Template, RAG client, graph offline, Evidence policy, profile routing, output writer, CLI và API.</p>
+            <p lang="ko">template, RAG client, offline graph, Evidence policy, profile routing, output writer, CLI, API.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view blue-view" id="view-architecture">
+      <div class="track-head">
+        <h2 lang="vi">Kiến trúc xử lý</h2>
+        <h2 lang="ko">처리 아키텍처</h2>
+        <span class="track-tag blue">12 Nodes</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        Workflow chia trách nhiệm thành bốn chặng. LangGraph điều phối tuyến chính và một vòng lặp có điều kiện
+        từ critic sang revision khi câu trả lời đủ điều kiện sửa.
+      </p>
+      <p class="track-sub" lang="ko">
+        워크플로는 네 단계로 책임을 분리합니다. LangGraph는 기본 경로와 critic 결과에 따라 revision으로 돌아가는
+        조건부 루프를 조정합니다.
+      </p>
+      <div class="callout info">
+        <b lang="vi">Đọc phần này theo thứ tự:</b><b lang="ko">읽는 순서:</b>
+        <span lang="vi"> bản đồ 12 node → cơ chế chọn 4 skills → context/Writer/Critic → sáu guard Revision.</span>
+        <span lang="ko"> 12개 node 맵 → 4개 skill 선택 → context/Writer/Critic → Revision 6개 guard.</span>
+      </div>
+
+      <div class="flow">
+        <div class="flow-stage">
+          <div class="stage-no">01–03</div>
+          <h4 lang="vi">Intake & Planning</h4><h4 lang="ko">입력 & 계획</h4>
+          <p lang="vi">Chuẩn hóa công ty, chọn template, lập danh sách câu hỏi.</p>
+          <p lang="ko">기업 입력 정규화, 템플릿 선택, 질문 계획 수립.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">04–06</div>
+          <h4 lang="vi">Evidence Pipeline</h4><h4 lang="ko">Evidence 파이프라인</h4>
+          <p lang="vi">Gọi RAG theo batch, gate Evidence, deduplicate và xếp hạng nguồn.</p>
+          <p lang="ko">RAG batch 호출, Evidence gate, 출처 중복 제거 및 순위화.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">07–11</div>
+          <h4 lang="vi">Specialist & QA</h4><h4 lang="ko">전문 작성 & QA</h4>
+          <p lang="vi">Chọn skill, tạo context, draft, critic và revision có điều kiện.</p>
+          <p lang="ko">skill 선택, context 생성, 초안 작성, 검토 및 조건부 수정.</p>
+        </div>
+        <div class="flow-stage">
+          <div class="stage-no">12</div>
+          <h4 lang="vi">Report Assembly</h4><h4 lang="ko">보고서 조립</h4>
+          <p lang="vi">Đóng gói answer, stats, audit fields và đường dẫn output.</p>
+          <p lang="ko">답변, 통계, 감사 필드, 출력 경로를 하나로 패키징.</p>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Bản đồ 12 node</span><span lang="ko">12개 노드 맵</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th><span lang="vi">Node</span><span lang="ko">노드</span></th>
+              <th><span lang="vi">Trách nhiệm chính</span><span lang="ko">주요 책임</span></th>
+              <th><span lang="vi">Kết quả chuyển tiếp</span><span lang="ko">전달 결과</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>01</td><td>Normalize Company Input</td><td><span lang="vi">Validate và normalize scale, industry, run ID.</span><span lang="ko">규모, 산업, run ID 검증 및 정규화.</span></td><td>Company context</td></tr>
+            <tr><td>02</td><td>Select Reporting Template</td><td><span lang="vi">Nạp câu hỏi và profile phù hợp.</span><span lang="ko">적합한 질문과 프로필 로드.</span></td><td>Selected template</td></tr>
+            <tr><td>03</td><td>Plan Disclosure Questions</td><td><span lang="vi">Chọn toàn bộ hoặc subset QID.</span><span lang="ko">전체 또는 QID subset 선택.</span></td><td>Planned questions</td></tr>
+            <tr><td>04</td><td>Retrieve RAG Evidence</td><td><span lang="vi">Gọi Team RAG theo batch và concurrency.</span><span lang="ko">batch 및 concurrency로 Team RAG 호출.</span></td><td>Raw RAG results</td></tr>
+            <tr><td>05</td><td>Evaluate Evidence Eligibility</td><td><span lang="vi">Chặn status/semantic label không hợp lệ.</span><span lang="ko">부적합 status 및 semantic label 차단.</span></td><td>Eligible evidence</td></tr>
+            <tr><td>06</td><td>Normalize Evidence Sources</td><td><span lang="vi">Deduplicate, rank và tạo source list.</span><span lang="ko">중복 제거, 순위화, source list 생성.</span></td><td>Normalized evidence</td></tr>
+            <tr><td>07–08</td><td>Select Skill & Build Context</td><td><span lang="vi">Chọn specialist skill và dựng prompt context.</span><span lang="ko">전문 skill 선택 및 prompt context 구성.</span></td><td>Specialist context</td></tr>
+            <tr><td>09</td><td>Draft Evidence-Grounded Answers</td><td><span lang="vi">Sinh draft bằng LLM hoặc fallback offline.</span><span lang="ko">LLM 또는 offline fallback으로 초안 생성.</span></td><td>Draft answers</td></tr>
+            <tr><td>10–11</td><td>Review & Revise</td><td><span lang="vi">Kiểm tra grounding; sửa tối đa theo config.</span><span lang="ko">grounding 검토 후 설정된 횟수 안에서 수정.</span></td><td>Reviewed answers</td></tr>
+            <tr><td>12</td><td>Assemble Report Output</td><td><span lang="vi">Đóng gói RunArtifacts và thống kê.</span><span lang="ko">RunArtifacts 및 통계 패키징.</span></td><td>JSON + Excel audit</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <b lang="vi">Điểm điều phối:</b><b lang="ko">제어 지점:</b>
+        <span lang="vi"> sau node Review, chỉ những QID vừa fail QA, còn Evidence hợp lệ và chưa vượt số vòng sửa mới đi qua Revision; các trường hợp khác chuyển thẳng sang Report Assembly.</span>
+        <span lang="ko"> Review 이후 QA 실패, 유효 Evidence 보유, 수정 횟수 미초과 조건을 모두 만족하는 QID만 Revision으로 이동하며 나머지는 Report Assembly로 전달됩니다.</span>
+      </div>
+      <div id="architecture-deep-dive-slot"></div>
+    </section>
+
+    <section class="view violet-view" id="view-evidence">
+      <div class="track-head">
+        <h2 lang="vi">Evidence & kiểm soát chất lượng</h2>
+        <h2 lang="ko">Evidence & 품질 관리</h2>
+        <span class="track-tag violet">Grounding Policy</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        Hệ thống phân biệt ba lớp: Evidence có được RAG trả về, Evidence có đủ điều kiện sử dụng, và câu trả lời
+        có thật sự bám sát Evidence hay không.
+      </p>
+      <p class="track-sub" lang="ko">
+        시스템은 RAG가 반환한 Evidence, 실제 사용 가능한 Evidence, 그리고 최종 답변이 Evidence에 근거하는지를
+        세 단계로 구분합니다.
+      </p>
+
+      <div class="metrics">
+        <div class="metric violet">
+          <div class="label"><span lang="vi">Top K mặc định</span><span lang="ko">기본 Top K</span></div>
+          <div class="value">5</div>
+          <div class="note"><span lang="vi">Evidence cho mỗi câu hỏi</span><span lang="ko">질문당 Evidence 수</span></div>
+        </div>
+        <div class="metric blue">
+          <div class="label"><span lang="vi">Batch size</span><span lang="ko">Batch 크기</span></div>
+          <div class="value">20</div>
+          <div class="note"><span lang="vi">QID trong mỗi batch RAG</span><span lang="ko">RAG batch당 QID 수</span></div>
+        </div>
+        <div class="metric green">
+          <div class="label"><span lang="vi">Concurrency</span><span lang="ko">동시 처리</span></div>
+          <div class="value">4</div>
+          <div class="note"><span lang="vi">Số batch chạy song song</span><span lang="ko">병렬 실행 batch 수</span></div>
+        </div>
+        <div class="metric amber">
+          <div class="label"><span lang="vi">Revision mặc định</span><span lang="ko">기본 수정 횟수</span></div>
+          <div class="value">1</div>
+          <div class="note"><span lang="vi">Tối đa một vòng sửa sau critic</span><span lang="ko">critic 이후 최대 1회 수정</span></div>
+        </div>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Quy tắc Evidence</span><span lang="ko">Evidence 규칙</span></h3>
+      <div class="cards">
+        <article class="card open">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="true">
+            <span class="card-title"><span lang="vi">1. Chỉ nhận answer status đủ tin cậy</span><span lang="ko">1. 신뢰 가능한 answer status만 허용</span></span>
+            <span class="badge rule">Gate</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Mặc định chấp nhận <code>high_confidence</code>, <code>medium_confidence</code>, <code>sufficient</code> và <code>confident</code>. Danh sách có thể cấu hình bằng biến môi trường.</p>
+            <p lang="ko">기본 허용 값은 <code>high_confidence</code>, <code>medium_confidence</code>, <code>sufficient</code>, <code>confident</code>이며 환경 변수로 변경할 수 있습니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">2. Loại semantic label yếu hoặc sai chủ đề</span><span lang="ko">2. 약하거나 무관한 semantic label 제외</span></span>
+            <span class="badge rule">Filter</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Các label <code>weak</code>, <code>irrelevant</code> và <code>no_match</code> bị loại theo cấu hình mặc định. Evidence sau đó được deduplicate và xếp hạng trước khi vào writer.</p>
+            <p lang="ko"><code>weak</code>, <code>irrelevant</code>, <code>no_match</code>는 기본적으로 제외되며, writer에 전달하기 전에 중복 제거와 순위화를 수행합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">3. Không đủ Evidence thì Final Answer để trống</span><span lang="ko">3. Evidence가 부족하면 Final Answer를 비움</span></span>
+            <span class="badge done">Safety</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Policy ưu tiên tính trung thực hơn độ phủ. Trường hợp không có căn cứ phù hợp vẫn được ghi vào audit với status, QA notes và result bucket để người vận hành biết nguyên nhân.</p>
+            <p lang="ko">범위보다 정직성을 우선합니다. 적합한 근거가 없는 경우에도 status, QA notes, result bucket을 감사 파일에 기록해 원인을 확인할 수 있습니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">4. Claim nhạy cảm phải vượt qua critic</span><span lang="ko">4. 민감한 claim은 critic 검토 필수</span></span>
+            <span class="badge rule">QA</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Critic kiểm tra số liệu, chứng nhận và các tuyên bố không có trong Evidence. QID fail nhưng còn khả năng sửa sẽ được đưa sang deep LLM để revision rồi kiểm tra lại.</p>
+            <p lang="ko">critic은 Evidence에 없는 수치, 인증, 선언을 검사합니다. 수정 가능한 실패 QID는 deep LLM으로 재작성한 뒤 다시 검토합니다.</p>
+          </div>
+        </article>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Specialist skill routing</span><span lang="ko">전문 skill routing</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th><span lang="vi">Khi nào được chọn</span><span lang="ko">선택 조건</span></th>
+              <th><span lang="vi">Trọng tâm</span><span lang="ko">중점</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>carbon</td><td><span lang="vi">Q029–Q031 hoặc từ khóa GHG, Scope, carbon, TCFD</span><span lang="ko">Q029–Q031 또는 GHG, Scope, carbon, TCFD 키워드</span></td><td><span lang="vi">Phát thải và narrative khí hậu</span><span lang="ko">배출량 및 기후 서술</span></td></tr>
+            <tr><td>materiality</td><td><span lang="vi">Từ khóa materiality, stakeholder, chủ đề trọng yếu</span><span lang="ko">materiality, stakeholder, 중요 주제 키워드</span></td><td><span lang="vi">Đánh giá trọng yếu</span><span lang="ko">중대성 평가</span></td></tr>
+            <tr><td>commitment</td><td><span lang="vi">Cam kết, mục tiêu, tiến độ, target date</span><span lang="ko">약속, 목표, 진행 상황, target date</span></td><td><span lang="vi">Theo dõi mục tiêu và trạng thái</span><span lang="ko">목표 및 상태 추적</span></td></tr>
+            <tr><td>general_section</td><td><span lang="vi">Fallback cho các câu hỏi còn lại</span><span lang="ko">나머지 질문의 기본 fallback</span></td><td><span lang="vi">Nội dung ESG định tính chung</span><span lang="ko">일반 ESG 정성 내용</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view amber-view" id="view-operations">
+      <div class="track-head">
+        <h2 lang="vi">Vận hành, kiểm thử & kế hoạch</h2>
+        <h2 lang="ko">운영, 테스트 & 계획</h2>
+        <span class="track-tag amber">Runbook</span>
+      </div>
+      <p class="track-sub" lang="vi">
+        Repo hỗ trợ hai bề mặt chạy là Typer CLI và FastAPI. Chế độ offline giúp kiểm tra luồng deterministic;
+        chế độ live cần Team RAG và thông tin xác thực LLM.
+      </p>
+      <p class="track-sub" lang="ko">
+        Typer CLI와 FastAPI 두 가지 실행 방식을 지원합니다. offline 모드는 deterministic 흐름 검증에 사용하며,
+        live 모드는 Team RAG와 LLM 인증 정보가 필요합니다.
+      </p>
+
+      <h3 class="section-title"><span lang="vi">Lệnh smoke test đề xuất</span><span lang="ko">권장 smoke test 명령</span></h3>
+      <div class="code-block"><span class="muted"># PowerShell · chạy một QID trước khi chạy toàn bộ</span>
+python -m esgagents.cli generate-qualitative `
+  --company-id samsung_electronics `
+  --company-name <span class="accent">"Samsung Electronics"</span> `
+  --year 2025 `
+  --scale large `
+  --industry TC `
+  --item-ids Q001 `
+  --output-language Korean</div>
+
+      <h3 class="section-title"><span lang="vi">Kiểm chứng hiện tại</span><span lang="ko">현재 검증 결과</span></h3>
+      <div class="check-list">
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>Template loader</h4><p lang="vi">Nạp và validate bộ câu hỏi/profile.</p><p lang="ko">질문 및 프로필 로드·검증.</p></div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>RAG client & routing</h4><p lang="vi">Contract, retry, batch và chọn specialist.</p><p lang="ko">contract, retry, batch 및 전문 skill 선택.</p></div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>Evidence policy</h4><p lang="vi">Gate, normalize và kiểm tra grounding.</p><p lang="ko">gate, normalize 및 grounding 검사.</p></div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>Graph offline</h4><p lang="vi">Subset run và checkpoint path.</p><p lang="ko">subset 실행 및 checkpoint 경로.</p></div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>Output writer</h4><p lang="vi">JSON, Excel audit và ký tự không hợp lệ.</p><p lang="ko">JSON, Excel 감사, 잘못된 문자 처리.</p></div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">✓</div>
+          <div><h4>CLI & API</h4><p lang="vi">Entrypoint và request schema.</p><p lang="ko">entrypoint 및 요청 schema.</p></div>
+        </div>
+      </div>
+      <div class="callout success">
+        <b lang="vi">Kết quả:</b><b lang="ko">결과:</b>
+        <span lang="vi"> <code>26 passed in 1.22s</code> khi chạy toàn bộ test offline ngày 31/07/2026 với thư mục tạm nằm trong workspace.</span>
+        <span lang="ko"> 2026-07-31 workspace 내부 임시 디렉터리로 전체 offline 테스트를 실행한 결과 <code>26 passed in 1.22s</code>입니다.</span>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Đầu ra mỗi run</span><span lang="ko">실행별 출력</span></h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">File</span><span lang="ko">파일</span></th>
+              <th><span lang="vi">Vai trò</span><span lang="ko">역할</span></th>
+              <th><span lang="vi">Thông tin chính</span><span lang="ko">주요 정보</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>qualitative_run.json</code></td>
+              <td><span lang="vi">Payload đầy đủ cho tích hợp hệ thống</span><span lang="ko">시스템 통합용 전체 payload</span></td>
+              <td><span lang="vi">Company, answers, stats, nguồn, QA và output paths</span><span lang="ko">기업, 답변, 통계, 출처, QA, 출력 경로</span></td>
+            </tr>
+            <tr>
+              <td><code>qualitative_audit.xlsx</code></td>
+              <td><span lang="vi">Bảng kiểm cho reviewer/auditor</span><span lang="ko">reviewer/auditor용 검토표</span></td>
+              <td><span lang="vi">21 cột gồm QID, answer, evidence, skill, flags, revision, result bucket</span><span lang="ko">QID, 답변, evidence, skill, flag, revision, result bucket 등 21개 열</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="section-title"><span lang="vi">Phần cần xác minh tiếp</span><span lang="ko">추가 검증 항목</span></h3>
+      <div class="cards">
+        <article class="card open">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="true">
+            <span class="card-title"><span lang="vi">Live integration với Team RAG</span><span lang="ko">Team RAG live integration</span></span>
+            <span class="badge todo">Next</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Cần cấu hình <code>TEAM_RAG_BASE_URL</code>, chạy một QID đại diện, đối chiếu request/response thực tế và kiểm tra retry/timeout trong môi trường triển khai.</p>
+            <p lang="ko"><code>TEAM_RAG_BASE_URL</code> 설정 후 대표 QID로 실제 request/response와 배포 환경의 retry/timeout을 확인해야 합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">Đánh giá chất lượng LLM trên 95 câu</span><span lang="ko">95개 질문 LLM 품질 평가</span></span>
+            <span class="badge todo">Next</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Sau smoke test, chạy toàn bộ 95 câu; đo answered/empty/weak/failed, số vòng revision, grounding flags, thời gian và chi phí.</p>
+            <p lang="ko">smoke test 이후 95개 전체를 실행하고 answered/empty/weak/failed, 수정 횟수, grounding flag, 시간, 비용을 측정해야 합니다.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head" role="button" tabindex="0" aria-expanded="false">
+            <span class="card-title"><span lang="vi">Chốt ngưỡng nghiệm thu vận hành</span><span lang="ko">운영 승인 기준 확정</span></span>
+            <span class="badge todo">Decision</span><span class="caret"></span>
+          </div>
+          <div class="card-body">
+            <p lang="vi">Cần thống nhất tỷ lệ answer hợp lệ, mức Evidence tối thiểu, SLA, budget và điều kiện cho phép để trống trước khi xem hệ thống là production-ready.</p>
+            <p lang="ko">production-ready 판단 전에 유효 답변 비율, 최소 Evidence 기준, SLA, budget, 빈 답변 허용 조건을 합의해야 합니다.</p>
+          </div>
+        </article>
+      </div>
+      <div class="callout warning">
+        <b lang="vi">Lưu ý trung thực:</b><b lang="ko">주의:</b>
+        <span lang="vi"> kết quả 26/26 xác nhận logic offline và contract trong test suite; chưa thay thế cho một lần chạy end-to-end bằng dữ liệu RAG và LLM thật.</span>
+        <span lang="ko"> 26/26 결과는 offline 로직과 test contract를 검증한 것이며 실제 RAG·LLM 데이터 기반 end-to-end 실행을 대신하지 않습니다.</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span lang="vi">ESG REPORT LANGGRAPH · PROJECT BRIEF · DỮ LIỆU KIỂM TRA NGÀY 2026-07-31</span>
+    <span lang="ko">ESG REPORT LANGGRAPH · PROJECT BRIEF · 2026-07-31 기준</span>
+  </footer>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const tabs = [...document.querySelectorAll(".tab-btn")];
+      const views = [...document.querySelectorAll(".view")];
+      const langButtons = [...document.querySelectorAll("[data-set-lang]")];
+      const deepDive = document.getElementById("architecture-deep-dive");
+      const deepDiveSlot = document.getElementById("architecture-deep-dive-slot");
+      if (deepDive && deepDiveSlot) deepDiveSlot.replaceWith(deepDive);
+
+      function showView(name, updateHash = true) {
+        const target = document.getElementById(`view-${name}`);
+        if (!target) return;
+        tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.view === name));
+        views.forEach((view) => view.classList.toggle("active", view === target));
+        if (updateHash) history.replaceState(null, "", `#${name}`);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function setLanguage(lang) {
+        if (!["vi", "ko"].includes(lang)) return;
+        root.setAttribute("lang", lang);
+        root.setAttribute("data-lang", lang);
+        langButtons.forEach((button) => {
+          const active = button.dataset.setLang === lang;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        try { localStorage.setItem("esg-report-language", lang); } catch (_) {}
+      }
+
+      tabs.forEach((tab) => tab.addEventListener("click", () => showView(tab.dataset.view)));
+      document.querySelectorAll("[data-goto]").forEach((link) => {
+        link.addEventListener("click", () => showView(link.dataset.goto));
+      });
+      langButtons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.setLang));
+      });
+
+      document.querySelectorAll(".card-head").forEach((head) => {
+        const toggle = () => {
+          const card = head.closest(".card");
+          card.classList.toggle("open");
+          head.setAttribute("aria-expanded", String(card.classList.contains("open")));
+        };
+        head.addEventListener("click", toggle);
+        head.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggle();
+          }
+        });
+      });
+
+      let storedLanguage = "vi";
+      try { storedLanguage = localStorage.getItem("esg-report-language") || "vi"; } catch (_) {}
+      setLanguage(storedLanguage);
+      const initialView = location.hash.replace("#", "");
+      if (tabs.some((tab) => tab.dataset.view === initialView)) showView(initialView, false);
+    })();
+  </script>
+</body>
+</html>

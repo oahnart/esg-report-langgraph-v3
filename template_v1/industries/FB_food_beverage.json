@@ -1,0 +1,30 @@
+{
+  "id": "FB",
+  "name_en": "Food and Beverage",
+  "name_ko": "식음료",
+  "name_vi": "Thực phẩm và đồ uống",
+  "material_topics": [
+    "food safety",
+    "water stewardship",
+    "sustainable sourcing",
+    "packaging",
+    "nutrition",
+    "supply-chain traceability"
+  ],
+  "priority_categories_ko": [
+    "제품 안전",
+    "물 관리",
+    "공급망 책임 관리",
+    "자원선순환",
+    "제품 책임"
+  ],
+  "metric_focus": [
+    "food safety incidents",
+    "certified raw-material sourcing",
+    "water intensity",
+    "packaging recyclability",
+    "supplier traceability"
+  ],
+  "risk_lens": "Focus on food safety failures, contamination, water stress, agricultural sourcing risk, and consumer health expectations.",
+  "answer_guidance": "Connect policies to quality systems, traceability, supplier management, and resource efficiency."
+}

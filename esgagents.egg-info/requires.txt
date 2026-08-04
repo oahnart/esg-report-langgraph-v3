@@ -1,0 +1,13 @@
+fastapi>=0.115.0
+langchain-core>=0.3.0
+langchain-openai>=0.3.0
+langgraph>=0.4.0
+langgraph-checkpoint-sqlite>=2.0.0
+openpyxl>=3.1.0
+pydantic>=2.0.0
+pytest>=8.0.0
+requests>=2.32.0
+temporalio<1.31.0,>=1.30.0
+tzdata>=2024.1
+typer>=0.12.0
+uvicorn[standard]>=0.30.0

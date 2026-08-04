@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="vi" data-lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Current ESG LangGraph Project vs Old Project</title>
+  <style>
+    :root {
+      --bg: #f3f6f7;
+      --panel: #ffffff;
+      --ink: #17232d;
+      --soft: #586873;
+      --line: #d9e2e6;
+      --teal: #087c70;
+      --blue: #3d5ba9;
+      --amber: #a66512;
+      --red: #b34431;
+      --green: #23784e;
+      --teal-soft: #e3f2ef;
+      --blue-soft: #e9edf8;
+      --amber-soft: #f8edda;
+      --red-soft: #f8e8e3;
+      --shadow: 0 14px 34px rgba(18, 36, 47, 0.08);
+      --radius: 8px;
+      --sans: "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      --mono: "Cascadia Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html[data-lang="vi"] [lang="ko"],
+    html[data-lang="ko"] [lang="vi"] { display: none !important; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    code {
+      border: 1px solid #d8e2e6;
+      border-radius: 5px;
+      background: #f8fbfc;
+      padding: 1px 5px;
+      font-family: var(--mono);
+      font-size: 0.92em;
+    }
+
+    .masthead {
+      background: #17232d;
+      color: #eef5f5;
+      padding: 42px 24px 34px;
+    }
+
+    .masthead-inner,
+    main {
+      width: min(1160px, 100%);
+      margin: 0 auto;
+    }
+
+    .masthead-inner { position: relative; }
+
+    .language-switcher {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      overflow: hidden;
+      border: 1px solid #3e4f5b;
+      border-radius: 999px;
+    }
+
+    .language-switcher button {
+      border: 0;
+      background: transparent;
+      color: #adbbc4;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .language-switcher button.active {
+      background: #7fd4c4;
+      color: #122a30;
+    }
+
+    .eyebrow {
+      margin-bottom: 12px;
+      color: #8ec5bd;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 920px;
+      margin: 0;
+      font-size: clamp(30px, 4.5vw, 47px);
+      line-height: 1.14;
+      letter-spacing: 0;
+    }
+
+    h1 em {
+      color: #7fd4c4;
+      font-style: normal;
+    }
+
+    .lede {
+      max-width: 940px;
+      margin: 16px 0 0;
+      color: #c1cdd3;
+      font-size: 17px;
+    }
+
+    .scope-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      margin-top: 24px;
+      color: #adbbc4;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .scope-line span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .scope-line i {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #7fd4c4;
+    }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(243, 246, 247, 0.96);
+      backdrop-filter: blur(8px);
+    }
+
+    .tabs-inner {
+      display: flex;
+      gap: 4px;
+      width: min(1160px, 100%);
+      margin: 0 auto;
+      padding: 10px 24px;
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--soft);
+      padding: 8px 15px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .tab-button:hover { background: #e7ecee; }
+    .tab-button.active { background: var(--ink); color: #fff; }
+    .tab-button .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 3px;
+      background: var(--soft);
+    }
+
+    .tab-button[data-view="old"] .dot,
+    .tab-button[data-view="compare"] .dot { background: var(--blue); }
+    .tab-button[data-view="current"] .dot { background: var(--teal); }
+    .tab-button[data-view="recommend"] .dot { background: var(--amber); }
+
+    main { padding: 34px 24px 76px; }
+    .view { display: none; }
+    .view.active { display: block; animation: enter 220ms ease-out; }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 19px;
+      line-height: 1.3;
+    }
+
+    h4 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    p { margin: 0 0 12px; }
+    ul { margin: 0; padding-left: 20px; }
+    li + li { margin-top: 6px; }
+
+    .sub {
+      max-width: 980px;
+      color: var(--soft);
+      font-size: 16px;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--teal-soft);
+      color: var(--teal);
+      padding: 5px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .tag.blue { background: var(--blue-soft); color: var(--blue); }
+    .tag.amber { background: var(--amber-soft); color: var(--amber); }
+    .tag.red { background: var(--red-soft); color: var(--red); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .metric,
+    .panel,
+    .callout {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      padding: 18px;
+      border-top: 4px solid var(--teal);
+    }
+
+    .metric.blue { border-top-color: var(--blue); }
+    .metric.amber { border-top-color: var(--amber); }
+    .metric.red { border-top-color: var(--red); }
+
+    .metric-label {
+      color: var(--soft);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      margin-top: 7px;
+      font-family: var(--mono);
+      font-size: 31px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .metric-note {
+      margin-top: 8px;
+      color: var(--soft);
+      font-size: 13px;
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .panel {
+      padding: 18px;
+      box-shadow: none;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(170px, 1fr));
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step {
+      position: relative;
+      min-height: 128px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--teal);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 14px;
+    }
+
+    .step.blue { border-top-color: var(--blue); }
+    .step.amber { border-top-color: var(--amber); }
+    .step.red { border-top-color: var(--red); }
+
+    .step::after {
+      content: "→";
+      position: absolute;
+      top: 48px;
+      right: -13px;
+      color: #9aa9b2;
+      font-weight: 900;
+    }
+
+    .step:last-child::after { display: none; }
+
+    .step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #edf3f5;
+      color: var(--soft);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .step strong {
+      display: block;
+      margin-top: 10px;
+      line-height: 1.3;
+    }
+
+    .step small {
+      display: block;
+      margin-top: 6px;
+      color: var(--soft);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 840px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef4f5;
+      color: #33414b;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .callout {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-left: 5px solid var(--teal);
+      box-shadow: none;
+    }
+
+    .callout.warning { border-left-color: var(--amber); }
+    .callout.risk { border-left-color: var(--red); }
+    .callout b { display: block; margin-bottom: 4px; }
+
+    .status-good { color: var(--green); font-weight: 900; }
+    .status-warn { color: var(--amber); font-weight: 900; }
+    .status-risk { color: var(--red); font-weight: 900; }
+
+    .footer {
+      margin-top: 34px;
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      color: var(--soft);
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .metrics,
+      .grid-2,
+      .grid-3 { grid-template-columns: 1fr; }
+      .section-head { display: block; }
+      .tag { display: inline-block; margin-top: 10px; }
+      .language-switcher { position: static; width: max-content; margin-bottom: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="language-switcher" aria-label="Language switcher">
+        <button type="button" class="active" data-language="vi">VI</button>
+        <button type="button" data-language="ko">KO</button>
+      </div>
+      <div class="eyebrow">ESG LANGGRAPH · PROJECT COMPARISON · 2026-08-04</div>
+      <h1 lang="vi">Báo cáo Project hiện tại <em>so sánh với Project bản cũ</em></h1>
+      <h1 lang="ko">현재 Project <em>대 기존 Project 비교 보고서</em></h1>
+      <p class="lede" lang="vi">
+        Báo cáo này so sánh trực tiếp hai codebase: project hiện tại tại <code>F:\MY_PROJECT\esg-report-langgraph</code>
+        và project bản cũ tại <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code>. Trọng tâm là kiến trúc LangGraph,
+        flow xử lý, evidence/QA, định lượng, output và vận hành.
+      </p>
+      <p class="lede" lang="ko">
+        이 보고서는 두 codebase를 직접 비교합니다. 현재 project는 <code>F:\MY_PROJECT\esg-report-langgraph</code>,
+        기존 project는 <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code>입니다. 비교 초점은 LangGraph architecture,
+        processing flow, evidence/QA, quantitative, output, operation입니다.
+      </p>
+      <div class="scope-line">
+        <span><i></i><b>Current</b> <span lang="vi">15 node graph</span><span lang="ko">15-node graph</span></span>
+        <span><i></i><b>Old</b> <span lang="vi">6 node + item subgraph</span><span lang="ko">6-node + item subgraph</span></span>
+        <span><i></i><b>95</b> <span lang="vi">câu định tính</span><span lang="ko">정성 질문</span></span>
+        <span><i></i><b>251</b> <span lang="vi">metric hiện tại</span><span lang="ko">현재 metric</span></span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Report sections">
+    <div class="tabs-inner">
+      <button type="button" class="tab-button active" data-view="overview"><span class="dot"></span><span lang="vi">Tổng quan</span><span lang="ko">개요</span></button>
+      <button type="button" class="tab-button" data-view="current"><span class="dot"></span><span lang="vi">Project hiện tại</span><span lang="ko">현재 Project</span></button>
+      <button type="button" class="tab-button" data-view="old"><span class="dot"></span><span lang="vi">Project bản cũ</span><span lang="ko">기존 Project</span></button>
+      <button type="button" class="tab-button" data-view="compare"><span class="dot"></span><span lang="vi">So sánh</span><span lang="ko">비교</span></button>
+      <button type="button" class="tab-button" data-view="recommend"><span class="dot"></span><span lang="vi">Kết luận</span><span lang="ko">결론</span></button>
+    </div>
+  </nav>
+
+  <main>
+    <section class="view active" id="view-overview">
+      <div class="section-head">
+        <h2 lang="vi">Tổng Quan So Sánh</h2>
+        <h2 lang="ko">비교 개요</h2>
+        <span class="tag">EXECUTIVE VIEW</span>
+      </div>
+      <p class="sub" lang="vi">
+        Hai project cùng giải quyết bài toán tạo báo cáo ESG theo công ty/năm, nhưng có triết lý khác nhau. Bản cũ chia report graph
+        và per-item qualitative subgraph khá rõ, nhấn mạnh 24 expert writer profiles và evidence segmentation. Bản hiện tại gom workflow
+        thành một pipeline LangGraph có nhiều gate/audit hơn, nhấn mạnh source policy, semantic QA, quantitative bridge và artifact output.
+      </p>
+      <p class="sub" lang="ko">
+        두 project 모두 company/year 기준 ESG 보고서 생성을 목표로 하지만 설계 철학이 다릅니다. 기존 버전은 report graph와 per-item
+        qualitative subgraph를 분리하고 24 expert writer profiles와 evidence segmentation을 강조합니다. 현재 버전은 workflow를 하나의
+        LangGraph pipeline으로 정리하고 source policy, semantic QA, quantitative bridge, artifact output을 강조합니다.
+      </p>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label"><span lang="vi">Graph hiện tại</span><span lang="ko">현재 graph</span></div>
+          <div class="metric-value">15</div>
+          <div class="metric-note"><span lang="vi">15 node trong qualitative workflow.</span><span lang="ko">정성 workflow 15 node.</span></div>
+        </div>
+        <div class="metric blue">
+          <div class="metric-label"><span lang="vi">Graph cũ</span><span lang="ko">기존 graph</span></div>
+          <div class="metric-value">6+</div>
+          <div class="metric-note"><span lang="vi">6 node report graph + item subgraph.</span><span lang="ko">6-node report graph + item subgraph.</span></div>
+        </div>
+        <div class="metric amber">
+          <div class="metric-label"><span lang="vi">Expert writers cũ</span><span lang="ko">기존 expert writers</span></div>
+          <div class="metric-value">24</div>
+          <div class="metric-note"><span lang="vi">24 category-scoped writer profiles.</span><span lang="ko">24 category-scoped writer profiles.</span></div>
+        </div>
+        <div class="metric red">
+          <div class="metric-label"><span lang="vi">Metric hiện tại</span><span lang="ko">현재 metric</span></div>
+          <div class="metric-value">251</div>
+          <div class="metric-note"><span lang="vi">QUANT-0001..QUANT-0251.</span><span lang="ko">QUANT-0001..QUANT-0251.</span></div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <b lang="vi">Kết luận nhanh.</b>
+        <b lang="ko">빠른 결론.</b>
+        <span lang="vi">Nếu cần hệ thống dễ audit, rõ policy, dễ triển khai qua CLI/API/Temporal, project hiện tại phù hợp hơn. Nếu cần mô hình writer chuyên gia sâu theo category và item-level graph cô lập mạnh, bản cũ có nhiều cấu trúc đáng giữ lại.</span>
+        <span lang="ko">Audit, policy 명확성, CLI/API/Temporal 운영성을 우선하면 현재 project가 더 적합합니다. Category별 전문 writer와 강한 item-level graph isolation이 필요하면 기존 project의 구조에서 유지할 가치가 있습니다.</span>
+      </div>
+    </section>
+
+    <section class="view" id="view-current">
+      <div class="section-head">
+        <h2 lang="vi">Project Hiện Tại</h2>
+        <h2 lang="ko">현재 Project</h2>
+        <span class="tag">CURRENT CODEBASE</span>
+      </div>
+      <p class="sub" lang="vi">
+        Project hiện tại dùng <code>ESGQualitativeGraph</code> và <code>ESGGraphSetup</code> để compile một StateGraph 15 node. Graph nhận company input, chọn template, plan QID, gọi Team RAG v3 theo batch, kiểm evidence, xử lý định lượng, sinh/QA/revision câu trả lời và assemble output.
+      </p>
+      <p class="sub" lang="ko">
+        현재 project는 <code>ESGQualitativeGraph</code>와 <code>ESGGraphSetup</code>으로 15-node StateGraph를 compile합니다. Company input, template selection, QID planning, Team RAG v3 batch call, evidence check, quantitative processing, answer generation/QA/revision, output assembly를 수행합니다.
+      </p>
+
+      <div class="flow" aria-label="Current graph flow">
+        <div class="step"><span class="num">01</span><strong>Normalize Company Input</strong><small lang="vi">Validate company/year/scale/industry/run_id.</small><small lang="ko">Company/year/scale/industry/run_id 검증.</small></div>
+        <div class="step"><span class="num">02</span><strong>Select Template</strong><small lang="vi">Load 95 questions, scale và industry profiles.</small><small lang="ko">95 questions, scale, industry profiles load.</small></div>
+        <div class="step blue"><span class="num">04</span><strong>Retrieve RAG Evidence</strong><small lang="vi">Team RAG v3, batch size 20, concurrency 4.</small><small lang="ko">Team RAG v3, batch size 20, concurrency 4.</small></div>
+        <div class="step red"><span class="num">05-06</span><strong>Evidence Gate</strong><small lang="vi">Eligibility, normalization, source policy.</small><small lang="ko">Eligibility, normalization, source policy.</small></div>
+        <div class="step amber"><span class="num">06B</span><strong>Quantitative Metrics</strong><small lang="vi">Map 251 metric và bridge vào Metrics QID.</small><small lang="ko">251 metric mapping 및 Metrics QID bridge.</small></div>
+        <div class="step"><span class="num">09-12</span><strong>Draft · QA · Output</strong><small lang="vi">Writer, grounding critic, semantic critic, revision, hygiene, report.</small><small lang="ko">Writer, grounding critic, semantic critic, revision, hygiene, report.</small></div>
+      </div>
+
+      <div class="grid-3" style="margin-top: 18px">
+        <article class="panel">
+          <h4 lang="vi">Điểm mạnh</h4>
+          <h4 lang="ko">강점</h4>
+          <ul lang="vi">
+            <li>Graph hiện tại dễ đọc theo thứ tự xử lý 01-12.</li>
+            <li>Evidence gate/source policy rõ, ưu tiên audit.</li>
+            <li>Semantic critic và revision có điều kiện giảm sửa thừa.</li>
+            <li>Output có JSON, coverage summary, audit Excel và combined workbook.</li>
+          </ul>
+          <ul lang="ko">
+            <li>현재 graph는 01-12 처리 순서로 읽기 쉽습니다.</li>
+            <li>Evidence gate/source policy가 명확하고 audit를 우선합니다.</li>
+            <li>Semantic critic 및 조건부 revision으로 불필요한 수정을 줄입니다.</li>
+            <li>JSON, coverage summary, audit Excel, combined workbook을 출력합니다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h4 lang="vi">Đánh đổi</h4>
+          <h4 lang="ko">Trade-off</h4>
+          <ul lang="vi">
+            <li>Không còn nhấn mạnh 24 writer chuyên gia theo category như bản cũ.</li>
+            <li>Policy chặt có thể tạo nhiều Final Answer rỗng nếu RAG/source yếu.</li>
+            <li>Chưa có benchmark live cùng input cũ trong báo cáo này.</li>
+          </ul>
+          <ul lang="ko">
+            <li>기존처럼 24 category expert writer를 강하게 강조하지 않습니다.</li>
+            <li>Policy가 엄격해 RAG/source가 약하면 빈 Final Answer가 많아질 수 있습니다.</li>
+            <li>이 보고서에는 기존 input과 같은 live benchmark가 아직 없습니다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h4 lang="vi">Vận hành</h4>
+          <h4 lang="ko">운영</h4>
+          <ul lang="vi">
+            <li>CLI, FastAPI và Temporal stack.</li>
+            <li>Optional SQLite checkpoint theo company/run.</li>
+            <li>Offline fallback khi thiếu LLM key.</li>
+          </ul>
+          <ul lang="ko">
+            <li>CLI, FastAPI, Temporal stack.</li>
+            <li>Company/run 기준 optional SQLite checkpoint.</li>
+            <li>LLM key가 없을 때 offline fallback.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-old">
+      <div class="section-head">
+        <h2 lang="vi">Project Bản Cũ</h2>
+        <h2 lang="ko">기존 Project</h2>
+        <span class="tag blue">OLD CODEBASE</span>
+      </div>
+      <p class="sub" lang="vi">
+        Project bản cũ tại <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code> dùng report-level graph 6 node. Bên trong bước <code>generate_qualitative</code>, từng câu định tính được xử lý bằng <code>QualitativeItemGraph</code>, nhấn mạnh item contract, evidence segmentation, relevance gate, expert writer routing và QA/rewrite.
+      </p>
+      <p class="sub" lang="ko">
+        기존 project <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code>는 6-node report-level graph를 사용합니다. <code>generate_qualitative</code> 내부에서 각 정성 질문은 <code>QualitativeItemGraph</code>로 처리되며 item contract, evidence segmentation, relevance gate, expert writer routing, QA/rewrite를 강조합니다.
+      </p>
+
+      <div class="flow" aria-label="Old report graph flow">
+        <div class="step"><span class="num">01</span><strong>initialize_run</strong><small lang="vi">Run_id, workspace, sector, template rule.</small><small lang="ko">Run_id, workspace, sector, template rule.</small></div>
+        <div class="step blue"><span class="num">02</span><strong>load_company_input</strong><small lang="vi">File/API input theo company/year.</small><small lang="ko">Company/year 기준 file/API input.</small></div>
+        <div class="step blue"><span class="num">03</span><strong>normalize_evidence</strong><small lang="vi">Normalize qualitative và quantitative evidence.</small><small lang="ko">Qualitative 및 quantitative evidence 정규화.</small></div>
+        <div class="step"><span class="num">04</span><strong>generate_qualitative</strong><small lang="vi">Fan-out item graph, concurrency default 4.</small><small lang="ko">Item graph fan-out, default concurrency 4.</small></div>
+        <div class="step amber"><span class="num">05</span><strong>map_quantitative</strong><small lang="vi">Map định lượng deterministic.</small><small lang="ko">Deterministic quantitative mapping.</small></div>
+        <div class="step"><span class="num">06</span><strong>write_outputs</strong><small lang="vi">Excel, JSON, QA outputs.</small><small lang="ko">Excel, JSON, QA outputs.</small></div>
+      </div>
+
+      <div class="grid-3" style="margin-top: 18px">
+        <article class="panel">
+          <h4 lang="vi">Item-level isolation</h4>
+          <h4 lang="ko">Item-level isolation</h4>
+          <ul lang="vi">
+            <li>Mỗi <code>QUAL-V2-001..095</code> có item contract riêng.</li>
+            <li>Evidence, writer, QA và status policy chỉ inject vào item hiện tại.</li>
+            <li>Resume invalidates đúng item khi contract/profile/input đổi.</li>
+          </ul>
+          <ul lang="ko">
+            <li>각 <code>QUAL-V2-001..095</code>는 별도 item contract를 가집니다.</li>
+            <li>Evidence, writer, QA, status policy는 현재 item에만 inject됩니다.</li>
+            <li>Contract/profile/input 변경 시 해당 item만 invalidates됩니다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h4 lang="vi">Evidence pipeline</h4>
+          <h4 lang="ko">Evidence pipeline</h4>
+          <ul lang="vi">
+            <li>Structure-preserving API parsing.</li>
+            <li>Lossless sentence/safe-clause segmentation.</li>
+            <li>Relevance gate phân loại direct/support/context/reject.</li>
+          </ul>
+          <ul lang="ko">
+            <li>Structure-preserving API parsing.</li>
+            <li>Lossless sentence/safe-clause segmentation.</li>
+            <li>Relevance gate가 direct/support/context/reject를 분류합니다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h4 lang="vi">Writer model</h4>
+          <h4 lang="ko">Writer model</h4>
+          <ul lang="vi">
+            <li>24 category-scoped ESG expert writers.</li>
+            <li>Category chọn writer; pillar chọn Strategy/Governance/Risk/Metrics skill.</li>
+            <li>Batch style review/rewrite và final polish.</li>
+          </ul>
+          <ul lang="ko">
+            <li>24 category-scoped ESG expert writers.</li>
+            <li>Category가 writer를 선택하고 pillar가 Strategy/Governance/Risk/Metrics skill을 선택합니다.</li>
+            <li>Batch style review/rewrite 및 final polish.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-compare">
+      <div class="section-head">
+        <h2 lang="vi">So Sánh Trực Tiếp</h2>
+        <h2 lang="ko">직접 비교</h2>
+        <span class="tag blue">CURRENT VS OLD</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Khía cạnh</span><span lang="ko">항목</span></th>
+              <th><span lang="vi">Project bản cũ</span><span lang="ko">기존 Project</span></th>
+              <th><span lang="vi">Project hiện tại</span><span lang="ko">현재 Project</span></th>
+              <th><span lang="vi">Nhận định</span><span lang="ko">판단</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Graph topology</td>
+              <td><span lang="vi">6 node report graph + per-item qualitative subgraph.</span><span lang="ko">6-node report graph + per-item qualitative subgraph.</span></td>
+              <td><span lang="vi">15 node qualitative StateGraph trực tiếp.</span><span lang="ko">15-node qualitative StateGraph.</span></td>
+              <td><span lang="vi">Cũ phân tầng sâu; hiện tại tuyến tính và dễ audit toàn pipeline hơn.</span><span lang="ko">기존은 깊은 layer 구조이고, 현재는 linear하며 전체 pipeline audit가 쉽습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Evidence</td>
+              <td><span lang="vi">Parsing giữ cấu trúc, lossless segmentation, relevance gate, prompt evidence immutable.</span><span lang="ko">Structure-preserving parsing, lossless segmentation, relevance gate, immutable prompt evidence.</span></td>
+              <td><span lang="vi">Team RAG v3 batch, evidence eligibility, source policy, deduplicate/rank.</span><span lang="ko">Team RAG v3 batch, evidence eligibility, source policy, deduplicate/rank.</span></td>
+              <td><span lang="vi">Cũ mạnh ở chia evidence tinh; hiện tại mạnh ở governance/audit nguồn.</span><span lang="ko">기존은 evidence segmentation이 강하고, 현재는 source governance/audit가 강합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Writer routing</td>
+              <td><span lang="vi">24 expert writer profiles theo category/pillar.</span><span lang="ko">Category/pillar 기준 24 expert writer profiles.</span></td>
+              <td><span lang="vi">Skill routing theo carbon, materiality, commitment, general section.</span><span lang="ko">Carbon, materiality, commitment, general section skill routing.</span></td>
+              <td><span lang="vi">Cũ chuyên gia hóa hơn; hiện tại ít lớp hơn và dễ bảo trì hơn.</span><span lang="ko">기존은 더 전문화되어 있고, 현재는 layer가 적어 유지보수하기 쉽습니다.</span></td>
+            </tr>
+            <tr>
+              <td>QA/revision</td>
+              <td><span lang="vi">Deterministic verify, LLM QA judge, rewrite loop, batch review/rewrite.</span><span lang="ko">Deterministic verify, LLM QA judge, rewrite loop, batch review/rewrite.</span></td>
+              <td><span lang="vi">Skill policy critic, semantic critic, conditional revision, output hygiene.</span><span lang="ko">Skill policy critic, semantic critic, conditional revision, output hygiene.</span></td>
+              <td><span lang="vi">Hiện tại chặt về claim/source; cũ có nhiều lớp polish văn phong hơn.</span><span lang="ko">현재는 claim/source에 엄격하고, 기존은 문체 polish layer가 더 많습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Quantitative</td>
+              <td><span lang="vi">Map deterministic; output cũ từng dùng 210 metric, code static hiện có 251 item.</span><span lang="ko">Deterministic mapping; 기존 output은 210 metric, 기존 code static은 현재 251 item.</span></td>
+              <td><span lang="vi">251 metric trong template hiện tại, file/API input, metric-QID bridge.</span><span lang="ko">현재 template 251 metric, file/API input, metric-QID bridge.</span></td>
+              <td><span lang="vi">Hiện tại rõ hơn về integration định lượng vào câu Metrics.</span><span lang="ko">현재는 정량 데이터를 Metrics 질문에 통합하는 구조가 더 명확합니다.</span></td>
+            </tr>
+            <tr>
+              <td>Recovery</td>
+              <td><span lang="vi">Partial output sau từng item; resume theo generation/input/writer signature.</span><span lang="ko">각 item 이후 partial output; generation/input/writer signature 기반 resume.</span></td>
+              <td><span lang="vi">Optional SQLite checkpoint và Temporal job path.</span><span lang="ko">Optional SQLite checkpoint 및 Temporal job path.</span></td>
+              <td><span lang="vi">Cũ tinh ở item resume; hiện tại tốt hơn cho job orchestration/API.</span><span lang="ko">기존은 item resume이 정교하고, 현재는 job orchestration/API에 좋습니다.</span></td>
+            </tr>
+            <tr>
+              <td>Output artifacts</td>
+              <td><span lang="vi">Final Excel, JSON, QA checklist, partial outputs.</span><span lang="ko">Final Excel, JSON, QA checklist, partial outputs.</span></td>
+              <td><span lang="vi">JSON run, coverage summary, audit Excel, combined workbook, formula injection guard.</span><span lang="ko">JSON run, coverage summary, audit Excel, combined workbook, formula injection guard.</span></td>
+              <td><span lang="vi">Hiện tại mạnh hơn về artifact audit và kiểm tra coverage sau run.</span><span lang="ko">현재는 artifact audit와 run 이후 coverage 점검이 더 강합니다.</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-recommend">
+      <div class="section-head">
+        <h2 lang="vi">Kết Luận Và Đề Xuất</h2>
+        <h2 lang="ko">결론 및 제안</h2>
+        <span class="tag amber">RECOMMENDATION</span>
+      </div>
+      <div class="callout">
+        <b lang="vi">Kết luận chính.</b>
+        <b lang="ko">핵심 결론.</b>
+        <span lang="vi">Project hiện tại là hướng “audit-first”: source policy, semantic QA, output artifacts và vận hành API/Temporal rõ hơn. Project bản cũ là hướng “expert-item-first”: per-item graph, 24 writer profiles, evidence segmentation và resume theo signature rất chi tiết.</span>
+        <span lang="ko">현재 project는 “audit-first” 방향입니다. Source policy, semantic QA, output artifacts, API/Temporal 운영성이 더 명확합니다. 기존 project는 “expert-item-first” 방향으로 per-item graph, 24 writer profiles, evidence segmentation, signature 기반 resume이 매우 세밀합니다.</span>
+      </div>
+
+      <div class="grid-2">
+        <article class="panel">
+          <h4 lang="vi">Nên giữ từ bản cũ</h4>
+          <h4 lang="ko">기존 버전에서 유지할 점</h4>
+          <ul lang="vi">
+            <li>Ý tưởng item-level contract độc lập cho từng QID.</li>
+            <li>Evidence segmentation lossless khi cần kiểm soát claim thật chặt.</li>
+            <li>Writer profile chuyên gia theo category nếu chất lượng văn phong/domain là ưu tiên.</li>
+            <li>Resume invalidation theo signature để tránh dùng lại stale output.</li>
+          </ul>
+          <ul lang="ko">
+            <li>각 QID별 독립 item-level contract 아이디어.</li>
+            <li>Claim 통제가 매우 중요할 때 lossless evidence segmentation.</li>
+            <li>문체/domain 품질이 우선이면 category별 expert writer profile.</li>
+            <li>Stale output 재사용 방지를 위한 signature 기반 resume invalidation.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h4 lang="vi">Nên ưu tiên ở bản hiện tại</h4>
+          <h4 lang="ko">현재 버전에서 우선할 점</h4>
+          <ul lang="vi">
+            <li>Chuẩn hóa source policy và coverage summary làm artifact bắt buộc.</li>
+            <li>Giữ metric-QID bridge cho các câu Metrics.</li>
+            <li>Đo live benchmark cùng input cũ để kết luận tốc độ/chất lượng.</li>
+            <li>Bổ sung tracing/token cost nếu cần so sánh chi phí thật.</li>
+          </ul>
+          <ul lang="ko">
+            <li>Source policy와 coverage summary를 필수 artifact로 표준화.</li>
+            <li>Metrics 질문을 위한 metric-QID bridge 유지.</li>
+            <li>속도/품질 결론을 위해 기존 input과 같은 live benchmark 측정.</li>
+            <li>실제 비용 비교가 필요하면 tracing/token cost 추가.</li>
+          </ul>
+        </article>
+      </div>
+
+      <p class="footer" lang="vi">
+        Nguồn đã đọc: project hiện tại <code>F:\MY_PROJECT\esg-report-langgraph</code>, project bản cũ <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code>, README và graph/architecture files của hai project.
+      </p>
+      <p class="footer" lang="ko">
+        읽은 source: 현재 project <code>F:\MY_PROJECT\esg-report-langgraph</code>, 기존 project <code>F:\GOBIT_PROJECT\esg-langgraph-report-agents</code>, 두 project의 README 및 graph/architecture files.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var languageButtons = document.querySelectorAll("[data-language]");
+      var tabButtons = document.querySelectorAll("[data-view]");
+      var views = document.querySelectorAll(".view");
+
+      languageButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var language = button.getAttribute("data-language");
+          root.setAttribute("data-lang", language);
+          root.setAttribute("lang", language);
+          languageButtons.forEach(function (item) {
+            item.classList.toggle("active", item === button);
+          });
+        });
+      });
+
+      tabButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var viewName = button.getAttribute("data-view");
+          tabButtons.forEach(function (item) {
+            item.classList.toggle("active", item === button);
+          });
+          views.forEach(function (view) {
+            view.classList.toggle("active", view.id === "view-" + viewName);
+          });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }());
+  </script>
+</body>
+</html>

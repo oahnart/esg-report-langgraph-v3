@@ -1,0 +1,41 @@
+{
+  "fixture_version": "p0-qualitative-v1",
+  "qids": {
+    "Q004": {
+      "case": "ISO identifier and spaced date normalization",
+      "expected": {"final_answer": "non_empty", "qa_status": "passed"}
+    },
+    "Q017": {
+      "case": "legitimate Korean topic phrase is not question leakage",
+      "expected": {"final_answer": "non_empty", "qa_status": "passed"}
+    },
+    "Q075": {
+      "case": "grounded metric overrides stale RAG missing facet",
+      "expected": {"final_answer": "non_empty", "facet_metric_result": "covered"}
+    },
+    "Q080": {
+      "case": "draft source requires attribution",
+      "expected": {"qa_grade": "cautious", "quality_flags": ["draft_based_answer", "draft_attributed"]}
+    },
+    "Q082": {
+      "case": "covered facet has no contradictory missing note",
+      "expected": {"contradictory_missing_notes": false}
+    },
+    "Q086": {
+      "case": "covered facet has no contradictory missing note",
+      "expected": {"contradictory_missing_notes": false}
+    },
+    "Q087": {
+      "case": "stale LLM missing note is removed",
+      "expected": {"final_answer": "non_empty", "contradictory_missing_notes": false}
+    },
+    "Q091": {
+      "case": "related-party transaction is not shareholder structure",
+      "expected": {"final_answer": "empty", "qa_status": "failed"}
+    },
+    "Q094": {
+      "case": "Korean person names and role-only parenthetical are removed",
+      "expected": {"contains_person_name": false, "quality_flags": ["pii_redacted"]}
+    }
+  }
+}

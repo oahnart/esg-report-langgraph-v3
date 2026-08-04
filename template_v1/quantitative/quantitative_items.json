@@ -1,0 +1,4520 @@
+[
+  {
+    "metric_id": "QUANT-0001",
+    "index": 1,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "총 구성원 수",
+    "item": "총 구성원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-7-a",
+      "GRI_description": "Employees - report the total number of employees and a breakdown of this total by gender and by region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32 KBZ-SC13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0002",
+    "index": 2,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별",
+    "item": "남성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-1-b-i",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0003",
+    "index": 3,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별",
+    "item": "여성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-1-b-i",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": "S-3-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0004",
+    "index": 4,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "정규직",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-7-b-i",
+      "GRI_description": "Employees - report the total number of - - permanent employees and a breakdown by gender and by region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": "S-1-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0005",
+    "index": 5,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "정규직",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-7-b-i",
+      "GRI_description": "Employees - report the total number of - - permanent employees and a breakdown by gender and by region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0006",
+    "index": 6,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "정규직 직원 비율",
+    "item": "정규직 직원 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "2-7-b-i",
+      "GRI_description": "Employees - report the total number of - - permanent employees and a breakdown by gender and by region",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0007",
+    "index": 7,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "계약직",
+    "item": "남성",
+    "description": "기간 단위 계약 기간제 근로자",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-7-b-ii",
+      "GRI_description": "Employees - report the total number of - - temporary employees and a breakdown by gender and by region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0008",
+    "index": 8,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "계약직",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-7-b-ii",
+      "GRI_description": "Employees - report the total number of - - temporary employees and a breakdown by gender and by region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0009",
+    "index": 9,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "소속 외 근로자",
+    "item": "소속 외 근로자",
+    "description": "직원이 아니나 조직에 의해 통제되는 근로자",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-8-a-i",
+      "GRI_description": "Workers who are not employees - report the total number of workers who are not employees and whose work is controlled by the organization and describe - - the most common types of worker and their contractual relationship with the organization",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0010",
+    "index": 10,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령",
+    "item": "30세 미만",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-1-b-ii",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Age group: under 30 years old 30-50 years old over 50 years old",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0011",
+    "index": 11,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령",
+    "item": "30-50세",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-1-b-ii",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Age group: under 30 years old 30-50 years old over 50 years old",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0012",
+    "index": 12,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령",
+    "item": "50세 초과",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-1-b-ii",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Age group: under 30 years old 30-50 years old over 50 years old",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0013",
+    "index": 13,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "팀장",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0014",
+    "index": 14,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "팀장",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0015",
+    "index": 15,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "팀원",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0016",
+    "index": 16,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "팀원",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0017",
+    "index": 17,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "기타 다양성 지표",
+    "item": "장애인",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "405-1-a-iii",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Other indicators of diversity where relevant (such as minority or vulnerable groups)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0018",
+    "index": 18,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "기타 다양성 지표",
+    "item": "외국인",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "405-1-a-iii",
+      "GRI_description": "Diversity of governance bodies and employees - Percentage of employees per employee category in each of the following diversity categories - - Other indicators of diversity where relevant (such as minority or vulnerable groups)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0019",
+    "index": 19,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "총 신규 채용 인원 수",
+    "item": "총 신규 채용 인원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0020",
+    "index": 20,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령대별 신규채용",
+    "item": "30세 미만",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0021",
+    "index": 21,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령대별 신규채용",
+    "item": "30-50세",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0022",
+    "index": 22,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "연령대별 신규채용",
+    "item": "50세 초과",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0023",
+    "index": 23,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 신규채용",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0024",
+    "index": 24,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 신규채용",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0025",
+    "index": 25,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 신규 채용",
+    "item": "정규직",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0026",
+    "index": 26,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 신규 채용",
+    "item": "비정규직",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0027",
+    "index": 27,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "장애인 신규채용",
+    "item": "장애인",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": "S-3-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0028",
+    "index": 28,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "총 자발적 이직률",
+    "item": "총 자발적 이직률",
+    "description": "당기 총 자발적 퇴사자(이직자) 수 / 당기 말 총 직원 수",
+    "unit": "%",
+    "standards": {
+      "GRI": "401-1-a",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of new employee hires during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0029",
+    "index": 29,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 자발적 이직률",
+    "item": "남성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0030",
+    "index": 30,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 자발적 이직률",
+    "item": "여성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0031",
+    "index": 31,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 자발적 이직률",
+    "item": "정규직",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0032",
+    "index": 32,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 자발적 이직률",
+    "item": "계약직",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0033",
+    "index": 33,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "총 비자발적 이직률",
+    "item": "총 비자발적 이직률",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0034",
+    "index": 34,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 비자발적 이직률",
+    "item": "남성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0035",
+    "index": 35,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "성별 비자발적 이직률",
+    "item": "여성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0036",
+    "index": 36,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 비자발적 이직률",
+    "item": "정규직",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0037",
+    "index": 37,
+    "domain": "사회",
+    "category": "구성원 현황",
+    "subcategory": "근로형태별 비자발적 이직률",
+    "item": "계약직",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "New employee hires and employee turnover - Total number and rate of employee turnover during the reporting period by age group gender and region",
+      "SASB": "",
+      "KBIZ": "KBZ-SC32",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0038",
+    "index": 38,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "여성 구성원 비율",
+    "item": "여성 구성원 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": "S-3-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0039",
+    "index": 39,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "사원(팀원) 여성 비율",
+    "item": "사원(팀원) 여성 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0040",
+    "index": 40,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "간부(팀장) 여성 비율",
+    "item": "간부(팀장) 여성 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0041",
+    "index": 41,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "임원 여성 비율",
+    "item": "임원 여성 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": "S-3-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0042",
+    "index": 42,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "매출발생 부서 내 여성 비율",
+    "item": "매출발생 부서 내 여성 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0043",
+    "index": 43,
+    "domain": "사회",
+    "category": "다양성",
+    "subcategory": "장애인 고용률",
+    "item": "장애인 고용률",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC33",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0044",
+    "index": 44,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "복리후생비",
+    "item": "복리후생비",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "401-2-a-i",
+      "GRI_description": "Benefits provided to full-time employees that are not provided to temporary or part-time employees - Benefits which are standard for full-time employees of the organization but are not provided to temporary or part-time employees by significant locations of operation. These include as a minimum - - life insurance",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0045",
+    "index": 45,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "구성원 건강검진 참여율",
+    "item": "구성원 건강검진 참여율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "403-6-a",
+      "GRI_description": "Promotion of worker health - An explanation of how the organization facilitates workers’ access to non-occupational medical and healthcare services and the scope of access provided",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0046",
+    "index": 46,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 대상자 수",
+    "item": "육아휴직 대상자 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-a",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0047",
+    "index": 47,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 대상자 수",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-a",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0048",
+    "index": 48,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 대상자 수",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-a",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0049",
+    "index": 49,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 사용자 수",
+    "item": "육아휴직 사용자 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-b",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0050",
+    "index": 50,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 사용자 수",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-b",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0051",
+    "index": 51,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 사용자 수",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-b",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0052",
+    "index": 52,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 복귀 구성원 수",
+    "item": "육아휴직 복귀 구성원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-c",
+      "GRI_description": "Parental leave - Total number of employees that returned to work in the reporting period after parental leave ended by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0053",
+    "index": 53,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 복귀 구성원 수",
+    "item": "남성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-c",
+      "GRI_description": "Parental leave - Total number of employees that returned to work in the reporting period after parental leave ended by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0054",
+    "index": 54,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 복귀 구성원 수",
+    "item": "여성",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-c",
+      "GRI_description": "Parental leave - Total number of employees that returned to work in the reporting period after parental leave ended by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0055",
+    "index": 55,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직제도 사용 후 복귀율",
+    "item": "육아휴직제도 사용 후 복귀율",
+    "description": "#ERROR!",
+    "unit": "%",
+    "standards": {
+      "GRI": "401.0",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0056",
+    "index": 56,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "육아휴직 복귀 후 12개월 이상 근속 구성원 수",
+    "item": "육아휴직 복귀 후 12개월 이상 근속 구성원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "401-3-d",
+      "GRI_description": "Parental leave - Total number of employees that returned to work after parental leave ended that were still employed 12 months after their return to work by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0057",
+    "index": 57,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "구성원 참여도",
+    "item": "구성원 참여도",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Benefits provided to full-time employees that are not provided to temporary or part-time employees - Benefits which are standard for full-time employees of the organization but are not provided to temporary or part-time employees by significant locations of operation. These include as a minimum - - life insurance",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0058",
+    "index": 58,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "성별",
+    "item": "남성",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Promotion of worker health - An explanation of how the organization facilitates workers’ access to non-occupational medical and healthcare services and the scope of access provided",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0059",
+    "index": 59,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "성별",
+    "item": "여성",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0060",
+    "index": 60,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "직급별",
+    "item": "임원",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0061",
+    "index": 61,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "직급별",
+    "item": "팀장",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that were entitled to parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0062",
+    "index": 62,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "직급별",
+    "item": "팀원",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0063",
+    "index": 63,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "연령별",
+    "item": "30세 미만",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0064",
+    "index": 64,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "연령별",
+    "item": "30세 이상 50세 미만",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that took parental leave by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0065",
+    "index": 65,
+    "domain": "사회",
+    "category": "일과 삶의 균형 지원",
+    "subcategory": "연령별",
+    "item": "50세 이상",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Parental leave - Total number of employees that returned to work in the reporting period after parental leave ended by gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0066",
+    "index": 66,
+    "domain": "사회",
+    "category": "안전보건경영체계",
+    "subcategory": "안전보건 교육",
+    "item": "안전보건교육 대상 구성원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC10",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0067",
+    "index": 67,
+    "domain": "사회",
+    "category": "안전보건경영체계",
+    "subcategory": "안전보건 교육",
+    "item": "안전보건교육 참여 구성원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC10",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0068",
+    "index": 68,
+    "domain": "사회",
+    "category": "안전보건경영체계",
+    "subcategory": "안전보건 교육",
+    "item": "1인당 안전보건교육 시간",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC10",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0069",
+    "index": 69,
+    "domain": "사회",
+    "category": "안전보건경영체계",
+    "subcategory": "안전보건경영인증 사업장 비율",
+    "item": "안전보건경영인증 사업장 비율",
+    "description": "ISO 45001 KOSHA-MS 인증을 보유한 사업장 비율",
+    "unit": "%",
+    "standards": {
+      "GRI": "403-1-b",
+      "GRI_description": "A statement of whether an occupational health and safety management system has been implemented including whether - A description of the scope of workers activities and workplaces covered by the occupational health and safety management system and an explanation of whether and if so why any workers activities or workplaces are not covered",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": "S-4-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0070",
+    "index": 70,
+    "domain": "사회",
+    "category": "사업장 안전보건 활동",
+    "subcategory": "위험성 평가",
+    "item": "위험요소 발굴 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC12",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0071",
+    "index": 71,
+    "domain": "사회",
+    "category": "사업장 안전보건 활동",
+    "subcategory": "위험성 평가",
+    "item": "위험요소 개선 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC12",
+      "K-ESG": "S-5-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0072",
+    "index": 72,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "사망사고 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "403-9-a-i",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of fatalities as a result of work-related injury",
+      "SASB": "",
+      "KBIZ": "KBZ-SC13",
+      "K-ESG": "S-5-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0073",
+    "index": 73,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "사망률",
+    "description": "(사망한 임직원 수 / 총 임직원 수) * 100",
+    "unit": "%",
+    "standards": {
+      "GRI": "403-9-a-i",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of fatalities as a result of work-related injury",
+      "SASB": "RT-IG-320a.1",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0074",
+    "index": 74,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "산업 재해건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "403-9-a-iii",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of recordable work-related injuries",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0075",
+    "index": 75,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "산업재해율",
+    "description": "(재해자수 / 산재보험적용근로자수) × 100",
+    "unit": "%",
+    "standards": {
+      "GRI": "403-9-a-iii",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of recordable work-related injuries",
+      "SASB": "",
+      "KBIZ": "KBZ-SC13",
+      "K-ESG": "S-5-4"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0076",
+    "index": 76,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "연간 총 근로시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "403-9-a-v",
+      "GRI_description": "Work-related injuries - For all employees - - The number of hours worked",
+      "SASB": "",
+      "KBIZ": "KBZ-SC13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0077",
+    "index": 77,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "근로손실재해율",
+    "description": "재해건수 / 연 근로시간 * 100만 시간",
+    "unit": "LTIFR",
+    "standards": {
+      "GRI": "403-9-a-iii",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of recordable work-related injuries",
+      "SASB": "RT-IG-320a.1",
+      "KBIZ": "KBZ-SC13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0078",
+    "index": 78,
+    "domain": "사회",
+    "category": "산업 재해",
+    "subcategory": "직원",
+    "item": "아차사고 빈도율(Near Miss Frequency Rate NMFR)",
+    "description": "(아차사고 건× 200000) / 근로시간",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "RT-IG-320a.1",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0079",
+    "index": 79,
+    "domain": "사회",
+    "category": "업무 관련 질병",
+    "subcategory": "직원",
+    "item": "업무 관련 질병으로 인한 사망 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "403-10-a-i",
+      "GRI_description": "Work-related ill health - For all employees - - The number of fatalities as a result of work-related ill health",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0080",
+    "index": 80,
+    "domain": "사회",
+    "category": "업무 관련 질병",
+    "subcategory": "직원",
+    "item": "기록된 업무 관련 질병 발병 사례 건수",
+    "description": "산재 신청 승인 건수",
+    "unit": "건",
+    "standards": {
+      "GRI": "403-10-a-ii",
+      "GRI_description": "Work-related ill health - For all employees - - The number of cases of recordable work-related ill health",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0081",
+    "index": 81,
+    "domain": "사회",
+    "category": "안전보건 컴플라이언스",
+    "subcategory": "안전보건 법규 위반 건수",
+    "item": "안전보건 법규 위반 건수",
+    "description": "산업안전보건관리비 사용의무 위반 산업재해발생 보고 의무 위반 등",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC15",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0082",
+    "index": 82,
+    "domain": "사회",
+    "category": "안전보건 컴플라이언스",
+    "subcategory": "안전보건 법규 위반으로 인한 벌금 및 과태료",
+    "item": "안전보건 법규 위반으로 인한 벌금 및 과태료",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC15",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0083",
+    "index": 83,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "근로계약 및 근무시간",
+    "item": "연간 인당 근로시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": "S-2-4"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0084",
+    "index": 84,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "근로계약 및 근무시간",
+    "item": "주당 평균 근로시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": "S-2-4"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0085",
+    "index": 85,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "근로계약 및 근무시간",
+    "item": "탄력적 유연근무제도 사용자 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0086",
+    "index": 86,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "노사 커뮤니케이션",
+    "item": "노사협의회 운영 횟수",
+    "description": "",
+    "unit": "회",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": "S-1-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0087",
+    "index": 87,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "노사 커뮤니케이션",
+    "item": "노사협의회 논의 안건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": "S-1-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0088",
+    "index": 88,
+    "domain": "사회",
+    "category": "노동 및 인권",
+    "subcategory": "노사 커뮤니케이션",
+    "item": "노사협의회 처리 안건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC21",
+      "K-ESG": "S-1-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0089",
+    "index": 89,
+    "domain": "사회",
+    "category": "노동 및 인권 고충 관리",
+    "subcategory": "노동/인권 고충 접수 건수",
+    "item": "노동/인권 고충 접수 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC24",
+      "K-ESG": "S-2-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0090",
+    "index": 90,
+    "domain": "사회",
+    "category": "노동 및 인권 고충 관리",
+    "subcategory": "노동/인권 고충 처리 건수",
+    "item": "노동/인권 고충 처리 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC24",
+      "K-ESG": "S-2-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0091",
+    "index": 91,
+    "domain": "사회",
+    "category": "구성원 역량 강화",
+    "subcategory": "구성원 총 교육 시간",
+    "item": "구성원 총 교육 시간",
+    "description": "",
+    "unit": "시간/명",
+    "standards": {
+      "GRI": "404-1-a-i",
+      "GRI_description": "Average hours of training per year per employee - Average hours of training that the organization’s employees have undertaken during the reporting period by - - gender",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0092",
+    "index": 92,
+    "domain": "사회",
+    "category": "구성원 역량 강화",
+    "subcategory": "1인당 교육 시간",
+    "item": "1인당 교육 시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0093",
+    "index": 93,
+    "domain": "사회",
+    "category": "구성원 역량 강화",
+    "subcategory": "구성원 총 교육 비용",
+    "item": "구성원 총 교육 비용",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0094",
+    "index": 94,
+    "domain": "사회",
+    "category": "구성원 역량 강화",
+    "subcategory": "1인당 교육 비용",
+    "item": "1인당 교육 비용",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0095",
+    "index": 95,
+    "domain": "사회",
+    "category": "구성원 성과평가 & 급여",
+    "subcategory": "정기적 성과평가를 받은 구성원 비율",
+    "item": "정기적 성과평가를 받은 구성원 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "404-3-a",
+      "GRI_description": "Percentage of employees receiving regular performance and career development reviews - Percentage of total employees by gender and by employee category who received a regular performance and career development review during the reporting period",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0096",
+    "index": 96,
+    "domain": "사회",
+    "category": "구성원 성과평가 & 급여",
+    "subcategory": "전체 평균 임금",
+    "item": "전체 평균 임금",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0097",
+    "index": 97,
+    "domain": "사회",
+    "category": "구성원 성과평가 & 급여",
+    "subcategory": "남성 대비 여성 급여 비율",
+    "item": "남성 대비 여성 급여 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "405-2",
+      "GRI_description": "Ratio of basic salary and remuneration of women to men",
+      "SASB": "",
+      "KBIZ": "KBZ-SC31",
+      "K-ESG": "S-3-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0098",
+    "index": 98,
+    "domain": "사회",
+    "category": "차별 사례 및 이에 대한 시정조치",
+    "subcategory": "보고기간 중 차별 사례 총 건수",
+    "item": "보고기간 중 차별 사례 총 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "406-1-a",
+      "GRI_description": "Incidents of discrimination and corrective actions taken - Total number of incidents of discrimination during the reporting period",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0099",
+    "index": 99,
+    "domain": "사회",
+    "category": "제품·서비스의 안전보건 영향 평가",
+    "subcategory": "평가 결과 개선 필요한 중요 제품·서비스 비중",
+    "item": "평가 결과 개선 필요한 중요 제품·서비스 비중",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "416-1-a",
+      "GRI_description": "Assessment of the health and safety impacts of product and service categories - Percentage of significant product and service categories for which health and safety impacts are assessed for improvement",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0100",
+    "index": 100,
+    "domain": "사회",
+    "category": "제품 및 서비스 품질 관리",
+    "subcategory": "고객 만족도 관리",
+    "item": "고객 제품 상담 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Incidents of non-compliance concerning the health and safety impacts of products and services - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning the health and safety impacts of products and services within the reporting period by - - incidents of non-compliance with regulations resulting in a warning",
+      "SASB": "",
+      "KBIZ": "KBZ-SC53",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0101",
+    "index": 101,
+    "domain": "사회",
+    "category": "제품 및 서비스 품질 관리",
+    "subcategory": "고객 만족도 관리",
+    "item": "고객 서비스 상담 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC53",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0102",
+    "index": 102,
+    "domain": "사회",
+    "category": "제품 및 서비스 품질 관리",
+    "subcategory": "고객 만족도 관리",
+    "item": "고객 만족도 점수",
+    "description": "",
+    "unit": "점",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC53",
+      "K-ESG": "S-10-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0103",
+    "index": 103,
+    "domain": "사회",
+    "category": "제품 및 서비스 품질 관리",
+    "subcategory": "고객 만족도 관리",
+    "item": "고객 만족도 향상 활동 프로그램 수",
+    "description": "",
+    "unit": "개",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC53",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0104",
+    "index": 104,
+    "domain": "사회",
+    "category": "제품 안전 컴플라이언스",
+    "subcategory": "품질 및 안전 컴플라이언스 위반 사항 및 리스크 개선활동",
+    "item": "제품·서비스 품질 및 안전 관련 법규 위반 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "416-2-a-i",
+      "GRI_description": "Incidents of non-compliance concerning the health and safety impacts of products and services - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning the health and safety impacts of products and services within the reporting period by - - incidents of non-compliance with regulations resulting in a fine or penalty",
+      "SASB": "",
+      "KBIZ": "KBZ-SC54",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0105",
+    "index": 105,
+    "domain": "사회",
+    "category": "제품 안전 컴플라이언스",
+    "subcategory": "품질 및 안전 컴플라이언스 위반 사항 및 리스크 개선활동",
+    "item": "관련 법규 위반으로 인한 금전적 손실",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Incidents of non-compliance concerning the health and safety impacts of products and services - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning the health and safety impacts of products and services within the reporting period by - - incidents of non-compliance with regulations resulting in a warning",
+      "SASB": "",
+      "KBIZ": "KBZ-SC54",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0106",
+    "index": 106,
+    "domain": "사회",
+    "category": "제품 안전 컴플라이언스",
+    "subcategory": "품질 및 안전 컴플라이언스 위반 사항 및 리스크 개선활동",
+    "item": "비자발적 리콜(권고 또는 명령) 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC54",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0107",
+    "index": 107,
+    "domain": "사회",
+    "category": "제품 안전 컴플라이언스",
+    "subcategory": "품질 및 안전 컴플라이언스 위반 사항 및 리스크 개선활동",
+    "item": "자발적 리콜 건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC54",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0108",
+    "index": 108,
+    "domain": "사회",
+    "category": "제품 안전 컴플라이언스",
+    "subcategory": "품질 및 안전 컴플라이언스 위반 사항 및 리스크 개선활동",
+    "item": "리콜로 인한 비용",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC54",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0109",
+    "index": 109,
+    "domain": "사회",
+    "category": "제품·서비스 정보 및 라벨링 관련 위반",
+    "subcategory": "관련 규정 및 자발적 규범 위반 총 건수",
+    "item": "관련 규정 및 자발적 규범 위반 총 건수",
+    "description": "라벨 오표기 기만 광고 등의 라벨링·마케팅 규정 위반으로 인한 경고 정정 중단 소송 등 자체 브랜드 및 위탁 판매 등과 관계 없이 기업이 판매한 경우 모두 포함",
+    "unit": "건",
+    "standards": {
+      "GRI": "417-2-a",
+      "GRI_description": "Incidents of non-compliance concerning product and service information and labeling - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning product and service information and labeling by",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0110",
+    "index": 110,
+    "domain": "사회",
+    "category": "제품·서비스 정보 및 라벨링 관련 위반",
+    "subcategory": "관련 규정 및 자발적 규범 위반 총 건수",
+    "item": "규정 위반으로 벌금 또는 페널티 부과",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "417-2-a-i",
+      "GRI_description": "Incidents of non-compliance concerning product and service information and labeling - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning product and service information and labeling by - - incidents of non-compliance with regulations resulting in a fine or penalty",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0111",
+    "index": 111,
+    "domain": "사회",
+    "category": "마케팅 커뮤니케이션 관련 위반",
+    "subcategory": "규정 또는 자발적 규범 위반 총 건수",
+    "item": "규정 또는 자발적 규범 위반 총 건수",
+    "description": "광고·판촉·후원 포함",
+    "unit": "건",
+    "standards": {
+      "GRI": "417-3-a",
+      "GRI_description": "Incidents of non-compliance concerning marketing communications - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning marketing communications including advertising promotion and sponsorship by",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0112",
+    "index": 112,
+    "domain": "사회",
+    "category": "마케팅 커뮤니케이션 관련 위반",
+    "subcategory": "관련 규정 또는 자발적 규범 위반 총 건수",
+    "item": "규정 위반으로 벌금 또는 페널티 부과",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "417-3-a-i",
+      "GRI_description": "Incidents of non-compliance concerning marketing communications - Total number of incidents of non-compliance with regulations and/or voluntary codes concerning marketing communications including advertising promotion and sponsorship by - - incidents of non-compliance with regulations resulting in a fine or penalty",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0113",
+    "index": 113,
+    "domain": "사회",
+    "category": "개인정보보호 체계",
+    "subcategory": "구성원 정보보호 교육",
+    "item": "정보보호 교육 이수 인원",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC51",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0114",
+    "index": 114,
+    "domain": "사회",
+    "category": "개인정보보호 체계",
+    "subcategory": "구성원 정보보호 교육",
+    "item": "정보보호 교육 이수율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC51",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0115",
+    "index": 115,
+    "domain": "사회",
+    "category": "개인정보보호 체계",
+    "subcategory": "구성원 정보보호 교육",
+    "item": "총 정보보호 교육 시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC51",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0116",
+    "index": 116,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "개인정보보호 관련 법/규제 위반 건 수",
+    "item": "개인정보보호 관련 법/규제 위반 건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "418-1-a",
+      "GRI_description": "Substantiated complaints concerning breaches of customer privacy and losses of customer data - Total number of substantiated complaints received concerning breaches of customer privacy categorized by",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": "S-9-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0117",
+    "index": 117,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "관련하여 접수된 민원 중 입증된 총 민원 건수",
+    "item": "외부로부터 접수된 개인정보보호 침해 및 불만 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "418-1-a-i",
+      "GRI_description": "Substantiated complaints concerning breaches of customer privacy and losses of customer data - Total number of substantiated complaints received concerning breaches of customer privacy categorized by - - complaints received from outside parties and substantiated by the organization",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0118",
+    "index": 118,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "관련하여 접수된 민원 중 입증된 총 민원 건수",
+    "item": "규제기관에 의해 제기된 개인정보보호 침해 및 불만 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "418-1-a-ii",
+      "GRI_description": "Substantiated complaints concerning breaches of customer privacy and losses of customer data - Total number of substantiated complaints received concerning breaches of customer privacy categorized by - - complaints from regulatory bodies",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0119",
+    "index": 119,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "관련하여 접수된 민원 중 입증된 총 민원 건수",
+    "item": "개인정보 유출 도난 분실 건수",
+    "description": "본인 및 가족 성명 식별번호 생년월일 출생지 생체 인식 기록 등 개인식별정보(PII)가 대상이 된 데이터 침해 암호화된 데이터가 암호화 키와 함께 유출되었을 시 합리적 암호화 해제 믿음이 있는 경우 법적 요구 및 자발적인 고객 통지한 경우",
+    "unit": "건",
+    "standards": {
+      "GRI": "418-1-b",
+      "GRI_description": "Substantiated complaints concerning breaches of customer privacy and losses of customer data - Total number of identified leaks thefts or losses of customer data",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0120",
+    "index": 120,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "데이터 관리 위반 건수",
+    "item": "데이터 관리 위반 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Substantiated complaints concerning breaches of customer privacy and losses of customer data - If the organization has not identified any substantiated complaints a brief statement of this fact is sufficient",
+      "SASB": "SV-PS-230a.3",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0121",
+    "index": 121,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "고객/직원 데이터 침해 건수",
+    "item": "고객/직원 데이터 침해 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "SV-PS-230a.3",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0122",
+    "index": 122,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "정보보안 위반으로 인한 과징금/벌금 건수",
+    "item": "정보보안 위반으로 인한 과징금/벌금 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0123",
+    "index": 123,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "정보보호 개선 현황",
+    "item": "정보보안 개선사항 발견 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0124",
+    "index": 124,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "정보보호 개선 현황",
+    "item": "완화 조치 이행 완료 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0125",
+    "index": 125,
+    "domain": "사회",
+    "category": "개인정보보호 컴플라이언스",
+    "subcategory": "정보보호 개선 현황",
+    "item": "완화 조치 미이행 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-SC52",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0126",
+    "index": 126,
+    "domain": "사회",
+    "category": "지역사회 상생협력 활동",
+    "subcategory": "지역사회 상생지원 & 구성원 봉사 참여 성과",
+    "item": "사회공헌 지출액",
+    "description": "기부금 사회공헌 프로그램 운영비용 등",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of fatalities as a result of work-related injury",
+      "SASB": "",
+      "KBIZ": "KBZ-SC61",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0127",
+    "index": 127,
+    "domain": "사회",
+    "category": "지역사회 상생협력 활동",
+    "subcategory": "지역사회 상생지원 & 구성원 봉사 참여 성과",
+    "item": "봉사활동 참여 인원",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Work-related injuries - For all employees - - The number of hours worked",
+      "SASB": "",
+      "KBIZ": "KBZ-SC61",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0128",
+    "index": 128,
+    "domain": "사회",
+    "category": "지역사회 상생협력 활동",
+    "subcategory": "지역사회 상생지원 & 구성원 봉사 참여 성과",
+    "item": "봉사활동 참여 시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Work-related injuries - For all employees - - The number and rate of recordable work-related injuries",
+      "SASB": "",
+      "KBIZ": "KBZ-SC61",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0129",
+    "index": 129,
+    "domain": "환경",
+    "category": "환경경영 체계",
+    "subcategory": "환경교육 대상자",
+    "item": "환경교육 대상자",
+    "description": "",
+    "unit": "인",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN11",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0130",
+    "index": 130,
+    "domain": "환경",
+    "category": "환경경영 체계",
+    "subcategory": "환경교육 대상 인원의 교육 참여율",
+    "item": "환경교육 대상 인원의 교육 참여율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN11",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0131",
+    "index": 131,
+    "domain": "환경",
+    "category": "환경경영 체계",
+    "subcategory": "1인당 교육 시간",
+    "item": "1인당 교육 시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN11",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0132",
+    "index": 132,
+    "domain": "환경",
+    "category": "환경경영 체계",
+    "subcategory": "친환경 매출액",
+    "item": "친환경 매출액",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "TR-AP-410a.1",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0133",
+    "index": 133,
+    "domain": "환경",
+    "category": "환경 투자",
+    "subcategory": "환경투자액",
+    "item": "환경투자액",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN12",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0134",
+    "index": 134,
+    "domain": "환경",
+    "category": "환경 투자",
+    "subcategory": "매출액 대비 환경투자액",
+    "item": "매출액 대비 환경투자액",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN12",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0135",
+    "index": 135,
+    "domain": "환경",
+    "category": "환경 컴플라이언스",
+    "subcategory": "법적 의무 및 규정 위반 건수",
+    "item": "법적 의무 및 규정 위반 건수",
+    "description": "과태료 및 벌금이 1백만원을 초과하는 환경 위반(대기 수질 폐기물 폐수 등)",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0136",
+    "index": 136,
+    "domain": "환경",
+    "category": "환경 컴플라이언스",
+    "subcategory": "벌금 총액",
+    "item": "벌금 총액",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0137",
+    "index": 137,
+    "domain": "환경",
+    "category": "환경 컴플라이언스",
+    "subcategory": "환경 관련 미지급 부채 금액",
+    "item": "환경 관련 미지급 부채 금액",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0138",
+    "index": 138,
+    "domain": "환경",
+    "category": "원부자재",
+    "subcategory": "원부자재 사용량 및 비율",
+    "item": "총 원부자재 사용량",
+    "description": "조직의 주요 제품·서비스의 생산·포장에 사용된 원부자재",
+    "unit": "톤",
+    "standards": {
+      "GRI": "301-1-a",
+      "GRI_description": "Materials used by weight or volume - Total weight or volume of materials that are used to produce and package the organization’s primary products and services during the reporting period by",
+      "SASB": "",
+      "KBIZ": "KBZ-EN21",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0139",
+    "index": 139,
+    "domain": "환경",
+    "category": "원부자재",
+    "subcategory": "원부자재 사용량 및 비율",
+    "item": "원부자재 사용량 집약도",
+    "description": "",
+    "unit": "톤/백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN21",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0140",
+    "index": 140,
+    "domain": "환경",
+    "category": "원부자재",
+    "subcategory": "원부자재 사용량 및 비율",
+    "item": "재생 불가 원재료 사용량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "301-1-a-i",
+      "GRI_description": "Materials used by weight or volume - Total weight or volume of materials that are used to produce and package the organization’s primary products and services during the reporting period by - - non-renewable materials used",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0141",
+    "index": 141,
+    "domain": "환경",
+    "category": "원부자재",
+    "subcategory": "원부자재 사용량 및 비율",
+    "item": "재생 가능 원재료 사용량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "301-1-a-ii",
+      "GRI_description": "Materials used by weight or volume - Total weight or volume of materials that are used to produce and package the organization’s primary products and services during the reporting period by - - renewable materials used",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0142",
+    "index": 142,
+    "domain": "환경",
+    "category": "원부자재",
+    "subcategory": "원부자재 사용량 및 비율",
+    "item": "재생원료 사용 비율",
+    "description": "조직의 주요 제품·서비스의 생산·포장에 사용된 재생 원부자재 및 재제조 제품",
+    "unit": "%",
+    "standards": {
+      "GRI": "301-2-a",
+      "GRI_description": "Recycled input materials used - Percentage of recycled input materials used to manufacture the organization's primary products and services",
+      "SASB": "",
+      "KBIZ": "KBZ-EN21",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0143",
+    "index": 143,
+    "domain": "환경",
+    "category": "재제조 설계 및 서비스",
+    "subcategory": "재제조된 제품 및 재제조 서비스 매출액",
+    "item": "재제조된 제품 및 재제조 서비스 매출액",
+    "description": "재제조된 제품은 원래의 가동 상태(즉 “새로운 것과 같은” 상태로 간 주)로 되돌리기 위해 산업 공정을 거친 수명종료 제품 또는 부품(즉 이전에 판매되었거나 마모되었거나 가동되지 않는 제품 또는 부품)으로 정의",
+    "unit": "KRW",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "RT-IG-440b.1",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0144",
+    "index": 144,
+    "domain": "환경",
+    "category": "친환경 인증 원부자재 사용 비율",
+    "subcategory": "",
+    "item": "",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN21",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0145",
+    "index": 145,
+    "domain": "환경",
+    "category": "재생원료를 사용한 포장재 비율",
+    "subcategory": "",
+    "item": "",
+    "description": "재생 가능한 원부자재 : 자원 채취 후 자연적인 성장 또는 보충 과정에 의해 이전의 자원 수준으로 돌아갈 수 있는천연 자원. 예) 산림 담수 토지 야생동물 농업자원의목재 등 (출처: 공급망 K-ESG 가이드라인)",
+    "unit": "%",
+    "standards": {
+      "GRI": "301-3-a",
+      "GRI_description": "Reclaimed products and their packaging materials - Percentage of reclaimed products and their packaging materials for each product category",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0146",
+    "index": 146,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "온실가스 배출량",
+    "item": "총 온실가스 배출량",
+    "description": "",
+    "unit": "tCO2-eq",
+    "standards": {
+      "GRI": "305-1-a",
+      "GRI_description": "Direct (Scope 1) GHG emissions - Gross direct (Scope 1) GHG emissions in metric tons of CO2 equivalent",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E3-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0147",
+    "index": 147,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "온실가스 배출량",
+    "item": "직접 온실가스 배출량 (Scope 1)",
+    "description": "",
+    "unit": "tCO2-eq",
+    "standards": {
+      "GRI": "305-1-a",
+      "GRI_description": "Direct (Scope 1) GHG emissions - Gross direct (Scope 1) GHG emissions in metric tons of CO2 equivalent",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E3-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0148",
+    "index": 148,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "온실가스 배출량",
+    "item": "간접 온실가스 배출량 (Scope 2)",
+    "description": "",
+    "unit": "tCO2-eq",
+    "standards": {
+      "GRI": "305-2-a",
+      "GRI_description": "Energy indirect (Scope 2) GHG emissions - Gross location-based energy indirect (Scope 2) GHG emissions in metric tons of CO2 equivalent",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E3-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0149",
+    "index": 149,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "온실가스 배출량 집약도",
+    "item": "온실가스 배출량 집약도",
+    "description": "(총 온실가스 배출량 ÷ 매출액)",
+    "unit": "tCO2-eq/ 백만 원",
+    "standards": {
+      "GRI": "305-4-a",
+      "GRI_description": "GHG emissions intensity - GHG emissions intensity ratio for the organization",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E-3-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0150",
+    "index": 150,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "에너지 사용량 집약도",
+    "item": "에너지 사용량 집약도",
+    "description": "총 에너지 사용량 ÷ 매출액",
+    "unit": "TJ/백만원",
+    "standards": {
+      "GRI": "302-3-a",
+      "GRI_description": "Energy intensity - Energy intensity ratio for the organization",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E-3-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0151",
+    "index": 151,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "에너지 소비량",
+    "item": "총 에너지 소비량",
+    "description": "비재생 에너지 소비량+재생 에너지 소비량",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-e",
+      "GRI_description": "Energy consumption within the organization - Total energy consumption within the organization in joules or multiples",
+      "SASB": "RT-IG-130a.1",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": "E-3-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0152",
+    "index": 152,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "에너지 소비량",
+    "item": "비재생 에너지 소비량",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-a",
+      "GRI_description": "Energy consumption within the organization - Total fuel consumption within the organization from non-renewable sources in joules or multiples and including fuel types used",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0153",
+    "index": 153,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "에너지 소비량",
+    "item": "재생 에너지 사용량",
+    "description": "재생 연료 소비 직접 생산 구매(재생에너지 공급 인증서(REC)나 원산지 보증 인증서(GO)가 명시된 PPA Green-e Energy 프로그램 REC·GO가 명시된 녹색 전력 제품 등) 바이오매스에 의해 생성된 재생에너지는 제3자 표준(국제삼림관리협의회 지속가능한 삼림 관리 등)에 따라 인증된 원료로 제한",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-b",
+      "GRI_description": "Energy consumption within the organization - Total fuel consumption within the organization from renewable sources in joules or multiples and including fuel types used",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0154",
+    "index": 154,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "재생 에너지 사용 비율",
+    "item": "재생 에너지 사용 비율",
+    "description": "재생 에너지 소비량 ÷ 총 에너지 소비량",
+    "unit": "%",
+    "standards": {
+      "GRI": "302-1-b",
+      "GRI_description": "Energy consumption within the organization - Total fuel consumption within the organization from renewable sources in joules or multiples and including fuel types used",
+      "SASB": "RT-IG-130a.1",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0155",
+    "index": 155,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "조달 방식별 재생에너지 사용량",
+    "item": "자가 발전",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0156",
+    "index": 156,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "조달 방식별 재생에너지 사용량",
+    "item": "녹색 프리미엄",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0157",
+    "index": 157,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "조달 방식별 재생에너지 사용량",
+    "item": "REC 구매",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0158",
+    "index": 158,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "용도별 에너지 사용량",
+    "item": "전기 (간접 에너지원)",
+    "description": "1 KWh = 0.0096 GJ (산업통상자원부령 제 281호)",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-c-i",
+      "GRI_description": "Energy consumption within the organization - In joules watt-hours or multiples the total - - electricity consumption",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0159",
+    "index": 159,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "용도별 에너지 사용량",
+    "item": "스팀 (간접 에너지원)",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-c-ii",
+      "GRI_description": "Energy consumption within the organization - In joules watt-hours or multiples the total - - heating consumption",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0160",
+    "index": 160,
+    "domain": "환경",
+    "category": "온실가스 및 에너지",
+    "subcategory": "용도별 에너지 사용량",
+    "item": "화석연료(직접 에너지원)",
+    "description": "",
+    "unit": "TJ",
+    "standards": {
+      "GRI": "302-1-c-iii",
+      "GRI_description": "Energy consumption within the organization - In joules watt-hours or multiples the total - - cooling consumption",
+      "SASB": "",
+      "KBIZ": "KBZ-EN22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0161",
+    "index": 161,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "총 폐기물 배출량",
+    "item": "총 폐기물 배출량",
+    "description": "일반 폐기물+지정 폐기물 배출량",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-3-a",
+      "GRI_description": "Waste generated - Total weight of waste generated in metric tons and a breakdown of this total by composition of the waste",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": "E-4-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0162",
+    "index": 162,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "폐기물 배출량 집약도",
+    "item": "폐기물 배출량 집약도",
+    "description": "총 폐기물 배출량 ÷ 매출액",
+    "unit": "톤/백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": "E-4-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0163",
+    "index": 163,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "구성별 폐기물 중량",
+    "item": "일반 폐기물",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-3-a",
+      "GRI_description": "Waste generated - Total weight of waste generated in metric tons and a breakdown of this total by composition of the waste",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0164",
+    "index": 164,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "구성별 폐기물 중량",
+    "item": "지정 페기물",
+    "description": "지정 폐기물 (지역 법률: 한국) 폐기물 발생 관할권 내 법/규제 체계에 따라 정의 (없을시 U.S. RCRA 또는 EU WFD 사용 가능)",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-3-a",
+      "GRI_description": "Waste generated - Total weight of waste generated in metric tons and a breakdown of this total by composition of the waste",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0165",
+    "index": 165,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "폐기물 재활용량",
+    "item": "폐기물 재활용량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-4-a",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0166",
+    "index": 166,
+    "domain": "환경",
+    "category": "폐기물 및 재활용",
+    "subcategory": "폐기물 재활용률",
+    "item": "폐기물 재활용률",
+    "description": "(폐기물 재활용 처리량 ÷ 총 폐기물 발생량)*100",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0167",
+    "index": 167,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "처분된 폐기물의 총 중량",
+    "item": "처분된 폐기물의 총 중량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-a",
+      "GRI_description": "Waste directed to disposal - Total weight of waste directed to disposal in metric tons and a breakdown of this total by composition of the waste",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0168",
+    "index": 168,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "일반 폐기물 처리량",
+    "item": "일반 폐기물 처리량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-b",
+      "GRI_description": "Waste directed to disposal - Total weight of hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0169",
+    "index": 169,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "일반 폐기물 처리량 합계",
+    "item": "일반 폐기물 처리량 합계",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-b-i",
+      "GRI_description": "Waste directed to disposal - Total weight of hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Incineration (with energy recovery)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0170",
+    "index": 170,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "일반 폐기물 처리량 합계",
+    "item": "소각",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-b-ii",
+      "GRI_description": "Waste directed to disposal - Total weight of hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Incineration (with energy recovery)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0171",
+    "index": 171,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "일반 폐기물 처리량 합계",
+    "item": "매립",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-b-iii",
+      "GRI_description": "Waste directed to disposal - Total weight of hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Landfilling",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0172",
+    "index": 172,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "일반 폐기물 처리량 합계",
+    "item": "기타",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-b-iv",
+      "GRI_description": "Waste directed to disposal - Total weight of hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Other disposal operations",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0173",
+    "index": 173,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "지정 폐기물 처리량",
+    "item": "지정 폐기물 처리량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-c",
+      "GRI_description": "Waste directed to disposal - Total weight of non-hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0174",
+    "index": 174,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "지정 폐기물 처리량",
+    "item": "소각",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-c-i",
+      "GRI_description": "Waste directed to disposal - Total weight of non-hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Incineration (with energy recovery)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0175",
+    "index": 175,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "지정 폐기물 처리량",
+    "item": "매립",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-c-iii",
+      "GRI_description": "Waste directed to disposal - Total weight of non-hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Landfilling",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0176",
+    "index": 176,
+    "domain": "환경",
+    "category": "폐기물 처리",
+    "subcategory": "지정 폐기물 처리량",
+    "item": "기타",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "306-5-c-iv",
+      "GRI_description": "Waste directed to disposal - Total weight of non-hazardous waste directed to disposal in metric tons and a breakdown of this total by the following disposal operations - - Other disposal operations",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0177",
+    "index": 177,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "대기오염물질 배출량",
+    "description": "NOxSOx POP VOC HAP PM 배출량의 합계",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - NOx",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": "E-5-1"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0178",
+    "index": 178,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "NOx 배출량",
+    "description": "NO 및 NO2 N2O(아산화질소) 제외",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-i",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - NOx",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0179",
+    "index": 179,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "SOx 배출량",
+    "description": "SO2 및 SO3",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-ii",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - SOx",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0180",
+    "index": 180,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "잔류 유기 오염물 (POP)",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-iii",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - Persistent organic pollutants (POP)",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0181",
+    "index": 181,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "휘발성 유기 화합물 (VOC)",
+    "description": "대기 강화학 반응 작용을 일으키는 모든 탄소 화합물(일산화탄소 이산화탄소 탄산가스 금속성 탄화물 또는 탄산염 탄산암모늄 제외) (U.S. 40 CFR Part 51.100(s))",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-iv",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - Volatile organic compounds (VOC)",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0182",
+    "index": 182,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "유해 대기 오염물 (HAP)",
+    "description": "암이나 기타 심각한 질병을 유발하는 것으로 알려지거나 의심되는 오염물질 ('The Clean Air Act Amendments of 1990 List of Hazardous Air Pollutants' EPA)",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-v",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - Hazardous air pollutants (HAP)",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0183",
+    "index": 183,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 발생량 집약도",
+    "item": "대기오염물질 발생량 집약도",
+    "description": "",
+    "unit": "톤/백만 원",
+    "standards": {
+      "GRI": "305-7-a-v",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - Hazardous air pollutants (HAP)",
+      "SASB": "EM-CM-120a.1",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0184",
+    "index": 184,
+    "domain": "환경",
+    "category": "대기오염물질",
+    "subcategory": "대기오염물질 배출량",
+    "item": "입자성 물질 (PM) 배출량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "305-7-a-vi",
+      "GRI_description": "Nitrogen oxides (NOx) sulfur oxides (SOx) and other significant air emissions - Significant air emissions in kilograms or multiples for each of the following - - Particulate matter (PM)",
+      "SASB": "",
+      "KBIZ": "KBZ-EN25",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0185",
+    "index": 185,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "수질오염물질 배출량",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0186",
+    "index": 186,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "COD (화학적산소요구량)",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0187",
+    "index": 187,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "BOD (생화학적산소요구량)",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0188",
+    "index": 188,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "SS (부유물질)",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-3"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0189",
+    "index": 189,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "TOC (유기탄소량)",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0190",
+    "index": 190,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "T-N",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0191",
+    "index": 191,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "수질오염물질 배출량",
+    "item": "T-P",
+    "description": "",
+    "unit": "톤",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0192",
+    "index": 192,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 취수량",
+    "item": "용수 취수량",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "303-3-a",
+      "GRI_description": "Water withdrawal - Total water withdrawal from all areas in megaliters and a breakdown of this total by the following sources if applicable",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0193",
+    "index": 193,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 취수량",
+    "item": "상수도",
+    "description": "상수도 1 M3 = 0.001 ML",
+    "unit": "M3",
+    "standards": {
+      "GRI": "303-3-a-v",
+      "GRI_description": "Water withdrawal - Total water withdrawal from all areas in megaliters and a breakdown of this total by the following sources if applicable - - Third-party water",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0194",
+    "index": 194,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 취수량",
+    "item": "지하수",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "303-3-a-ii",
+      "GRI_description": "Water withdrawal - Total water withdrawal from all areas in megaliters and a breakdown of this total by the following sources if applicable - - Groundwater",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0195",
+    "index": 195,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 취수량",
+    "item": "공업용수 취수량",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "303-3-a-v",
+      "GRI_description": "Water withdrawal - Total water withdrawal from all areas in megaliters and a breakdown of this total by the following sources if applicable - - Third-party water",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0196",
+    "index": 196,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 사용량",
+    "item": "용수 사용량",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "303-5-a",
+      "GRI_description": "Water consumption - Total water consumption from all areas in megaliters",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0197",
+    "index": 197,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 사용량",
+    "item": "용수 재사용량",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0198",
+    "index": 198,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 사용량",
+    "item": "용수 재사용 비율",
+    "description": "용수 재사용량 ÷ 용수 사용량 *100",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0199",
+    "index": 199,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "용수 사용량",
+    "item": "용수 사용량 집약도",
+    "description": "용수 사용량 ÷ 매출액",
+    "unit": "M3/백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": "E-6-2"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0200",
+    "index": 200,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "폐수 배출량",
+    "item": "폐수 배출량",
+    "description": "",
+    "unit": "M3",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0201",
+    "index": 201,
+    "domain": "환경",
+    "category": "수자원",
+    "subcategory": "폐수 배출량",
+    "item": "폐수 배출량 집약도",
+    "description": "폐수 배출량 ÷ 매출액",
+    "unit": "M3/백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-EN24",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0202",
+    "index": 202,
+    "domain": "환경",
+    "category": "생물다양성 영향 관리",
+    "subcategory": "생물다양성에 가장 중대한 영향 미치는 사업장에 대한 설명",
+    "item": "복원 및 재건 진행 중인 면적",
+    "description": "",
+    "unit": "ha",
+    "standards": {
+      "GRI": "101-2-b",
+      "GRI_description": "Management of biodiversity impacts - with reference to 101-2-a-iii report for each site with the most significant impacts on biodiversity:  - - transformative actions taken and additional conservation actions taken;",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0203",
+    "index": 203,
+    "domain": "환경",
+    "category": "생물다양성 영향 관리",
+    "subcategory": "생물다양성에 가장 중대한 영향 미치는 사업장에 대한 설명",
+    "item": "복원 및 재건 완료된 면적",
+    "description": "",
+    "unit": "ha",
+    "standards": {
+      "GRI": "101-2-b-i",
+      "GRI_description": "Management of biodiversity impacts - with reference to 101-2-a-iii report for each site with the most significant impacts on biodiversity:  - - the size in hectares of the area under restoration or rehabilitation;",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0204",
+    "index": 204,
+    "domain": "거버넌스",
+    "category": "사업장 소재 지역의 최저 임금 대비 초임 임금의 비율",
+    "subcategory": "성별",
+    "item": "남성",
+    "description": "근로자의 상당수가 최저임금법에 따라 급여를 받는 경우",
+    "unit": "%",
+    "standards": {
+      "GRI": "202-1-a",
+      "GRI_description": "Ratios of standard entry level wage by gender compared to local minimum wage - When a significant proportion of employees are compensated based on wages subject to minimum wage rules report the relevant ratio of the entry level wage by gender at significant locations of operation to the minimum wage",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0205",
+    "index": 205,
+    "domain": "거버넌스",
+    "category": "사업장 소재 지역의 최저 임금 대비 초임 임금의 비율",
+    "subcategory": "성별",
+    "item": "여성",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "202-1-a",
+      "GRI_description": "Ratios of standard entry level wage by gender compared to local minimum wage - When a significant proportion of employees are compensated based on wages subject to minimum wage rules report the relevant ratio of the entry level wage by gender at significant locations of operation to the minimum wage",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0206",
+    "index": 206,
+    "domain": "거버넌스",
+    "category": "사업장 소재 지역의 최저 임금 대비 초임 임금의 비율",
+    "subcategory": "적용한 최저임금 기준",
+    "item": "적용한 최저임금 기준",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "202-1-c",
+      "GRI_description": "Ratios of standard entry level wage by gender compared to local minimum wage - Whether a local minimum wage is absent or variable at significant locations of operation by gender. In circumstances in which different minimums can be used as a reference report which minimum wage is being used",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0207",
+    "index": 207,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 창출",
+    "item": "매출액",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-i",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Direct economic value generated: revenues",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0208",
+    "index": 208,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "유형자산 취득",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0209",
+    "index": 209,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "이자비용",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0210",
+    "index": 210,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "급여+복리후생비+퇴직급여",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0211",
+    "index": 211,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "구매비용+외주용역비",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0212",
+    "index": 212,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "기부금 지역사회 투자비",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0213",
+    "index": 213,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "경제적 가치 배분",
+    "item": "세금 및 공과 + 법인세",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-ii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value distributed: operating costs employee wages and benefits payments to providers of capital payments to government by country and community investments",
+      "SASB": "",
+      "KBIZ": "KBZ-SR23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0214",
+    "index": 214,
+    "domain": "거버넌스",
+    "category": "경제적 가치 창출 및 분배",
+    "subcategory": "유보된 경제가치",
+    "item": "유보된 경제가치",
+    "description": "경제작 가치 창출 - 경제적 가치 배분의 합",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "201-1-a-iii",
+      "GRI_description": "Direct economic value generated and distributed - Direct economic value generated and distributed (EVG&D) on an accruals basis including the basic components for the organization’s global operations as listed below. If data are presented on a cash basis report the justification for this decision in addition to reporting the following basic components - - Economic value retained: ‘direct economic value generated’ less ‘economic value distributed’",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0215",
+    "index": 215,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 준수 모니터링 & 윤리 리스크 평가",
+    "item": "평가 사업장 수",
+    "description": "반부패 프로그램(부패방지 영향 평가)",
+    "unit": "개",
+    "standards": {
+      "GRI": "205-1-a",
+      "GRI_description": "Operations assessed for risks related to corruption - Total number and percentage of operations assessed for risks related to corruption",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0216",
+    "index": 216,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 준수 모니터링 & 윤리 리스크 평가",
+    "item": "평가 사업장 비율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "205-1-a",
+      "GRI_description": "Operations assessed for risks related to corruption - Total number and percentage of operations assessed for risks related to corruption",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0217",
+    "index": 217,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 준수 모니터링 & 윤리 리스크 평가",
+    "item": "윤리 리스크 평가 실시 횟수",
+    "description": "",
+    "unit": "회",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0218",
+    "index": 218,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 준수 모니터링 & 윤리 리스크 평가",
+    "item": "윤리 리스크가 발견된 사업장 또는 영역 수",
+    "description": "",
+    "unit": "개",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0219",
+    "index": 219,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 제보 건수",
+    "item": "윤리 위반 제보 건수",
+    "description": "윤리규범 위반: 이해관계 상충 금품 및 향응 수수 직무권한 및 지위 남용 공정거래 미준수 부정경쟁 행위 자금세탁방지 위반 중요정보 관리 위반 내부정보 무단 활용 품질기준 저해 괴롭힘 및 차별 기타 반환경적·반사회적 행위",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-a",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number and nature of confirmed incidents of corruption",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": "G-1-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0220",
+    "index": 220,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 처리 건수",
+    "item": "윤리 위반 처리 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": "G-1-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0221",
+    "index": 221,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 처리 건수",
+    "item": "직원 해고 또는 징계 해당 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-b",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number of confirmed incidents in which employees were dismissed or disciplined for corruption",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": "G-1-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0222",
+    "index": 222,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 처리 건수",
+    "item": "부패로 인한 협력 관계 종료 건수",
+    "description": "계약 종료 또는 계약 갱신 취소",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-c",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number of confirmed incidents when contracts with business partners were terminated or not renewed due to violations related to corruption",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0223",
+    "index": 223,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 처리 건수",
+    "item": "처리율",
+    "description": "",
+    "unit": "%",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0224",
+    "index": 224,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 유형별 건수",
+    "item": "반부패/뇌물",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0225",
+    "index": 225,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 유형별 건수",
+    "item": "성희롱 직장 내 괴롬힘",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0226",
+    "index": 226,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 유형별 건수",
+    "item": "자금세탁 내부자 거래",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0227",
+    "index": 227,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 유형별 건수",
+    "item": "이해관계 충돌",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0228",
+    "index": 228,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "윤리 위반 유형별 건수",
+    "item": "기타",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0229",
+    "index": 229,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "구성원 윤리교육",
+    "item": "윤리교육 이수 인원",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "205-2-b",
+      "GRI_description": "Communication and training about anti-corruption policies and procedures - Total number and percentage of employees that the organization’s anti-corruption policies and procedures have been communicated to broken down by employee category and region",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0230",
+    "index": 230,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "구성원 윤리교육",
+    "item": "윤리교육 대상자",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0231",
+    "index": 231,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "구성원 윤리교육",
+    "item": "윤리교육 이수율",
+    "description": "윤리교육 이수 인원 / 총 임직원 수 * 100",
+    "unit": "%",
+    "standards": {
+      "GRI": "205-2-b",
+      "GRI_description": "Communication and training about anti-corruption policies and procedures - Total number and percentage of employees that the organization’s anti-corruption policies and procedures have been communicated to broken down by employee category and region",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0232",
+    "index": 232,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "구성원 윤리교육",
+    "item": "윤리교육 1인당 교육 시간",
+    "description": "",
+    "unit": "시간",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0233",
+    "index": 233,
+    "domain": "거버넌스",
+    "category": "윤리 모니터링",
+    "subcategory": "구성원 윤리교육",
+    "item": "윤리경영 정책에 대한 공지를 받은 임직원 수",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV22",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0234",
+    "index": 234,
+    "domain": "거버넌스",
+    "category": "확인된 부패 사례 및 조치",
+    "subcategory": "총 사건 수",
+    "item": "총 사건 수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-a",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number and nature of confirmed incidents of corruption",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": "G-1-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0235",
+    "index": 235,
+    "domain": "거버넌스",
+    "category": "확인된 부패 사례 및 조치",
+    "subcategory": "총 사건 수",
+    "item": "직원 해고 또는 징계 해당건",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-b",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number of confirmed incidents in which employees were dismissed or disciplined for corruption",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0236",
+    "index": 236,
+    "domain": "거버넌스",
+    "category": "확인된 부패 사례 및 조치",
+    "subcategory": "총 사건 수",
+    "item": "부패로 인한 협력 관계 종료건",
+    "description": "계약 종료 또는 계약 갱신 취소",
+    "unit": "건",
+    "standards": {
+      "GRI": "205-3-c",
+      "GRI_description": "Confirmed incidents of corruption and actions taken - Total number of confirmed incidents when contracts with business partners were terminated or not renewed due to violations related to corruption",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0237",
+    "index": 237,
+    "domain": "거버넌스",
+    "category": "공정거래 법령 위반 행위",
+    "subcategory": "공정거래 관련 계류 중 또는 완료된 소송 건수",
+    "item": "공정거래 관련 계류 중 또는 완료된 소송 건수",
+    "description": "하도급법 경쟁저해행위 독과점 등",
+    "unit": "건",
+    "standards": {
+      "GRI": "206-1-a",
+      "GRI_description": "Legal actions for anti-competitive behavior anti-trust and monopoly practices - Number of legal actions pending or completed during the reporting period regarding anti-competitive behavior and violations of anti-trust and monopoly legislation in which the organization has been identified as a participant",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0238",
+    "index": 238,
+    "domain": "거버넌스",
+    "category": "공정거래 법령 위반 행위",
+    "subcategory": "공정거래 관련 규정 및 자발적 규범 위반 총 건수",
+    "item": "공정거래 관련 규정 및 자발적 규범 위반 총 건수",
+    "description": "불공정하도급거래행위 부정당업자 제재 등",
+    "unit": "건",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0239",
+    "index": 239,
+    "domain": "거버넌스",
+    "category": "지배구조 및 구성",
+    "subcategory": "사내이사",
+    "item": "사내이사",
+    "description": "",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-9-c-i",
+      "GRI_description": "Governance structure and composition - describe the composition of the highest governance body and its committees by - - executive and non-executive members",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0240",
+    "index": 240,
+    "domain": "거버넌스",
+    "category": "지배구조 및 구성",
+    "subcategory": "사외이사",
+    "item": "사외이사",
+    "description": "자산총액 2 조원 이상의 상장사는 3명 이상 및 이사 총수의 과반수 일반 상장법인은 1/4 이상 (상법 제542조의8 제1항 및 동법 시행 령 제13조 제2항)",
+    "unit": "명",
+    "standards": {
+      "GRI": "2-9-c-i",
+      "GRI_description": "Governance structure and composition - describe the composition of the highest governance body and its committees by - - executive and non-executive members",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0241",
+    "index": 241,
+    "domain": "거버넌스",
+    "category": "이사회 성과 평가 및 보상",
+    "subcategory": "최고 급여자 및 구성원 간 급여 비율",
+    "item": "최고 급여자 급여",
+    "description": "",
+    "unit": "백만 원",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0242",
+    "index": 242,
+    "domain": "거버넌스",
+    "category": "이사회 성과 평가 및 보상",
+    "subcategory": "최고 급여자 및 구성원 간 급여 비율",
+    "item": "구성원 급여 평균값 대비 최고 급여자 급여 비율",
+    "description": "",
+    "unit": "배",
+    "standards": {
+      "GRI": "2-21-a",
+      "GRI_description": "Annual total compensation ratio - report the ratio of the annual total compensation for the organization’s highest-paid individual to the median annual total compensation for all employees(excluding the highest-paid individual)",
+      "SASB": "",
+      "KBIZ": "KBZ-GV13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0243",
+    "index": 243,
+    "domain": "거버넌스",
+    "category": "이사회 성과 평가 및 보상",
+    "subcategory": "최고 급여자 및 구성원 간 급여 비율",
+    "item": "구성원 연간 급여 중앙값 대비 최고 급여자 급여 비율",
+    "description": "",
+    "unit": "배",
+    "standards": {
+      "GRI": "",
+      "GRI_description": "",
+      "SASB": "",
+      "KBIZ": "KBZ-GV13",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0244",
+    "index": 244,
+    "domain": "거버넌스",
+    "category": "단체교섭",
+    "subcategory": "단체교섭이 적용되는 직원 비율",
+    "item": "단체교섭이 적용되는 직원 비율",
+    "description": "노동조합 가입 인원 수 / 노동조합 가입 적용 대상 인원 수",
+    "unit": "%",
+    "standards": {
+      "GRI": "2-30-a",
+      "GRI_description": "Collective bargaining agreements - report the percentage of total employees covered by collective bargaining agreements",
+      "SASB": "",
+      "KBIZ": "",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0245",
+    "index": 245,
+    "domain": "거버넌스",
+    "category": "윤리 컴플라이언스",
+    "subcategory": "윤리 및 컴플라이언스 위반 건수",
+    "item": "윤리 및 컴플라이언스 위반 건수",
+    "description": "임금체불 최저임금법 위반 재취업제한대상자 고용 등",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which fines were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV23",
+      "K-ESG": "G-1-6"
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0246",
+    "index": 246,
+    "domain": "거버넌스",
+    "category": "윤리 컴플라이언스",
+    "subcategory": "금전적 제재 총 건수",
+    "item": "금전적 제재 총 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a-i",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which fines were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0247",
+    "index": 247,
+    "domain": "거버넌스",
+    "category": "윤리 컴플라이언스",
+    "subcategory": "비금전적 제재 총 건수",
+    "item": "비금전적 제재 총 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a-ii",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which non-monetary sanctions were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0248",
+    "index": 248,
+    "domain": "거버넌스",
+    "category": "윤리 컴플라이언스",
+    "subcategory": "금전적 손실 총액",
+    "item": "금전적 손실 총액",
+    "description": "",
+    "unit": "원",
+    "standards": {
+      "GRI": "2-27-b-i 2-27-b-ii",
+      "GRI_description": "Compliance with laws and regulations - report the total number and the monetary value of fines for instances of noncompliance with laws and regulations that were paid during the reporting period and a breakdown of this total by - - fines for instances of non-compliance with laws and regulations that occurred in the current reporting period - - fines for instances of non-compliance with laws and regulations that occurred in previous reporting periods",
+      "SASB": "",
+      "KBIZ": "KBZ-GV23",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0249",
+    "index": 249,
+    "domain": "거버넌스",
+    "category": "지배구조 컴플라이언스",
+    "subcategory": "지배구조 컴플라이언스 위반 사례 건수",
+    "item": "지배구조 컴플라이언스 위반 사례 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which fines were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV14",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0250",
+    "index": 250,
+    "domain": "거버넌스",
+    "category": "지배구조 컴플라이언스",
+    "subcategory": "관련 법규 위반으로 인한 처벌 또는 과태료 건수",
+    "item": "관련 법규 위반으로 인한 처벌 또는 과태료 건수",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a-i",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which fines were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV14",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  },
+  {
+    "metric_id": "QUANT-0251",
+    "index": 251,
+    "domain": "거버넌스",
+    "category": "지배구조 컴플라이언스",
+    "subcategory": "관련 법규 위반으로 인한 금전적 손실",
+    "item": "관련 법규 위반으로 인한 금전적 손실",
+    "description": "",
+    "unit": "건",
+    "standards": {
+      "GRI": "2-27-a-ii",
+      "GRI_description": "Compliance with laws and regulations - report the total number of significant instances of non-compliance with laws and regulations during the reporting period and a breakdown of this total by - - instances for which non-monetary sanctions were incurred",
+      "SASB": "",
+      "KBIZ": "KBZ-GV14",
+      "K-ESG": ""
+    },
+    "metadata": {}
+  }
+]

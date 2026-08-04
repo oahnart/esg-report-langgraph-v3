@@ -1,0 +1,129 @@
+name: esg-report-langgraph
+
+x-esg-app: &esg-app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  environment:
+    PYTHONUNBUFFERED: "1"
+    TEMPORAL_ADDRESS: temporal:7233
+    TEMPORAL_NAMESPACE: default
+    TEMPORAL_TASK_QUEUE: esg-report
+    TEMPORAL_TLS: "false"
+    ESG_TEMPLATE_DIR: /app/template_v1
+    ESG_SKILL_DIR: /app/skills
+    ESG_OUTPUT_DIR: /app/data/outputs
+    ESG_CACHE_DIR: /app/data/cache
+    ESG_QUANTITATIVE_INPUT_DIR: /app/data/inputs
+    ESG_PROVENANCE_MODE: strict
+    ESG_PROVENANCE_SOURCE_ROOT: /workspace-source
+    ESG_PROVENANCE_BUILD_FILE: /app/build_provenance.json
+  volumes:
+    - ./data:/app/data
+    - ./esgagents:/workspace-source/esgagents:ro
+    - ./skills:/workspace-source/skills:ro
+    - ./template_v1:/workspace-source/template_v1:ro
+    - ./pyproject.toml:/workspace-source/pyproject.toml:ro
+  depends_on:
+    temporal:
+      condition: service_healthy
+  networks:
+    - esg-network
+  restart: unless-stopped
+
+services:
+  temporal-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      - esg-network
+    restart: unless-stopped
+
+  temporal:
+    image: temporalio/auto-setup:1.29.7
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+      DEFAULT_NAMESPACE: default
+      BIND_ON_IP: 0.0.0.0
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "7233"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+    networks:
+      - esg-network
+    restart: unless-stopped
+
+  temporal-ui:
+    image: temporalio/ui:2.49.1
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8233
+    depends_on:
+      temporal:
+        condition: service_healthy
+    ports:
+      - "8233:8080"
+    networks:
+      - esg-network
+    restart: unless-stopped
+
+  api:
+    <<: *esg-app
+    command:
+      - python
+      - -m
+      - uvicorn
+      - esgagents.api.app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://localhost:8000/health', timeout=2)
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  worker:
+    <<: *esg-app
+    command: ["python", "-m", "esgagents.temporal.worker"]
+
+volumes:
+  temporal-postgres-data:
+
+networks:
+  esg-network:
+    driver: bridge

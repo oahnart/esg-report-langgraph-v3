@@ -1,0 +1,32 @@
+{
+  "id": "TC",
+  "name_en": "Technology and Communications",
+  "name_ko": "기술 및 통신",
+  "name_vi": "Công nghệ và truyền thông",
+  "material_topics": [
+    "data privacy",
+    "cybersecurity",
+    "digital inclusion",
+    "energy use",
+    "human capital",
+    "responsible AI/technology"
+  ],
+  "priority_categories_ko": [
+    "정보보호",
+    "인적 자본",
+    "기후행동",
+    "윤리경영",
+    "제품 책임",
+    "다양성 및 포용성"
+  ],
+  "metric_focus": [
+    "security incidents",
+    "privacy complaints",
+    "data-center energy",
+    "renewable electricity",
+    "employee training",
+    "service reliability"
+  ],
+  "risk_lens": "Focus on information security, privacy, platform/service reliability, technology ethics, talent, and energy demand.",
+  "answer_guidance": "Give extra weight to data governance, cybersecurity controls, service reliability, responsible technology, and digital access."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "sme",
+  "name_en": "Small and Medium Enterprise",
+  "name_ko": "중소기업",
+  "name_vi": "Doanh nghiệp vừa và nhỏ",
+  "company_profile": {
+    "typical_scope": "Smaller company with limited ESG reporting resources and operationally focused management systems.",
+    "disclosure_maturity": "basic",
+    "expected_evidence_depth": "basic policy/practice, responsible person or team, key activity, and simple indicator if available"
+  },
+  "answer_guidance": {
+    "detail_level": "medium",
+    "writing_style": "Plain, concrete, implementation-focused language.",
+    "metrics_policy": "Use simple operational indicators; avoid demanding complex targets if the source does not support them.",
+    "governance_expectation": "Identify management-level responsibility rather than assuming formal ESG committees.",
+    "risk_management_expectation": "Describe practical risk checks, compliance controls, and corrective actions.",
+    "supply_chain_expectation": "Focus on essential supplier requirements, legal compliance, and direct supplier communication.",
+    "assurance_expectation": "Do not imply external assurance; internal recordkeeping or basic certification is sufficient if evidenced.",
+    "fallback_when_evidence_missing": "Keep the answer short, state the data gap, and avoid generic large-company language."
+  },
+  "question_adaptation_rules": [
+    "Make answers shorter and more action-oriented than large-enterprise templates.",
+    "For Metrics questions, simple counts, status, or activity records are acceptable when trend data is unavailable.",
+    "For Governance questions, map responsibility to management roles or departments."
+  ]
+}

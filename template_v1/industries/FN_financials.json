@@ -1,0 +1,31 @@
+{
+  "id": "FN",
+  "name_en": "Financials",
+  "name_ko": "금융",
+  "name_vi": "Tài chính",
+  "material_topics": [
+    "responsible investment",
+    "climate risk",
+    "data protection",
+    "business ethics",
+    "financial inclusion",
+    "governance"
+  ],
+  "priority_categories_ko": [
+    "ESG 경영",
+    "기후행동",
+    "정보보호",
+    "윤리경영",
+    "컴플라이언스",
+    "이사회 구성"
+  ],
+  "metric_focus": [
+    "ESG finance exposure",
+    "financed emissions",
+    "privacy incidents",
+    "compliance breaches",
+    "customer protection indicators"
+  ],
+  "risk_lens": "Focus on financed and portfolio risks, conduct risk, cybersecurity, customer protection, and regulatory compliance.",
+  "answer_guidance": "Treat ESG as part of credit, investment, underwriting, stewardship, and risk governance rather than only internal operations."
+}

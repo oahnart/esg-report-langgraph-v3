@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESG Report LangGraph - Architecture, Process, Performance</title>
+  <style>
+    :root {
+      --ink: #16212a;
+      --muted: #5b6875;
+      --line: #d8e0e6;
+      --bg: #f5f7f8;
+      --panel: #ffffff;
+      --nav: #143d48;
+      --accent: #2f7d70;
+      --accent-2: #b76e3f;
+      --soft: #e9f3f0;
+      --warn: #fff5e6;
+      --bad: #fbeaea;
+      --good: #e8f6ee;
+      --shadow: 0 12px 28px rgba(18, 31, 42, 0.09);
+      font-family: Inter, "Segoe UI", Arial, "Noto Sans", "Noto Sans KR", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.58;
+    }
+
+    header {
+      background: #153c47;
+      color: #fff;
+      padding: 28px 32px 22px;
+      border-bottom: 5px solid var(--accent);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: start;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      color: #d9e8ea;
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      padding: 4px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      gap: 4px;
+    }
+
+    .lang-switch button, .tabs button {
+      font: inherit;
+      cursor: pointer;
+      border: 0;
+      border-radius: 6px;
+      transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    .lang-switch button {
+      color: #e8f1f2;
+      background: transparent;
+      padding: 8px 12px;
+      min-width: 44px;
+    }
+
+    .lang-switch button.active {
+      color: #12323a;
+      background: #fff;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 32px 40px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0 0 18px;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      min-height: 118px;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 760;
+      color: var(--nav);
+      margin-bottom: 8px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(245,247,248,0.94);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      overflow-x: auto;
+      margin: 18px 0;
+    }
+
+    .tabs button {
+      white-space: nowrap;
+      padding: 10px 14px;
+      color: var(--nav);
+      background: #fff;
+      border: 1px solid var(--line);
+      min-height: 42px;
+    }
+
+    .tabs button.active {
+      color: #fff;
+      background: var(--nav);
+      border-color: var(--nav);
+    }
+
+    section.tab-panel {
+      display: none;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 26px;
+      margin-bottom: 28px;
+    }
+
+    section.tab-panel.active { display: block; }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      line-height: 1.18;
+      letter-spacing: 0;
+      color: var(--nav);
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      color: #274653;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+    ul, ol { margin: 8px 0 18px 20px; padding: 0; }
+    li { margin: 7px 0; }
+    code {
+      background: #eef2f4;
+      border: 1px solid #d9e1e5;
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--soft);
+      padding: 14px 16px;
+      border-radius: 6px;
+      margin: 14px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--accent-2);
+      background: var(--warn);
+    }
+
+    .flow {
+      display: grid;
+      gap: 9px;
+      margin: 14px 0 20px;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .badge {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--nav);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 11px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #eef4f5;
+      color: #163c45;
+      font-weight: 700;
+    }
+
+    .status-good { background: var(--good); }
+    .status-warn { background: var(--warn); }
+    .status-bad { background: var(--bad); }
+    .small { font-size: 13px; color: var(--muted); }
+    .mono-block {
+      white-space: pre-wrap;
+      background: #0f2530;
+      color: #eaf4f4;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 13px;
+    }
+
+    [data-lang="ko"] { display: none; }
+    body.lang-ko [data-lang="vi"] { display: none; }
+    body.lang-ko [data-lang="ko"] { display: revert; }
+    body.lang-ko tr[data-lang="ko"] { display: table-row; }
+
+    @media (max-width: 880px) {
+      header { padding: 24px 18px 18px; }
+      main { padding: 18px; }
+      .header-inner, .summary-grid, .two-col { grid-template-columns: 1fr; }
+      .lang-switch { justify-self: start; }
+      section.tab-panel { padding: 18px; }
+      .metric { min-height: auto; }
+    }
+  </style>
+</head>
+<body class="lang-vi">
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1 data-lang="vi">Báo Cáo Kiến Trúc, Quy Trình Và Hiệu Suất Hiện Tại</h1>
+        <h1 data-lang="ko">현재 아키텍처, 프로세스 및 성능 보고서</h1>
+        <p class="subtitle" data-lang="vi">Dự án <strong>ESG Report LangGraph</strong> tạo báo cáo ESG định tính và định lượng bằng LangGraph, Team RAG, FastAPI, Temporal và các lớp kiểm soát evidence.</p>
+        <p class="subtitle" data-lang="ko"><strong>ESG Report LangGraph</strong> 프로젝트는 LangGraph, Team RAG, FastAPI, Temporal 및 evidence 통제 계층을 기반으로 정성/정량 ESG 보고서를 생성합니다.</p>
+      </div>
+      <div class="lang-switch" aria-label="Language switch">
+        <button class="active" type="button" data-set-lang="vi">VI</button>
+        <button type="button" data-set-lang="ko">KO</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="summary-grid">
+      <article class="metric">
+        <span class="value">15</span>
+        <span class="label" data-lang="vi">node LangGraph trong pipeline chính</span>
+        <span class="label" data-lang="ko">메인 LangGraph 파이프라인 노드</span>
+      </article>
+      <article class="metric">
+        <span class="value">95</span>
+        <span class="label" data-lang="vi">câu hỏi ESG định tính trong template</span>
+        <span class="label" data-lang="ko">정성 ESG 템플릿 질문 수</span>
+      </article>
+      <article class="metric">
+        <span class="value">251</span>
+        <span class="label" data-lang="vi">metric định lượng được map deterministic</span>
+        <span class="label" data-lang="ko">결정론적으로 매핑되는 정량 지표 수</span>
+      </article>
+      <article class="metric">
+        <span class="value">177/177</span>
+        <span class="label" data-lang="vi">test pass khi dùng thư mục tạm trong workspace</span>
+        <span class="label" data-lang="ko">workspace 임시 폴더 사용 시 테스트 통과</span>
+      </article>
+    </div>
+
+    <nav class="tabs" aria-label="Report sections">
+      <button class="active" type="button" data-tab="overview" data-lang="vi">Tổng Quan</button>
+      <button type="button" data-tab="overview" data-lang="ko">개요</button>
+      <button type="button" data-tab="architecture" data-lang="vi">Kiến Trúc</button>
+      <button type="button" data-tab="architecture" data-lang="ko">아키텍처</button>
+      <button type="button" data-tab="workflow" data-lang="vi">Quy Trình</button>
+      <button type="button" data-tab="workflow" data-lang="ko">프로세스</button>
+      <button type="button" data-tab="performance" data-lang="vi">Hiệu Suất</button>
+      <button type="button" data-tab="performance" data-lang="ko">성능</button>
+      <button type="button" data-tab="operations" data-lang="vi">Vận Hành</button>
+      <button type="button" data-tab="operations" data-lang="ko">운영</button>
+      <button type="button" data-tab="risks" data-lang="vi">Rủi Ro</button>
+      <button type="button" data-tab="risks" data-lang="ko">리스크</button>
+    </nav>
+
+    <section id="overview" class="tab-panel active">
+      <div data-lang="vi">
+        <h2>Tổng Quan Dự Án</h2>
+        <p>Dự án là một hệ thống agent tạo báo cáo ESG, tập trung vào tính kiểm toán được: mọi câu trả lời định tính phải dựa trên evidence, còn dữ liệu định lượng được xử lý bằng mapping deterministic thay vì dùng LLM.</p>
+        <div class="two-col">
+          <div>
+            <h3>Phạm vi chức năng</h3>
+            <ul>
+              <li>Tạo câu trả lời cho 95 câu hỏi ESG định tính từ <code>template_v1/question/questions.json</code>.</li>
+              <li>Áp dụng guideline theo 4 quy mô công ty và 11 nhóm ngành.</li>
+              <li>Gọi Team RAG endpoint mặc định <code>/qualitative/evidence/v3</code> để lấy evidence.</li>
+              <li>Map 251 metric định lượng <code>QUANT-0001..QUANT-0251</code>.</li>
+              <li>Xuất JSON audit, coverage summary và Excel workbook.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Trạng thái hiện tại</h3>
+            <ul>
+              <li>API async qua Temporal là hướng vận hành chính; endpoint generate đồng bộ vẫn tồn tại nhưng đã đánh dấu deprecated.</li>
+              <li>Pipeline có cơ chế evidence gate, source normalization, policy critic, semantic critic, revision và output hygiene.</li>
+              <li>Hệ thống có fallback offline khi <code>ESG_AGENT_MODE=auto</code> mà thiếu API key LLM.</li>
+              <li>Kiểm thử hiện tại bao phủ CLI/API, RAG contract, graph offline, output writer, provenance, quantitative, Temporal và semantic/source hygiene.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="small">Ngày lập báo cáo: 2026-08-04. Nguồn đọc: README, package metadata, graph setup, API, config, RAG client, quantitative agent, output writer, Temporal workflow/activity và test suite trong workspace.</p>
+      </div>
+
+      <div data-lang="ko">
+        <h2>프로젝트 개요</h2>
+        <p>이 프로젝트는 감사 가능성을 중심에 둔 ESG 보고서 생성 agent 시스템입니다. 정성 답변은 evidence 기반이어야 하며, 정량 데이터는 LLM이 아닌 deterministic mapping으로 처리됩니다.</p>
+        <div class="two-col">
+          <div>
+            <h3>기능 범위</h3>
+            <ul>
+              <li><code>template_v1/question/questions.json</code>의 95개 정성 ESG 질문 답변 생성.</li>
+              <li>4개 회사 규모와 11개 산업군 guideline 적용.</li>
+              <li>기본 Team RAG endpoint <code>/qualitative/evidence/v3</code> 호출.</li>
+              <li>251개 정량 지표 <code>QUANT-0001..QUANT-0251</code> 매핑.</li>
+              <li>JSON audit, coverage summary, Excel workbook 출력.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>현재 상태</h3>
+            <ul>
+              <li>Temporal 기반 비동기 API가 권장 운영 경로이며, 동기 generate endpoint는 deprecated 상태입니다.</li>
+              <li>pipeline은 evidence gate, source normalization, policy critic, semantic critic, revision, output hygiene를 포함합니다.</li>
+              <li><code>ESG_AGENT_MODE=auto</code>에서 LLM API key가 없으면 offline fallback을 사용할 수 있습니다.</li>
+              <li>현재 테스트는 CLI/API, RAG contract, offline graph, output writer, provenance, quantitative, Temporal, semantic/source hygiene를 포괄합니다.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="small">보고서 작성일: 2026-08-04. 참고 소스: workspace 내 README, package metadata, graph setup, API, config, RAG client, quantitative agent, output writer, Temporal workflow/activity, test suite.</p>
+      </div>
+    </section>
+
+    <section id="architecture" class="tab-panel">
+      <div data-lang="vi">
+        <h2>Kiến Trúc Hiện Tại</h2>
+        <p>Kiến trúc được tổ chức theo package Python <code>esgagents</code>, trong đó LangGraph điều phối các agent chuyên trách. FastAPI cung cấp giao diện HTTP, Temporal quản lý job dài hạn, còn output writer chịu trách nhiệm ghi artifact audit.</p>
+        <table>
+          <thead><tr><th>Lớp</th><th>Thành phần</th><th>Vai trò</th></tr></thead>
+          <tbody>
+            <tr><td>Interface</td><td><code>esgagents/api/app.py</code>, <code>esgagents/cli.py</code></td><td>Nhận input công ty, expose health, submit/status/result/cancel job và CLI generate.</td></tr>
+            <tr><td>Orchestration</td><td><code>esgagents/graph/*</code>, <code>esgagents/agents/orchestrator.py</code></td><td>Định nghĩa state graph, node, cạnh điều kiện và facade gom các agent.</td></tr>
+            <tr><td>Retrieval</td><td><code>esgagents/rag_client.py</code>, <code>agents/retrieval/rag_batch.py</code></td><td>Gọi Team RAG theo batch, validate contract v3, retry HTTP 429/500/503/504 và lưu request traces.</td></tr>
+            <tr><td>Evidence control</td><td><code>agents/evidence/*</code>, <code>agents/answering/*</code></td><td>Gate evidence yếu, deduplicate/rank source, review grounding, semantic completeness và revision.</td></tr>
+            <tr><td>Specialists</td><td><code>skills/*.md</code>, <code>skills/agents/*</code></td><td>Router chọn skill carbon, materiality, commitment hoặc general section; writer dùng LLM hoặc fallback.</td></tr>
+            <tr><td>Quantitative</td><td><code>esgagents/quantitative.py</code>, <code>template_v1/quantitative</code></td><td>Load input file/API, normalize alias, map metric, bridge metric vào qualitative QID dạng Metrics.</td></tr>
+            <tr><td>Output</td><td><code>esgagents/output_writer.py</code></td><td>Ghi JSON, coverage summary, audit Excel và combined workbook bằng thao tác file atomic.</td></tr>
+            <tr><td>Runtime</td><td><code>compose.yaml</code>, <code>esgagents/temporal/*</code></td><td>Docker Compose chạy PostgreSQL, Temporal, Temporal UI, FastAPI và worker.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">Điểm mạnh kiến trúc: tách biệt rõ giữa retrieval, kiểm soát evidence, drafting, semantic QA và output. Thiết kế này giúp audit từng quyết định vì mỗi record giữ RAG metadata, source, QA notes, quality flags và revision count.</div>
+      </div>
+
+      <div data-lang="ko">
+        <h2>현재 아키텍처</h2>
+        <p>아키텍처는 Python package <code>esgagents</code> 중심으로 구성되며, LangGraph가 전문 agent들을 orchestration합니다. FastAPI는 HTTP interface를 제공하고, Temporal은 장기 job을 관리하며, output writer는 audit artifact 생성을 담당합니다.</p>
+        <table>
+          <thead><tr><th>계층</th><th>구성 요소</th><th>역할</th></tr></thead>
+          <tbody>
+            <tr><td>Interface</td><td><code>esgagents/api/app.py</code>, <code>esgagents/cli.py</code></td><td>회사 input 수신, health, job submit/status/result/cancel, CLI generate 제공.</td></tr>
+            <tr><td>Orchestration</td><td><code>esgagents/graph/*</code>, <code>esgagents/agents/orchestrator.py</code></td><td>state graph, node, conditional edge, agent facade 정의.</td></tr>
+            <tr><td>Retrieval</td><td><code>esgagents/rag_client.py</code>, <code>agents/retrieval/rag_batch.py</code></td><td>Team RAG batch 호출, v3 contract 검증, HTTP 429/500/503/504 retry, request trace 저장.</td></tr>
+            <tr><td>Evidence control</td><td><code>agents/evidence/*</code>, <code>agents/answering/*</code></td><td>약한 evidence 차단, source deduplicate/ranking, grounding review, semantic completeness, revision 수행.</td></tr>
+            <tr><td>Specialists</td><td><code>skills/*.md</code>, <code>skills/agents/*</code></td><td>carbon, materiality, commitment, general section skill을 routing하고 writer는 LLM 또는 fallback을 사용.</td></tr>
+            <tr><td>Quantitative</td><td><code>esgagents/quantitative.py</code>, <code>template_v1/quantitative</code></td><td>file/API input load, alias normalization, metric mapping, Metrics 유형 qualitative QID로 bridge.</td></tr>
+            <tr><td>Output</td><td><code>esgagents/output_writer.py</code></td><td>JSON, coverage summary, audit Excel, combined workbook을 atomic file operation으로 작성.</td></tr>
+            <tr><td>Runtime</td><td><code>compose.yaml</code>, <code>esgagents/temporal/*</code></td><td>Docker Compose로 PostgreSQL, Temporal, Temporal UI, FastAPI, worker 실행.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">아키텍처의 강점은 retrieval, evidence control, drafting, semantic QA, output이 분리되어 있다는 점입니다. 각 answer record가 RAG metadata, source, QA notes, quality flags, revision count를 보존하므로 결정 추적이 쉽습니다.</div>
+      </div>
+    </section>
+
+    <section id="workflow" class="tab-panel">
+      <div data-lang="vi">
+        <h2>Quy Trình Xử Lý</h2>
+        <p>Pipeline LangGraph hiện có 15 node. Luồng đi tuyến tính tới semantic review, sau đó có vòng lặp revision nếu còn lỗi và chưa vượt giới hạn <code>ESG_MAX_REVISION_ROUNDS</code>.</p>
+        <div class="flow">
+          <div class="flow-step"><span class="badge">1</span><div><strong>Normalize Company Input</strong><br>Validate identifier, năm, scale, industry, top_k, run_id và output language.</div></div>
+          <div class="flow-step"><span class="badge">2</span><div><strong>Select Template + Plan Questions</strong><br>Load template 95 câu hỏi, chọn subset theo <code>item_ids</code>, merge guidance theo quy mô/ngành.</div></div>
+          <div class="flow-step"><span class="badge">3</span><div><strong>Retrieve RAG Evidence</strong><br>Gọi Team RAG theo batch size mặc định 20, concurrency mặc định 4, top_k mặc định 5.</div></div>
+          <div class="flow-step"><span class="badge">4</span><div><strong>Evidence Gate + Normalization</strong><br>Chỉ giữ câu có evidence hợp lệ, semantic label dùng được, source path đầy đủ và contract v3 không vi phạm nghiêm trọng.</div></div>
+          <div class="flow-step"><span class="badge">5</span><div><strong>Quantitative Processing</strong><br>Map 251 metric từ file/API; metric có match được bridge vào câu qualitative dạng Metrics.</div></div>
+          <div class="flow-step"><span class="badge">6</span><div><strong>Skill Selection + Context</strong><br>Router chọn skill chuyên môn, context builder gom question, guideline, evidence, source và quality flags.</div></div>
+          <div class="flow-step"><span class="badge">7</span><div><strong>Draft + QA + Semantic Review</strong><br>Writer tạo draft, policy critic chặn claim không có evidence, semantic critic kiểm tra facet/alignment/source usage.</div></div>
+          <div class="flow-step"><span class="badge">8</span><div><strong>Revision + Hygiene + Assembly</strong><br>Draft fail có evidence được revise tối đa 2 vòng mặc định; output hygiene chuẩn hóa Markdown/PII rồi report manager đóng gói artifact.</div></div>
+        </div>
+        <h3>API job lifecycle</h3>
+        <p>Đường async: <code>POST /reports/esg/qualitative/jobs</code> trả <code>202</code>, người dùng polling <code>GET /jobs/{job_id}</code>, lấy kết quả qua <code>GET /jobs/{job_id}/result</code>, hoặc hủy bằng <code>DELETE /jobs/{job_id}</code>. Temporal activity heartbeat theo từng node để job dài hạn vẫn quan sát được.</p>
+      </div>
+
+      <div data-lang="ko">
+        <h2>처리 프로세스</h2>
+        <p>현재 LangGraph pipeline은 15개 node로 구성됩니다. semantic review까지 선형으로 진행한 뒤, 오류가 있고 <code>ESG_MAX_REVISION_ROUNDS</code> 한도 내이면 revision loop를 수행합니다.</p>
+        <div class="flow">
+          <div class="flow-step"><span class="badge">1</span><div><strong>Normalize Company Input</strong><br>identifier, year, scale, industry, top_k, run_id, output language 검증.</div></div>
+          <div class="flow-step"><span class="badge">2</span><div><strong>Select Template + Plan Questions</strong><br>95개 질문 template load, <code>item_ids</code> subset 선택, 규모/산업 guidance 병합.</div></div>
+          <div class="flow-step"><span class="badge">3</span><div><strong>Retrieve RAG Evidence</strong><br>기본 batch size 20, concurrency 4, top_k 5로 Team RAG 호출.</div></div>
+          <div class="flow-step"><span class="badge">4</span><div><strong>Evidence Gate + Normalization</strong><br>유효 evidence, 허용 semantic label, source path, v3 contract를 기준으로 answer 가능 항목만 통과.</div></div>
+          <div class="flow-step"><span class="badge">5</span><div><strong>Quantitative Processing</strong><br>file/API에서 251개 metric을 매핑하고, match된 metric을 Metrics 유형 qualitative QID에 bridge.</div></div>
+          <div class="flow-step"><span class="badge">6</span><div><strong>Skill Selection + Context</strong><br>router가 전문 skill을 선택하고 context builder가 question, guidance, evidence, source, quality flags를 구성.</div></div>
+          <div class="flow-step"><span class="badge">7</span><div><strong>Draft + QA + Semantic Review</strong><br>writer가 draft를 만들고 policy critic은 근거 없는 claim을 차단하며 semantic critic은 facet/alignment/source usage를 검사.</div></div>
+          <div class="flow-step"><span class="badge">8</span><div><strong>Revision + Hygiene + Assembly</strong><br>evidence가 있는 failed draft는 기본 최대 2회 revise되고, output hygiene 후 report manager가 artifact를 조립.</div></div>
+        </div>
+        <h3>API job lifecycle</h3>
+        <p>비동기 경로는 <code>POST /reports/esg/qualitative/jobs</code>가 <code>202</code>를 반환하고, 사용자는 <code>GET /jobs/{job_id}</code>로 상태를 polling하며, <code>GET /jobs/{job_id}/result</code>로 결과를 받고, <code>DELETE /jobs/{job_id}</code>로 취소할 수 있습니다. Temporal activity는 node별 heartbeat를 보내 장기 job 관찰성을 제공합니다.</p>
+      </div>
+    </section>
+
+    <section id="performance" class="tab-panel">
+      <div data-lang="vi">
+        <h2>Hiệu Suất Và Độ Tin Cậy Hiện Tại</h2>
+        <table>
+          <thead><tr><th>Hạng mục</th><th>Giá trị hiện tại</th><th>Ý nghĩa</th></tr></thead>
+          <tbody>
+            <tr class="status-good"><td>Test suite</td><td><strong>177 passed in 4.00s</strong></td><td>Chạy bằng <code>python -m pytest</code> với <code>TMP</code>/<code>TEMP</code> trỏ tới <code>.tmp_pytest</code> trong workspace.</td></tr>
+            <tr><td>Test collection</td><td>177 pytest cases, 145 test definitions</td><td>Một số test được parameterize nên số case thực thi lớn hơn số hàm test.</td></tr>
+            <tr><td>RAG batching</td><td>Batch size 20, concurrency 4, top_k 5</td><td>Thiết kế cân bằng throughput và tải lên Team RAG; retry top_k cao hơn chỉ bật khi cấu hình <code>ESG_TEAM_RAG_RETRY_TOP_K</code>.</td></tr>
+            <tr><td>Timeout</td><td>RAG 30s/request, LLM 120s/request</td><td>Giới hạn mặc định tránh job treo lâu ở dependency ngoài.</td></tr>
+            <tr><td>Temporal</td><td>Activity timeout 3600s, workflow timeout 7200s, heartbeat 180s</td><td>Phù hợp job báo cáo dài hạn và cho phép retry activity tối đa 2 lần.</td></tr>
+            <tr><td>Output consistency</td><td>Atomic temp file + <code>os.replace</code></td><td>Giảm rủi ro file audit bị ghi dở khi process bị lỗi.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warn">Lưu ý môi trường: lần chạy pytest đầu tiên dùng Temp mặc định của Windows bị <code>PermissionError</code> tại <code>C:\Users\vincent\AppData\Local\Temp\pytest-of-vincent</code>. Khi chuyển Temp vào workspace, toàn bộ test pass. Vì vậy đây là vấn đề quyền thư mục tạm, không phải regression chức năng.</div>
+        <h3>Nút thắt hiệu suất dự kiến</h3>
+        <ul>
+          <li>Độ trễ tổng phụ thuộc mạnh vào Team RAG và LLM; graph nội bộ chủ yếu là validation, mapping và ghi file.</li>
+          <li>Semantic QA concurrency mặc định 4 giúp song song hóa review, nhưng vẫn bị giới hạn bởi provider LLM.</li>
+          <li>Excel output có nhiều cột audit và nội dung evidence dài; với full 95 câu hỏi, ghi workbook có thể trở thành chi phí I/O đáng kể nhưng hiện đã có ghi atomic.</li>
+          <li>Quantitative mapping deterministic giúp phần 251 metric ổn định, nhanh và không phát sinh token LLM.</li>
+        </ul>
+      </div>
+
+      <div data-lang="ko">
+        <h2>현재 성능 및 신뢰성</h2>
+        <table>
+          <thead><tr><th>항목</th><th>현재 값</th><th>의미</th></tr></thead>
+          <tbody>
+            <tr class="status-good"><td>Test suite</td><td><strong>177 passed in 4.00s</strong></td><td><code>TMP</code>/<code>TEMP</code>를 workspace의 <code>.tmp_pytest</code>로 지정하고 <code>python -m pytest</code> 실행.</td></tr>
+            <tr><td>Test collection</td><td>177 pytest cases, 145 test definitions</td><td>일부 test는 parameterized되어 실행 case 수가 test 함수 수보다 많습니다.</td></tr>
+            <tr><td>RAG batching</td><td>Batch size 20, concurrency 4, top_k 5</td><td>Team RAG 부하와 throughput의 균형을 고려한 기본값이며, 더 높은 top_k retry는 <code>ESG_TEAM_RAG_RETRY_TOP_K</code> 설정 시에만 동작합니다.</td></tr>
+            <tr><td>Timeout</td><td>RAG 30s/request, LLM 120s/request</td><td>외부 dependency 지연으로 job이 오래 멈추는 것을 제한합니다.</td></tr>
+            <tr><td>Temporal</td><td>Activity timeout 3600s, workflow timeout 7200s, heartbeat 180s</td><td>장기 보고서 job에 적합하며 activity retry는 최대 2회입니다.</td></tr>
+            <tr><td>Output consistency</td><td>Atomic temp file + <code>os.replace</code></td><td>process 오류 시 audit file이 부분 작성되는 위험을 줄입니다.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warn">환경 참고: 첫 pytest 실행은 Windows 기본 Temp 경로 <code>C:\Users\vincent\AppData\Local\Temp\pytest-of-vincent</code> 접근 권한 문제로 <code>PermissionError</code>가 발생했습니다. Temp를 workspace로 바꾼 뒤 모든 test가 통과했으므로 기능 regression이라기보다 임시 폴더 권한 문제입니다.</div>
+        <h3>예상 성능 병목</h3>
+        <ul>
+          <li>전체 지연 시간은 Team RAG와 LLM에 크게 의존합니다. 내부 graph 작업은 주로 validation, mapping, file writing입니다.</li>
+          <li>Semantic QA concurrency 기본값 4는 review 병렬성을 제공하지만 LLM provider 처리량에 의해 제한됩니다.</li>
+          <li>Excel output은 audit column과 긴 evidence 텍스트가 많아 full 95문항에서는 I/O 비용이 커질 수 있으나 atomic write가 적용되어 있습니다.</li>
+          <li>정량 251개 metric은 deterministic mapping이라 안정적이고 빠르며 LLM token 비용이 발생하지 않습니다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="operations" class="tab-panel">
+      <div data-lang="vi">
+        <h2>Vận Hành Và Cấu Hình</h2>
+        <div class="two-col">
+          <div>
+            <h3>Chạy local full stack</h3>
+            <div class="mono-block">docker compose up --build -d
+FastAPI: http://localhost:8000
+Swagger: http://localhost:8000/docs
+Temporal UI: http://localhost:8233</div>
+          </div>
+          <div>
+            <h3>Chạy trực tiếp</h3>
+            <div class="mono-block">python -m uvicorn esgagents.api.app:app --reload
+python -m esgagents.cli generate-qualitative --company-id ...</div>
+          </div>
+        </div>
+        <h3>Cấu hình trọng yếu</h3>
+        <table>
+          <thead><tr><th>Biến</th><th>Mặc định</th><th>Ghi chú</th></tr></thead>
+          <tbody>
+            <tr><td><code>TEAM_RAG_BASE_URL</code></td><td>rỗng</td><td>Bắt buộc khi gọi RAG live.</td></tr>
+            <tr><td><code>TEAM_RAG_QUALITATIVE_PATH</code></td><td><code>/qualitative/evidence/v3</code></td><td>Có thể rollback thủ công về v2.</td></tr>
+            <tr><td><code>ESG_AGENT_MODE</code></td><td><code>auto</code></td><td><code>auto</code>, <code>llm</code>, hoặc <code>offline</code>.</td></tr>
+            <tr><td><code>ESG_LLM_PROVIDER</code></td><td><code>openai</code></td><td>Hỗ trợ OpenAI-compatible và HallMDR.</td></tr>
+            <tr><td><code>ESG_OUTPUT_LANGUAGE</code></td><td><code>Korean</code></td><td>Ngôn ngữ output báo cáo ESG.</td></tr>
+            <tr><td><code>ESG_CHECKPOINT_ENABLED</code></td><td><code>false</code></td><td>Bật SQLite checkpoint theo company/run khi cần.</td></tr>
+          </tbody>
+        </table>
+        <h3>Artifact đầu ra</h3>
+        <ul>
+          <li><code>qualitative_run.json</code>: payload đầy đủ theo schema <code>RunArtifacts</code>.</li>
+          <li><code>coverage_summary.json</code>: tổng hợp coverage, quality grade, RAG status và nhóm lỗi.</li>
+          <li><code>qualitative_audit.xlsx</code>: sheet audit chi tiết theo QID.</li>
+          <li><code>[langgraph][company]report-YYYY.MM.DD_N.xlsx</code>: workbook kết hợp sheet Qualitative và Quantitative.</li>
+        </ul>
+      </div>
+
+      <div data-lang="ko">
+        <h2>운영 및 설정</h2>
+        <div class="two-col">
+          <div>
+            <h3>Local full stack 실행</h3>
+            <div class="mono-block">docker compose up --build -d
+FastAPI: http://localhost:8000
+Swagger: http://localhost:8000/docs
+Temporal UI: http://localhost:8233</div>
+          </div>
+          <div>
+            <h3>직접 실행</h3>
+            <div class="mono-block">python -m uvicorn esgagents.api.app:app --reload
+python -m esgagents.cli generate-qualitative --company-id ...</div>
+          </div>
+        </div>
+        <h3>핵심 설정</h3>
+        <table>
+          <thead><tr><th>변수</th><th>기본값</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td><code>TEAM_RAG_BASE_URL</code></td><td>empty</td><td>live RAG 호출 시 필수입니다.</td></tr>
+            <tr><td><code>TEAM_RAG_QUALITATIVE_PATH</code></td><td><code>/qualitative/evidence/v3</code></td><td>필요 시 v2로 수동 rollback 가능.</td></tr>
+            <tr><td><code>ESG_AGENT_MODE</code></td><td><code>auto</code></td><td><code>auto</code>, <code>llm</code>, <code>offline</code>.</td></tr>
+            <tr><td><code>ESG_LLM_PROVIDER</code></td><td><code>openai</code></td><td>OpenAI-compatible 및 HallMDR 지원.</td></tr>
+            <tr><td><code>ESG_OUTPUT_LANGUAGE</code></td><td><code>Korean</code></td><td>ESG report output language.</td></tr>
+            <tr><td><code>ESG_CHECKPOINT_ENABLED</code></td><td><code>false</code></td><td>필요 시 company/run 단위 SQLite checkpoint 활성화.</td></tr>
+          </tbody>
+        </table>
+        <h3>Output artifact</h3>
+        <ul>
+          <li><code>qualitative_run.json</code>: <code>RunArtifacts</code> schema 기반 전체 payload.</li>
+          <li><code>coverage_summary.json</code>: coverage, quality grade, RAG status, failure group summary.</li>
+          <li><code>qualitative_audit.xlsx</code>: QID별 상세 audit sheet.</li>
+          <li><code>[langgraph][company]report-YYYY.MM.DD_N.xlsx</code>: Qualitative 및 Quantitative sheet가 포함된 combined workbook.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="risks" class="tab-panel">
+      <div data-lang="vi">
+        <h2>Rủi Ro Và Khuyến Nghị</h2>
+        <table>
+          <thead><tr><th>Mức</th><th>Vấn đề</th><th>Khuyến nghị</th></tr></thead>
+          <tbody>
+            <tr class="status-warn"><td>Trung bình</td><td>Hiệu suất production chưa có benchmark end-to-end với Team RAG/LLM live.</td><td>Thêm benchmark job 95 QID ghi latency từng node, RAG latency, LLM token/latency và Excel write time.</td></tr>
+            <tr class="status-warn"><td>Trung bình</td><td>Độ ổn định phụ thuộc Team RAG v3 contract và nguồn evidence có metadata đầy đủ.</td><td>Giữ contract tests hiện có, bổ sung canary job theo công ty mẫu trước mỗi release.</td></tr>
+            <tr class="status-warn"><td>Trung bình</td><td>Output local filesystem cần shared storage nếu API và worker chạy trên nhiều máy.</td><td>Dùng shared volume hoặc object storage abstraction trước khi scale multi-host.</td></tr>
+            <tr><td>Thấp</td><td>Checkpoint đang mặc định tắt.</td><td>Bật <code>ESG_CHECKPOINT_ENABLED</code> cho workflow dài nếu cần resume/debug chi tiết.</td></tr>
+            <tr><td>Thấp</td><td>Temp mặc định Windows có thể gây lỗi test trong môi trường bị hạn chế quyền.</td><td>Chuẩn hóa script test set <code>TMP</code>/<code>TEMP</code> về <code>.tmp_pytest</code> hoặc dọn quyền thư mục Temp.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">Ưu tiên tiếp theo nên là observability: log thời gian từng node và đưa số liệu vào <code>coverage_summary.json</code>. Khi đó phần hiệu suất không chỉ dựa vào test time mà có cả latency thực tế của từng report run.</div>
+      </div>
+
+      <div data-lang="ko">
+        <h2>리스크 및 권장 사항</h2>
+        <table>
+          <thead><tr><th>수준</th><th>이슈</th><th>권장 사항</th></tr></thead>
+          <tbody>
+            <tr class="status-warn"><td>Medium</td><td>Team RAG/LLM live 환경 기준 end-to-end benchmark가 아직 없습니다.</td><td>95 QID benchmark job을 추가하고 node별 latency, RAG latency, LLM token/latency, Excel write time을 기록합니다.</td></tr>
+            <tr class="status-warn"><td>Medium</td><td>안정성은 Team RAG v3 contract와 충분한 source metadata에 의존합니다.</td><td>현재 contract test를 유지하고 release 전 sample company canary job을 추가합니다.</td></tr>
+            <tr class="status-warn"><td>Medium</td><td>API와 worker가 여러 host에서 실행되면 local filesystem output은 shared storage가 필요합니다.</td><td>multi-host scaling 전 shared volume 또는 object storage abstraction을 도입합니다.</td></tr>
+            <tr><td>Low</td><td>checkpoint는 기본적으로 꺼져 있습니다.</td><td>장기 workflow의 resume/debug가 필요하면 <code>ESG_CHECKPOINT_ENABLED</code>를 활성화합니다.</td></tr>
+            <tr><td>Low</td><td>권한이 제한된 Windows 환경에서 기본 Temp가 test 오류를 유발할 수 있습니다.</td><td>test script에서 <code>TMP</code>/<code>TEMP</code>를 <code>.tmp_pytest</code>로 지정하거나 Temp 폴더 권한을 정리합니다.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">다음 우선순위는 observability입니다. node별 실행 시간을 기록하고 <code>coverage_summary.json</code>에 포함하면, 성능 평가는 test time뿐 아니라 실제 report run latency까지 기반으로 할 수 있습니다.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const body = document.body;
+    const langButtons = Array.from(document.querySelectorAll("[data-set-lang]"));
+    const tabButtons = Array.from(document.querySelectorAll("[data-tab]"));
+    const panels = Array.from(document.querySelectorAll(".tab-panel"));
+    let activeTab = "overview";
+    let activeLang = "vi";
+
+    function setLanguage(lang) {
+      activeLang = lang;
+      body.classList.toggle("lang-ko", lang === "ko");
+      body.classList.toggle("lang-vi", lang === "vi");
+      document.documentElement.lang = lang;
+      langButtons.forEach(button => {
+        button.classList.toggle("active", button.dataset.setLang === lang);
+      });
+      syncVisibleTabButtons();
+    }
+
+    function setTab(tab) {
+      activeTab = tab;
+      panels.forEach(panel => panel.classList.toggle("active", panel.id === tab));
+      syncVisibleTabButtons();
+    }
+
+    function syncVisibleTabButtons() {
+      tabButtons.forEach(button => {
+        const sameLang = button.getAttribute("data-lang") === activeLang;
+        button.classList.toggle("active", sameLang && button.dataset.tab === activeTab);
+      });
+    }
+
+    langButtons.forEach(button => {
+      button.addEventListener("click", () => setLanguage(button.dataset.setLang));
+    });
+
+    tabButtons.forEach(button => {
+      button.addEventListener("click", () => setTab(button.dataset.tab));
+    });
+
+    setLanguage("vi");
+    setTab("overview");
+  </script>
+</body>
+</html>

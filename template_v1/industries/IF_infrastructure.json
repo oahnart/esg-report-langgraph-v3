@@ -1,0 +1,32 @@
+{
+  "id": "IF",
+  "name_en": "Infrastructure",
+  "name_ko": "인프라",
+  "name_vi": "Hạ tầng",
+  "material_topics": [
+    "asset resilience",
+    "worker safety",
+    "emissions",
+    "community impact",
+    "water and pollution",
+    "business continuity"
+  ],
+  "priority_categories_ko": [
+    "안전 보건",
+    "기후행동",
+    "오염 및 배출 관리",
+    "물 관리",
+    "지역사회 임팩트",
+    "ESG 운영 체계"
+  ],
+  "metric_focus": [
+    "asset availability",
+    "safety incidents",
+    "energy intensity",
+    "emissions",
+    "community grievances",
+    "resilience investment"
+  ],
+  "risk_lens": "Focus on long-lived assets, physical climate risk, operational continuity, worker safety, and local community impact.",
+  "answer_guidance": "Frame answers around asset lifecycle, resilience, permits, operational controls, and stakeholder coordination."
+}

@@ -1,0 +1,26 @@
+{
+  "id": "large_enterprise",
+  "name_en": "Large Enterprise",
+  "name_ko": "대기업",
+  "name_vi": "Doanh nghiệp lớn",
+  "company_profile": {
+    "typical_scope": "Listed or systemically important company with multi-site operations, broad stakeholder exposure, and mature reporting expectations.",
+    "disclosure_maturity": "advanced",
+    "expected_evidence_depth": "policy, governance body, process, KPI trend, target, and assurance/readiness where available"
+  },
+  "answer_guidance": {
+    "detail_level": "high",
+    "writing_style": "Structured, evidence-heavy, board-level reporting language.",
+    "metrics_policy": "Prefer multi-year quantitative metrics, targets, baselines, and progress explanations.",
+    "governance_expectation": "Identify board or executive oversight, committee roles, reporting cadence, and accountability owners.",
+    "risk_management_expectation": "Describe enterprise-wide risk process, scenario/impact assessment, controls, monitoring, and escalation.",
+    "supply_chain_expectation": "Include supplier standards, due diligence, audits, corrective actions, and high-risk supplier coverage where relevant.",
+    "assurance_expectation": "Mention internal controls, external assurance, certification, or verification readiness when evidence exists.",
+    "fallback_when_evidence_missing": "State the limitation clearly and avoid inventing policies, metrics, certifications, or targets."
+  },
+  "question_adaptation_rules": [
+    "Expand governance and risk answers with decision rights and oversight cadence.",
+    "For Metrics questions, request or use quantitative trend data rather than only describing activities.",
+    "For Strategy questions, connect the topic to enterprise strategy, financial resilience, and stakeholder expectations."
+  ]
+}

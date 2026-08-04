@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import json
+import logging
+from typing import Any, Callable, Optional, TypeVar
+
+from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
+
+
+class PromptStructuredLLM:
+    """Structured-output adapter for OpenAI-compatible models without tool calling."""
+
+    def __init__(self, llm: Any, schema: type[T]):
+        self.llm = llm
+        self.schema = schema
+
+    def invoke(self, prompt: Any) -> T:
+        instruction = SystemMessage(
+            content=(
+                "/no_think\n"
+                "Return exactly one valid JSON object matching this JSON schema. "
+                "Do not return markdown, code fences, analysis, or additional text.\n"
+                f"JSON schema: {json.dumps(self.schema.model_json_schema(), ensure_ascii=False)}"
+            )
+        )
+        if isinstance(prompt, (list, tuple)):
+            messages = [instruction, *prompt]
+        else:
+            messages = [instruction, HumanMessage(content=str(prompt))]
+        response = self.llm.invoke(messages)
+        content = getattr(response, "content", str(response))
+        if not isinstance(content, str):
+            content = str(content)
+        return self.schema.model_validate(_json_object(content))
+
+
+def _json_object(raw: str) -> dict[str, Any]:
+    text = raw.strip()
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start < 0 or end <= start:
+            raise ValueError("No JSON object found in LLM response")
+        value = json.loads(text[start : end + 1])
+    if not isinstance(value, dict):
+        raise ValueError("Structured LLM response must be a JSON object")
+    return value
+
+
+def bind_structured(llm: Any | None, schema: type[T], agent_name: str) -> Optional[Any]:
+    if llm is None:
+        return None
+    metadata = getattr(llm, "metadata", None) or {}
+    if metadata.get("esg_llm_provider") == "hallmdr":
+        return PromptStructuredLLM(llm, schema)
+    try:
+        return llm.with_structured_output(schema)
+    except (AttributeError, NotImplementedError) as exc:
+        logger.warning("%s structured output unavailable; using free-text fallback: %s", agent_name, exc)
+        return None
+
+
+def invoke_structured_or_freetext(
+    structured_llm: Optional[Any],
+    plain_llm: Any | None,
+    prompt: Any,
+    render: Callable[[T], str],
+    agent_name: str,
+) -> str:
+    if structured_llm is not None:
+        try:
+            return render(structured_llm.invoke(prompt))
+        except Exception as exc:
+            logger.warning("%s structured call failed; retrying as free text: %s", agent_name, exc)
+
+    if plain_llm is None:
+        raise RuntimeError(f"{agent_name} has no LLM available")
+    response = plain_llm.invoke(prompt)
+    return getattr(response, "content", str(response))

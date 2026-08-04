@@ -1,0 +1,31 @@
+{
+  "id": "HC",
+  "name_en": "Healthcare",
+  "name_ko": "헬스케어",
+  "name_vi": "Y tế và chăm sóc sức khỏe",
+  "material_topics": [
+    "patient safety",
+    "product quality",
+    "access to healthcare",
+    "data privacy",
+    "ethics",
+    "clinical/compliance controls"
+  ],
+  "priority_categories_ko": [
+    "제품 안전",
+    "제품 책임",
+    "정보보호",
+    "윤리경영",
+    "컴플라이언스"
+  ],
+  "metric_focus": [
+    "quality defects",
+    "adverse events",
+    "product recalls",
+    "privacy incidents",
+    "ethics training",
+    "access programs"
+  ],
+  "risk_lens": "Focus on patient harm, product compliance, privacy, research ethics, and healthcare access.",
+  "answer_guidance": "Use conservative claims and connect practices to patient/customer safety, regulatory compliance, and quality management."
+}

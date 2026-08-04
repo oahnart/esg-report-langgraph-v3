@@ -1,0 +1,31 @@
+{
+  "id": "TR",
+  "name_en": "Transportation",
+  "name_ko": "운송",
+  "name_vi": "Vận tải",
+  "material_topics": [
+    "fleet emissions",
+    "fuel efficiency",
+    "safety",
+    "labor conditions",
+    "air quality",
+    "supply-chain logistics"
+  ],
+  "priority_categories_ko": [
+    "기후행동",
+    "안전 보건",
+    "오염 및 배출 관리",
+    "노동 및 인권",
+    "ESG 운영 체계"
+  ],
+  "metric_focus": [
+    "fuel consumption",
+    "fleet emissions",
+    "accident rate",
+    "LTIFR",
+    "vehicle efficiency",
+    "modal shift or low-carbon fleet share"
+  ],
+  "risk_lens": "Focus on transport safety, fuel and emissions exposure, workforce risk, service continuity, and air pollution.",
+  "answer_guidance": "Connect ESG actions to fleet operations, route efficiency, safety management, and low-carbon transition."
+}

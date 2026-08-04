@@ -1,0 +1,310 @@
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
+
+from esgagents.rag_client import TeamRagClient
+from esgagents.schemas import (
+    EvidenceItem,
+    NormalizedCompany,
+    RagQuestionResult,
+    RagRequestTrace,
+    RagResponse,
+    model_to_dict,
+)
+
+from esgagents.agents.evidence.policy import has_evidence_text, has_source_path
+from esgagents.agents.evidence.source_policy import evidence_fingerprint
+
+
+def chunked(values: list[str], size: int) -> list[list[str]]:
+    return [values[i : i + size] for i in range(0, len(values), size)]
+
+
+class RagBatchAgent:
+    def __init__(self, config: dict[str, Any], rag_client: TeamRagClient):
+        self.config = config
+        self.rag_client = rag_client
+
+    def run(self, state: dict[str, Any]) -> dict[str, Any]:
+        company: NormalizedCompany = state["company"]
+        qids = [q.id for q in state["planned_questions"]]
+        batch_size = int(self.config["team_rag_batch_size"])
+        concurrency = max(1, int(self.config["team_rag_concurrency"]))
+        batches = chunked(qids, batch_size)
+        results: dict[str, RagQuestionResult] = {}
+        attempts: dict[str, list[dict[str, Any]]] = {qid: [] for qid in qids}
+        raw_responses = []
+        request_traces: list[RagRequestTrace] = []
+
+        def fetch(batch: list[str]):
+            return self.rag_client.fetch_evidence(company.company_id, batch, company.top_k, company.year)
+
+        with ThreadPoolExecutor(max_workers=min(concurrency, max(1, len(batches)))) as pool:
+            futures = {pool.submit(fetch, batch): batch for batch in batches}
+            for future in as_completed(futures):
+                response = future.result()
+                raw_responses.append(model_to_dict(response))
+                request_traces.append(
+                    self._request_trace(
+                        response,
+                        requested_item_ids=futures[future],
+                        top_k=company.top_k,
+                        phase="initial",
+                    )
+                )
+                for item in response.results:
+                    results[item.question_id] = item
+                    attempts.setdefault(item.question_id, []).append(
+                        self._attempt_metadata(
+                            top_k=company.top_k,
+                            reason="initial",
+                            result=item,
+                            response=response,
+                        )
+                    )
+
+        retry_top_k = int(self.config.get("team_rag_retry_top_k", 0) or 0)
+        if retry_top_k > company.top_k:
+            retry_qids = [
+                qid
+                for qid in qids
+                if self._should_retry(results.get(qid))
+            ]
+            if retry_qids:
+                for qid in retry_qids:
+                    current = results.get(qid)
+                    attempts.setdefault(qid, []).append(
+                        {
+                            "top_k": retry_top_k,
+                            "retry_reason": self._retry_reason(current),
+                            "eligible_item_count_before_retry": len(
+                                self._eligible_retry_items(current.items if current else [])
+                            ),
+                        }
+                    )
+                retry_batches = chunked(retry_qids, batch_size)
+                with ThreadPoolExecutor(max_workers=min(concurrency, max(1, len(retry_batches)))) as pool:
+                    futures = {
+                        pool.submit(
+                            self.rag_client.fetch_evidence,
+                            company.company_id,
+                            batch,
+                            retry_top_k,
+                            company.year,
+                        ): batch
+                        for batch in retry_batches
+                    }
+                    for future in as_completed(futures):
+                        try:
+                            response = future.result()
+                        except Exception as exc:
+                            request_traces.append(
+                                RagRequestTrace(
+                                    requested_item_ids=list(futures[future]),
+                                    top_k=retry_top_k,
+                                    phase="retry",
+                                    error=str(exc),
+                                )
+                            )
+                            for qid in futures[future]:
+                                attempts.setdefault(qid, []).append(
+                                    {
+                                        "top_k": retry_top_k,
+                                        "retry_reason": "retry failed",
+                                        "error": str(exc),
+                                    }
+                                )
+                            continue
+                        raw_responses.append(model_to_dict(response))
+                        request_traces.append(
+                            self._request_trace(
+                                response,
+                                requested_item_ids=futures[future],
+                                top_k=retry_top_k,
+                                phase="retry",
+                            )
+                        )
+                        for item in response.results:
+                            attempts.setdefault(item.question_id, []).append(
+                                self._attempt_metadata(
+                                    top_k=retry_top_k,
+                                    reason="retry_result",
+                                    result=item,
+                                    response=response,
+                                )
+                            )
+                            if item.is_v3 or self._eligible_retry_items(item.items):
+                                results[item.question_id] = self._merge_retry_result(
+                                    results.get(item.question_id),
+                                    item,
+                                )
+
+        for qid in qids:
+            if qid not in results:
+                attempts.setdefault(qid, []).append(
+                    {
+                        "top_k": company.top_k,
+                        "retry_reason": "missing RAG result",
+                        "eligible_item_count": 0,
+                    }
+                )
+        return {
+            "rag_results": results,
+            "raw_rag_responses": raw_responses,
+            "retrieval_attempts": attempts,
+            "rag_request_traces": request_traces,
+        }
+
+    def _should_retry(self, result: RagQuestionResult | None) -> bool:
+        if result is None or not result.items:
+            return True
+        if result.is_v3:
+            return (
+                result.answerable is False
+                or result.coverage_status in {"insufficient", "no_evidence"}
+                or result.failure_code in {
+                    "WRONG_TOPIC",
+                    "DRAFT_ONLY",
+                    "MISSING_REQUIRED_FACETS",
+                    "CLIENT_CONTRACT_MISSING_RESULT",
+                    "CLIENT_CONTRACT_VIOLATION",
+                }
+                or bool(result.client_contract_violations)
+            )
+        return not self._eligible_retry_items(result.items)
+
+    def _retry_reason(self, result: RagQuestionResult | None) -> str:
+        if result is None:
+            return "missing RAG result"
+        if result.is_v3:
+            if result.client_contract_violations:
+                return "v3 contract violation"
+            if result.failure_code:
+                return result.failure_code
+            if result.coverage_status:
+                return result.coverage_status
+            if result.answerable is False:
+                return "unanswerable"
+        if not result.items:
+            return "empty evidence"
+        if not self._eligible_retry_items(result.items):
+            if not any(has_source_path(item) for item in result.items):
+                return "missing source_path"
+            return "all evidence semantic labels are weak"
+        return "eligible evidence available"
+
+    def _attempt_metadata(
+        self,
+        *,
+        top_k: int,
+        reason: str,
+        result: RagQuestionResult,
+        response: RagResponse,
+    ) -> dict[str, Any]:
+        eligible_count = len(self._eligible_retry_items(result.items))
+        return {
+            "top_k": top_k,
+            "retry_top_k": top_k,
+            "retry_reason": reason,
+            "answer_status": result.answer_status,
+            "coverage_status": result.coverage_status,
+            "answerable": result.answerable,
+            "retrieval_confidence": result.retrieval_confidence,
+            "covered_facets": list(result.covered_facets),
+            "missing_facets": list(result.missing_facets),
+            "failure_code": result.failure_code,
+            "request_id": response.request_id,
+            "item_count": len(result.items),
+            "eligible_item_count": eligible_count,
+        }
+
+    def _request_trace(
+        self,
+        response: RagResponse,
+        *,
+        requested_item_ids: list[str],
+        top_k: int,
+        phase: str,
+    ) -> RagRequestTrace:
+        violations = list(response.client_contract_violations)
+        for result in response.results:
+            violations.extend(
+                f"{result.question_id}: {violation}"
+                for violation in result.client_contract_violations
+            )
+        return RagRequestTrace(
+            request_id=response.request_id,
+            api_version=response.api_version,
+            rag_version=response.rag_version,
+            index_version=response.index_version,
+            generated_at=response.generated_at,
+            latency_ms=response.latency_ms,
+            warnings=list(response.warnings),
+            requested_item_ids=list(requested_item_ids),
+            top_k=top_k,
+            phase=phase,
+            contract_violations=list(dict.fromkeys(violations)),
+        )
+
+    def _eligible_retry_items(self, items: list[EvidenceItem]) -> list[EvidenceItem]:
+        rejected_labels = {
+            str(label).strip().lower()
+            for label in self.config.get("rejected_semantic_labels", set())
+        }
+        return [
+            item
+            for item in items
+            if has_evidence_text(item)
+            and has_source_path(item)
+            and item.semantic_label.strip().lower() not in rejected_labels
+        ]
+
+    def _merge_retry_result(
+        self,
+        original: RagQuestionResult | None,
+        retry: RagQuestionResult,
+    ) -> RagQuestionResult:
+        if original is None:
+            return retry
+        if original.is_v3 or retry.is_v3:
+            preferred, secondary = self._preferred_v3_result(original, retry)
+        else:
+            preferred, secondary = retry, original
+        seen: set[tuple[str, str]] = set()
+        merged_items = []
+        for item in [*preferred.items, *secondary.items]:
+            key = self._evidence_dedup_key(item)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged_items.append(item)
+        return preferred.model_copy(update={"items": merged_items})
+
+    def _preferred_v3_result(
+        self,
+        original: RagQuestionResult,
+        retry: RagQuestionResult,
+    ) -> tuple[RagQuestionResult, RagQuestionResult]:
+        coverage_rank = {
+            "complete": 4,
+            "partial": 3,
+            "insufficient": 2,
+            "no_evidence": 1,
+            None: 0,
+        }
+
+        def quality(result: RagQuestionResult) -> tuple[int, int, float]:
+            return (
+                coverage_rank.get(result.coverage_status, 0),
+                -len(result.missing_facets),
+                float(result.retrieval_confidence or 0.0),
+            )
+
+        return (retry, original) if quality(retry) > quality(original) else (original, retry)
+
+    @staticmethod
+    def _evidence_dedup_key(item: EvidenceItem) -> tuple[str, str]:
+        if item.canonical_source_id.strip() and item.chunk_id.strip():
+            return (item.canonical_source_id.strip(), item.chunk_id.strip())
+        return (item.source_path.strip(), evidence_fingerprint(item.raw_evidence_ko))

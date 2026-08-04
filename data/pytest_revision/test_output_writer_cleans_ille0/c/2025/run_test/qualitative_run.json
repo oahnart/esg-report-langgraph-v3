@@ -1,0 +1,57 @@
+{
+  "run_id": "run_test",
+  "company": {
+    "company_id": "c",
+    "company_name": "C",
+    "year": 2025
+  },
+  "template_selection": {
+    "template_version": "template_v1",
+    "question_count": 1
+  },
+  "answers": [
+    {
+      "qid": "Q025",
+      "source_id": "EBX-Q-025",
+      "category": "ESG",
+      "question": "question",
+      "answer_status": "high_confidence",
+      "final_answer": "answer",
+      "evidence_summary": "감사실\u0001소개",
+      "sources": [
+        {
+          "source_name": "doc\u0001.docx",
+          "source_path": "ESG/doc.docx"
+        }
+      ],
+      "qa": {
+        "status": "passed",
+        "notes": [
+          "grounded\u0001note"
+        ]
+      },
+      "agent_profile": "general_section",
+      "skill_key": "general_section",
+      "skill_name": "",
+      "skill_version": "",
+      "skill_source_path": "",
+      "skill_selection_reason": "",
+      "skill_checks": [],
+      "disclosure_flags": [],
+      "hard_failures": [],
+      "quality_flags": [],
+      "revision_count": 0,
+      "raw_rag_result": {}
+    }
+  ],
+  "stats": {
+    "answered": 1,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\data\\pytest_revision\\test_output_writer_cleans_ille0\\c\\2025\\run_test\\qualitative_run.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\data\\pytest_revision\\test_output_writer_cleans_ille0\\c\\2025\\run_test\\qualitative_audit.xlsx"
+  }
+}

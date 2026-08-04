@@ -1,0 +1,29 @@
+{
+  "id": "CG",
+  "name_en": "Consumer Goods",
+  "name_ko": "소비재",
+  "name_vi": "Hàng tiêu dùng",
+  "material_topics": [
+    "product safety",
+    "customer health and safety",
+    "packaging",
+    "supply-chain labor",
+    "responsible marketing"
+  ],
+  "priority_categories_ko": [
+    "제품 안전",
+    "제품 책임",
+    "공급망 책임 관리",
+    "친환경 제품",
+    "자원선순환"
+  ],
+  "metric_focus": [
+    "product recalls",
+    "quality incidents",
+    "sustainable packaging ratio",
+    "supplier assessment coverage",
+    "customer complaints"
+  ],
+  "risk_lens": "Focus on consumer harm, product quality failures, misleading claims, supplier labor risk, and packaging waste.",
+  "answer_guidance": "Tie ESG answers to product lifecycle, customer trust, brand risk, and supplier controls."
+}

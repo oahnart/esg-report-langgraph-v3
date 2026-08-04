@@ -1,0 +1,127 @@
+from __future__ import annotations
+
+from collections import OrderedDict
+from typing import Any
+
+from esgagents.schemas import EvidenceItem, model_to_dict
+
+from .policy import is_usable_evidence, source_name_from_path
+from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
+
+
+STATUS_RANK = {
+    "approved": 6,
+    "effective": 6,
+    "operational": 5,
+    "historical": 4,
+    "external_assessment": 3,
+    "unknown": 2,
+    "draft": 1,
+    "proposal": 1,
+    "consultant_material": 1,
+    "superseded": 0,
+}
+
+
+class EvidenceNormalizerAgent:
+    def __init__(self, config: dict[str, Any]):
+        self.rejected_labels = {
+            str(label).strip().lower() for label in config["rejected_semantic_labels"]
+        }
+        self.source_policy_enabled = bool(config.get("source_policy_enabled", True))
+
+    def run(self, state: dict[str, Any]) -> dict[str, Any]:
+        normalized: dict[str, dict[str, Any]] = {}
+        for qid, rag in state["rag_results"].items():
+            deduped: OrderedDict[str, EvidenceItem] = OrderedDict()
+            for item in rag.items:
+                if not is_usable_evidence(item, self.rejected_labels):
+                    continue
+                upstream_canonical_id = item.canonical_source_id.strip()
+                source_path = item.source_path.strip()
+                source_name = item.source_name.strip() or source_name_from_path(source_path)
+                normalized_item = item.model_copy(update={"source_name": source_name, "source_path": source_path})
+                classification = classify_source(normalized_item)
+                if self.source_policy_enabled:
+                    normalized_item = normalized_item.model_copy(update=classification.__dict__)
+                if upstream_canonical_id and normalized_item.chunk_id:
+                    key = f"{upstream_canonical_id}|{normalized_item.chunk_id}"
+                elif rag.is_v3:
+                    key = f"{source_path}|{evidence_fingerprint(item.raw_evidence_ko)}"
+                else:
+                    key = f"{classification.canonical_source_id}|{evidence_fingerprint(item.raw_evidence_ko)}"
+                current = deduped.get(key)
+                if current is None or self._rank_key(normalized_item) > self._rank_key(current):
+                    deduped[key] = normalized_item
+            ranked = sorted(
+                deduped.values(),
+                key=self._rank_key,
+                reverse=True,
+            )
+            normalized_answer = (
+                " ".join((rag.normalized_answer_ko or "").split())
+                if rag.is_v3
+                else ""
+            )
+            summary_parts = [normalized_answer] if normalized_answer else []
+            sources = []
+            for item in ranked[:5]:
+                text = " ".join(item.raw_evidence_ko.split())
+                if text and not normalized_answer:
+                    summary_parts.append(text[:350])
+                source = {
+                    "source_name": item.source_name,
+                    "source_path": item.source_path,
+                    "document_id": item.document_id,
+                    "chunk_id": item.chunk_id,
+                    "canonical_source_id": item.canonical_source_id,
+                    "source_tier": item.source_tier,
+                    "source_type": item.source_type,
+                    "document_status": item.document_status,
+                    "document_version": item.document_version,
+                    "effective_date": item.effective_date,
+                    "topic": item.topic,
+                    "subtopic": item.subtopic,
+                    "locator": model_to_dict(item.locator),
+                    "semantic_label": item.semantic_label,
+                    "semantic_score": item.semantic_score,
+                    "reranker_score": item.reranker_score,
+                    "vector_score": item.vector_score,
+                    "score": item.score,
+                    "classification_reason": item.classification_reason,
+                }
+                source_key = self._source_dedup_key(source, is_v3=rag.is_v3)
+                if not any(
+                    self._source_dedup_key(existing, is_v3=rag.is_v3) == source_key
+                    for existing in sources
+                ):
+                    sources.append(source)
+            normalized[qid] = {
+                "items": ranked,
+                "evidence_summary": "\n".join(summary_parts),
+                "sources": sources,
+            }
+        return {"normalized_evidence": normalized}
+
+    @staticmethod
+    def _rank_key(item: EvidenceItem) -> tuple[int, float, int, int, float, float, float, int]:
+        return (
+            relevance_band(item.semantic_label),
+            item.semantic_score if item.semantic_score is not None else -1.0,
+            TIER_RANK.get(item.source_tier, 0),
+            STATUS_RANK.get(item.document_status.strip().casefold(), 0),
+            item.reranker_score if item.reranker_score is not None else -1.0,
+            item.vector_score if item.vector_score is not None else -1.0,
+            float(item.score or 0),
+            len(item.source_path or ""),
+        )
+
+    @staticmethod
+    def _source_dedup_key(source: dict[str, Any], *, is_v3: bool) -> tuple[str, str]:
+        canonical_id = str(source.get("canonical_source_id") or "")
+        chunk_id = str(source.get("chunk_id") or "")
+        if not is_v3 and canonical_id:
+            return canonical_id, ""
+        if canonical_id and chunk_id:
+            return canonical_id, chunk_id
+        return str(source.get("source_path") or ""), str(source.get("source_name") or "")

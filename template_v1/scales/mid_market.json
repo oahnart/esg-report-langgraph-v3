@@ -1,0 +1,26 @@
+{
+  "id": "mid_market",
+  "name_en": "Mid-Market Company",
+  "name_ko": "중견기업",
+  "name_vi": "Doanh nghiệp quy mô vừa-lớn",
+  "company_profile": {
+    "typical_scope": "Company with established management functions and growing external reporting needs, but less reporting infrastructure than a large enterprise.",
+    "disclosure_maturity": "developing",
+    "expected_evidence_depth": "policy or principle, responsible function, main process, selected KPI, and improvement plan"
+  },
+  "answer_guidance": {
+    "detail_level": "medium_high",
+    "writing_style": "Practical and management-oriented, balancing formal disclosure with operational clarity.",
+    "metrics_policy": "Use available current-year or recent metrics; explain gaps and planned measurement improvements.",
+    "governance_expectation": "Identify executive owner, responsible department, and internal reporting route.",
+    "risk_management_expectation": "Describe material risk identification, control activities, and follow-up actions.",
+    "supply_chain_expectation": "Cover supplier code, screening, contract requirements, or priority supplier engagement where relevant.",
+    "assurance_expectation": "Mention certification or external verification only when supported; otherwise describe internal checks.",
+    "fallback_when_evidence_missing": "Use a concise limitation note and frame the expected next improvement step."
+  },
+  "question_adaptation_rules": [
+    "Avoid overclaiming board-level systems unless evidence shows they exist.",
+    "For Metrics questions, accept partial KPI sets but mark missing trend or target data.",
+    "For Strategy questions, emphasize staged implementation and management priorities."
+  ]
+}

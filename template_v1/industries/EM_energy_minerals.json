@@ -1,0 +1,32 @@
+{
+  "id": "EM",
+  "name_en": "Energy and Minerals",
+  "name_ko": "에너지 및 광물",
+  "name_vi": "Năng lượng và khoáng sản",
+  "material_topics": [
+    "climate transition",
+    "emissions",
+    "water",
+    "biodiversity",
+    "worker safety",
+    "community impact"
+  ],
+  "priority_categories_ko": [
+    "기후행동",
+    "오염 및 배출 관리",
+    "물 관리",
+    "생물다양성",
+    "안전 보건",
+    "지역사회 임팩트"
+  ],
+  "metric_focus": [
+    "GHG emissions",
+    "energy use",
+    "water withdrawal",
+    "pollutant emissions",
+    "lost-time injury rate",
+    "site rehabilitation"
+  ],
+  "risk_lens": "Focus on high-impact environmental footprint, regulatory exposure, site safety, land use, and community license to operate.",
+  "answer_guidance": "Require stronger environmental risk language, transition planning, compliance controls, and site-level metrics."
+}
