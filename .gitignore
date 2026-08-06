@@ -21,3 +21,5 @@ env/
 # Runtime outputs
 data/outputs/
 data/cache/
+
+node_modules
