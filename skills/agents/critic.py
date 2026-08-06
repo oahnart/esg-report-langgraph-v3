@@ -254,6 +254,30 @@ def _supported_reporting_period_numbers(
     return supported
 
 
+def _table_header_percent_numbers(text: str) -> set[str]:
+    supported: set[str] = set()
+    normalized = unicodedata.normalize("NFKC", text or "")
+    for row in re.finditer(r"%(?P<values>(?:\s+\d+(?:[,.]\d+)*){1,12})", normalized):
+        for match in NUMERIC_RE.finditer(row.group("values")):
+            canonical = _canonical_number(match.group(0))
+            if not canonical.endswith("%"):
+                supported.add(f"{canonical}%")
+    return supported
+
+
+def _structured_fact_numbers(normalized: dict[str, Any]) -> set[str]:
+    supported: set[str] = set()
+    for item in normalized.get("items", []):
+        for fact in getattr(item, "facts", []) or []:
+            value = str(getattr(fact, "value", "") or "").strip()
+            unit = str(getattr(fact, "unit", "") or "").strip()
+            if not value:
+                continue
+            canonical = _canonical_number(value)
+            supported.add(f"{canonical}%" if unit in {"%", "percent"} and not canonical.endswith("%") else canonical)
+    return supported
+
+
 class SkillPolicyCriticAgent:
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         qa: dict[str, QAResult] = {}
@@ -354,6 +378,8 @@ class SkillPolicyCriticAgent:
         normalized: dict[str, Any] | None = None,
     ) -> list[str]:
         evidence_numbers = {canonical for canonical, _ in _number_claims(evidence_text)}
+        evidence_numbers.update(_table_header_percent_numbers(evidence_text))
+        evidence_numbers.update(_structured_fact_numbers(normalized or {}))
         answer_numbers = _number_claims(answer)
         period_numbers = _supported_reporting_period_numbers(answer, evidence_text, normalized or {})
         return [

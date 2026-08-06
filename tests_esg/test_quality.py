@@ -1,5 +1,5 @@
 from esgagents.quality import classify_answer_quality, resolved_answer_quality
-from esgagents.schemas import AnswerRecord, QAResult
+from esgagents.schemas import AnswerRecord, ClaimSupport, QAResult
 
 
 def _answer(**overrides):
@@ -50,6 +50,58 @@ def test_quality_grade_cautious_for_complete_draft_or_assessment_answer():
     assert (assessment.grade, assessment.reason) == ("cautious", "assessment_only")
 
 
+def test_mixed_sources_are_cautious_only_when_a_claim_depends_on_draft():
+    answer = _answer(
+        sources=[
+            {"source_tier": "tier_2_operational", "document_status": "operational"},
+            {"source_tier": "tier_4_draft", "document_status": "draft"},
+        ],
+        claim_support=[
+            ClaimSupport(
+                claim_id="c1",
+                claim_text="Operational policy claim.",
+                source_ids=["operational"],
+                support_tier="tier_2_operational",
+                support_status="grounded",
+            ),
+            ClaimSupport(
+                claim_id="c2",
+                claim_text="Proposed target claim.",
+                source_ids=["draft"],
+                support_tier="tier_4_draft",
+                support_status="grounded",
+                attribution_required=True,
+            ),
+        ],
+    )
+
+    quality = classify_answer_quality(answer)
+
+    assert (quality.grade, quality.reason) == ("cautious", "draft_evidence")
+
+
+def test_auxiliary_draft_source_does_not_lower_operationally_grounded_claim():
+    answer = _answer(
+        sources=[
+            {"source_tier": "tier_2_operational", "document_status": "operational"},
+            {"source_tier": "tier_4_draft", "document_status": "draft"},
+        ],
+        claim_support=[
+            ClaimSupport(
+                claim_id="c1",
+                claim_text="Operational policy claim.",
+                source_ids=["operational"],
+                support_tier="tier_2_operational",
+                support_status="grounded",
+            )
+        ],
+    )
+
+    quality = classify_answer_quality(answer)
+
+    assert (quality.grade, quality.reason) == ("full", "complete_grounded_answer")
+
+
 def test_quality_grade_failed_for_empty_or_unsupported_answer():
     empty = classify_answer_quality(
         _answer(final_answer="", qa=QAResult(status="empty", notes=["empty evidence"]))
@@ -60,6 +112,19 @@ def test_quality_grade_failed_for_empty_or_unsupported_answer():
 
     assert (empty.grade, empty.reason) == ("failed", "empty_evidence")
     assert (unsupported.grade, unsupported.reason) == ("failed", "unsupported_claim")
+
+
+def test_quality_uses_specific_writer_empty_reason():
+    quality = classify_answer_quality(
+        _answer(
+            qid="Q015",
+            final_answer="",
+            qa=QAResult(status="empty", notes=["writer returned empty output"]),
+            quality_flags=["writer_empty"],
+        )
+    )
+
+    assert (quality.grade, quality.reason) == ("failed", "writer_empty")
 
 
 def test_resolved_quality_falls_back_for_legacy_record_without_grade():

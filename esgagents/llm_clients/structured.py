@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, Callable, Optional, TypeVar
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -10,6 +11,7 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
+JSON_FIELD_BOUNDARY_RE = re.compile(r"(?<=[\]\"}0-9eE])\s*\n\s*(?=\"[^\"\n]+\"\s*:)")
 
 
 class PromptStructuredLLM:
@@ -42,16 +44,38 @@ class PromptStructuredLLM:
 def _json_object(raw: str) -> dict[str, Any]:
     text = raw.strip()
     try:
-        value = json.loads(text)
+        value = _loads_json_with_repair(text)
     except json.JSONDecodeError:
         start = text.find("{")
         end = text.rfind("}")
         if start < 0 or end <= start:
             raise ValueError("No JSON object found in LLM response")
-        value = json.loads(text[start : end + 1])
+        value = _loads_json_with_repair(text[start : end + 1])
     if not isinstance(value, dict):
         raise ValueError("Structured LLM response must be a JSON object")
     return value
+
+
+def _loads_json_with_repair(text: str) -> Any:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as original:
+        repaired = _repair_common_json_shape_errors(text)
+        if repaired != text:
+            try:
+                return json.loads(repaired)
+            except json.JSONDecodeError:
+                pass
+        raise original
+
+
+def _repair_common_json_shape_errors(text: str) -> str:
+    repaired = text.strip()
+    repaired = re.sub(r"^```(?:json)?\s*", "", repaired, flags=re.IGNORECASE)
+    repaired = re.sub(r"\s*```$", "", repaired)
+    repaired = JSON_FIELD_BOUNDARY_RE.sub(",\n", repaired)
+    repaired = re.sub(r",(\s*[}\]])", r"\1", repaired)
+    return repaired
 
 
 def bind_structured(llm: Any | None, schema: type[T], agent_name: str) -> Optional[Any]:

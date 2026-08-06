@@ -7,7 +7,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from skills.agents.context_builder import compact
 from esgagents.llm_clients.structured import bind_structured
-from esgagents.agents.evidence.source_policy import attribute_draft_statement
+from esgagents.agents.evidence.source_policy import (
+    attribute_assessment_statement,
+    attribute_draft_statement,
+)
 from esgagents.schemas import SkillDraft
 
 logger = logging.getLogger(__name__)
@@ -37,6 +40,9 @@ class SkillWriterAgent:
             if gate.get("reason") == "accepted_draft_evidence":
                 answer = attribute_draft_statement(answer, context.get("output_language", ""))
                 draft_flags.extend(["draft_attributed", "draft_based_answer"])
+            if gate.get("reason") == "accepted_assessment_evidence":
+                answer = attribute_assessment_statement(answer, context.get("output_language", ""))
+                draft_flags.extend(["assessment_attributed", "assessment_based_answer"])
             if gate.get("reason") == "accepted_v3_partial":
                 draft_flags.append("rag_partial_coverage")
             if rag.is_v3:

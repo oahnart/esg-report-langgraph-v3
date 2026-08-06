@@ -120,3 +120,11 @@ def test_hallmdr_structured_output_uses_prompt_json_adapter():
     assert isinstance(structured, PromptStructuredLLM)
     assert result == StructuredResult(answer="ok")
     assert "Return exactly one valid JSON object" in llm.messages[0].content
+
+
+def test_hallmdr_structured_output_repairs_missing_field_comma():
+    llm = FakeHallMDRLLM()
+    llm.invoke = lambda messages: SimpleNamespace(content='{"answer": "ok"\n "extra": "ignored"}')
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    assert structured.invoke("return an answer") == StructuredResult(answer="ok")

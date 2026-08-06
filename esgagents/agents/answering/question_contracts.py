@@ -9,6 +9,44 @@ class QuestionContract:
     pillar: str
     required_facets: tuple[str, ...]
     expected_facets: tuple[str, ...] = ()
+    metric_dimensions: tuple[str, ...] = ()
+
+
+METRIC_DIMENSIONS_BY_QID: dict[str, tuple[str, ...]] = {
+    "Q007": ("occupational_accident_count", "ltifr", "safety_training"),
+    "Q011": ("human_rights_grievances",),
+    "Q015": ("product_recall_count", "product_safety_incident_count", "quality_complaint_count"),
+    "Q019": ("privacy_breach_count", "data_leak_incident_count", "security_violation_count"),
+    "Q023": (
+        "water_reuse_rate",
+        "waste_recycling_rate",
+        "environmental_violation_count",
+        "environmental_accident_count",
+    ),
+    "Q027": ("ethics_violation_reports", "corruption_incidents", "whistleblowing_cases_resolved"),
+    "Q031": ("scope_1_emissions", "scope_2_emissions", "scope_3_emissions", "energy_use"),
+    "Q035": ("waste_generation", "waste_recycling_rate"),
+    "Q039": ("water_consumption", "water_reuse_rate", "wastewater_discharge"),
+    "Q043": ("habitat_protection_activity", "ecosystem_restoration_activity"),
+    "Q047": ("air_pollutant_emissions", "water_pollutant_emissions"),
+    "Q051": ("eco_friendly_product_count", "environmental_certification_count"),
+    "Q055": ("product_recovery_recycling", "environmental_regulatory_response"),
+    "Q059": ("employee_training_hours", "training_investment", "turnover_rate"),
+    "Q063": ("workforce_gender_mix", "workforce_age_mix", "female_manager_ratio"),
+    "Q067": ("supplier_esg_assessment_count", "supplier_improvement_support"),
+    "Q071": ("community_investment", "volunteer_participation"),
+    "Q075": ("committee_meeting_count", "committee_activity_count"),
+    "Q079": (
+        "board_composition",
+        "independent_director_ratio",
+        "board_meeting_count",
+        "board_attendance_rate",
+    ),
+    "Q083": ("esg_target", "esg_target_progress"),
+    "Q087": ("compliance_violation_cases", "fine_amount", "compliance_training"),
+    "Q091": ("shareholder_composition", "dividend_policy", "shareholder_meeting"),
+    "Q095": ("stakeholder_communication_activity",),
+}
 
 
 def build_question_contract(planned: Any) -> QuestionContract:
@@ -21,7 +59,11 @@ def build_question_contract(planned: Any) -> QuestionContract:
         )
     ).casefold()
     if pillar == "metrics":
-        return QuestionContract(pillar, ("metric_result", "reporting_period"))
+        return QuestionContract(
+            pillar,
+            ("metric_result", "reporting_period"),
+            metric_dimensions=METRIC_DIMENSIONS_BY_QID.get(str(getattr(planned, "id", "")), ()),
+        )
     if pillar == "governance":
         return QuestionContract(pillar, ("accountable_body", "role"), ("oversight_cadence",))
     if pillar == "risk_management":

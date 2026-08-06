@@ -78,6 +78,21 @@ class EvidenceLocator(BaseModel):
     cell_range: str | None = None
 
 
+class EvidenceFact(BaseModel):
+    metric: str = ""
+    period: str = ""
+    value: str = ""
+    unit: str = ""
+    value_role: Literal["actual", "target", "unknown"] = "unknown"
+    scope: str = ""
+    locator: EvidenceLocator = Field(default_factory=EvidenceLocator)
+
+    @field_validator("metric", "period", "value", "unit", "scope", mode="before")
+    @classmethod
+    def _fact_text(cls, value: Any) -> str:
+        return "" if value is None else str(value)
+
+
 class RagCoverage(BaseModel):
     direct_answer: bool = False
     supports_policy_or_direction: bool = False
@@ -113,6 +128,7 @@ class EvidenceItem(BaseModel):
     topic: str = ""
     subtopic: str = ""
     locator: EvidenceLocator = Field(default_factory=EvidenceLocator)
+    facts: list[EvidenceFact] = Field(default_factory=list)
     classification_reason: str = ""
 
     @field_validator(
@@ -275,6 +291,17 @@ class SemanticReview(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class ClaimSupport(BaseModel):
+    claim_id: str
+    claim_text: str
+    source_ids: list[str] = Field(default_factory=list)
+    support_tier: str = "tier_unknown"
+    support_status: Literal["grounded", "partial", "unsupported", "data_gap"] = "unsupported"
+    facets: list[str] = Field(default_factory=list)
+    reporting_period: str = ""
+    attribution_required: bool = False
+
+
 class AnswerRecord(BaseModel):
     qid: str
     source_id: str = ""
@@ -300,6 +327,7 @@ class AnswerRecord(BaseModel):
     sanitizer_actions: list[str] = Field(default_factory=list)
     evidence_summary: str = ""
     sources: list[dict[str, Any]] = Field(default_factory=list)
+    claim_support: list[ClaimSupport] = Field(default_factory=list)
     qa: QAResult
     agent_profile: AgentProfileKey = "general_section"
     skill_key: AgentProfileKey = "general_section"
@@ -325,6 +353,7 @@ class SkillDraft(BaseModel):
         default_factory=list,
         description="Concise quality or disclosure flags identified while drafting.",
     )
+    claim_support: list[ClaimSupport] = Field(default_factory=list)
 
 
 class RunArtifacts(BaseModel):

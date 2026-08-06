@@ -3,13 +3,15 @@ from types import SimpleNamespace
 import pytest
 
 from esgagents.agents.answering.output_hygiene import OutputHygieneAgent, normalize_markdown
+from esgagents.agents.answering.question_contracts import METRIC_DIMENSIONS_BY_QID
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
 from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
 from esgagents.agents.evidence.source_policy import classify_source
+from esgagents.quality_flags import CANONICAL_FLAGS
 from esgagents.schemas import EvidenceItem, QAResult, RagQuestionResult, SemanticReview
 
 
-def _planned(qid="Q035", pillar="Metrics", item="Waste KPI", description="Disclose performance"):
+def _planned(qid="Q999", pillar="Metrics", item="Waste KPI", description="Disclose performance"):
     return SimpleNamespace(
         id=qid,
         pillar=pillar,
@@ -49,6 +51,17 @@ def _semantic_state(planned, answer, *, tier="tier_1_governing", evidence_text="
         "quality_flags": {planned.id: []},
         "skill_checks": {planned.id: ["claims_grounded: passed"]},
     }
+
+
+def test_every_template_metrics_qid_has_a_dimension_contract():
+    metrics_qids = {
+        "Q007", "Q011", "Q015", "Q019", "Q023", "Q027", "Q031", "Q035",
+        "Q039", "Q043", "Q047", "Q051", "Q055", "Q059", "Q063", "Q067",
+        "Q071", "Q075", "Q079", "Q083", "Q087", "Q091", "Q095",
+    }
+
+    assert set(METRIC_DIMENSIONS_BY_QID) == metrics_qids
+    assert all(METRIC_DIMENSIONS_BY_QID[qid] for qid in metrics_qids)
 
 
 @pytest.mark.parametrize("qid", ["Q035", "Q039", "Q063", "Q091"])
@@ -134,6 +147,67 @@ def test_metrics_gap_only_answer_is_not_usable():
 
 
 @pytest.mark.parametrize(
+    ("pillar", "item", "answer"),
+    [
+        ("Strategy", "Environmental policy and target", "The policy and target were not disclosed."),
+        ("Governance", "ESG accountable body and role", "The accountable body and its role were not disclosed."),
+        ("Risk Management", "Risk identification and response", "The risk process and response were not disclosed."),
+    ],
+)
+def test_gap_only_answer_is_blank_for_every_pillar(pillar, item, answer):
+    planned = _planned(pillar=pillar, item=item, description=item)
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+
+
+def test_q023_keeps_supported_metric_and_discloses_missing_dimensions():
+    planned = _planned(
+        qid="Q023",
+        item="Environmental KPI performance",
+        description="Water reuse, recycling, violations and accidents",
+    )
+    answer = (
+        "In 2025, environmental violations were 0 cases. "
+        "Water reuse rate, waste recycling rate, and environmental accidents were not disclosed."
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "disclosed_data_gap" in result["quality_flags"][planned.id]
+    assert "metric_environmental_violation_count" in result["semantic_reviews"][planned.id].covered_facets
+    assert "metric_environmental_violation_count" in result["claim_support"][planned.id][0].facets
+
+
+@pytest.mark.parametrize(
+    ("qid", "item", "answer"),
+    [
+        ("Q039", "Water usage", "In 2025, water-pollutant intensity was 0.3 kg per tonne."),
+        ("Q079", "Board composition and activity", "In 2025, the EHS committee held 4 meetings."),
+        ("Q083", "ESG performance", "In 2025, security incidents were 0 and human-rights training reached 100%."),
+    ],
+)
+def test_metric_dimension_contract_rejects_wrong_subject_proxy(qid, item, answer):
+    planned = _planned(qid=qid, item=item, description=item)
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=answer)
+    )
+
+    assert result["qa_results"][qid].status == "failed"
+    assert result["final_answers"][qid] == ""
+
+
+@pytest.mark.parametrize(
     ("pillar", "answer", "missing_facet"),
     [
         ("Strategy", "The company operates an environmental policy.", "target"),
@@ -199,7 +273,12 @@ def test_metrics_grounded_result_and_period_override_stale_v3_missing_facets():
 
     review = result["semantic_reviews"][planned.id]
     assert review.missing_facets == []
-    assert set(review.covered_facets) == {"metric_result", "reporting_period"}
+    assert set(review.covered_facets) == {
+        "metric_result",
+        "reporting_period",
+        "metric_committee_meeting_count",
+        "metric_committee_activity_count",
+    }
     assert result["qa_results"][planned.id].status == "passed"
 
 
@@ -416,6 +495,56 @@ def test_path_variants_deduplicate_to_one_source_but_keep_distinct_excerpts():
     assert normalized["sources"][0]["source_tier"] == "tier_1_governing"
 
 
+def test_q035_flattened_table_infers_header_units_periods_and_value_roles():
+    table = (
+        "폐기물 발생량 합계 톤 1,159 985 1,340 1,250 1,444 "
+        "폐기물 재활용률 % 34.1 50.9 54.5 62.9 62.5"
+    )
+    item = EvidenceItem(
+        raw_evidence_ko=table,
+        source_name="waste_kpi.xlsx",
+        source_path="ESG/waste_kpi.xlsx",
+        semantic_label="useful",
+    )
+    result = EvidenceNormalizerAgent(
+        {"rejected_semantic_labels": {"weak"}, "source_policy_enabled": True}
+    ).run({"rag_results": {"Q035": RagQuestionResult(question_id="Q035", items=[item])}})
+
+    facts = result["normalized_evidence"]["Q035"]["items"][0].facts
+    mapping = {
+        (fact.metric, fact.period, fact.value_role): (fact.value, fact.unit)
+        for fact in facts
+    }
+    assert mapping[("waste_generation", "2023", "actual")] == ("1,159", "t")
+    assert mapping[("waste_recycling_rate", "2023", "actual")] == ("34.1", "%")
+    assert mapping[("waste_generation", "2025", "target")] == ("1,340", "t")
+    assert mapping[("waste_recycling_rate", "2025", "actual")] == ("62.9", "%")
+    assert mapping[("waste_generation", "2026", "target")] == ("1,444", "t")
+    assert mapping[("waste_recycling_rate", "2026", "target")] == ("62.5", "%")
+
+
+def test_output_hygiene_emits_only_canonical_flags_and_moves_free_text_to_notes():
+    planned = _planned(qid="Q011")
+    state = {
+        "planned_questions": [planned],
+        "final_answers": {planned.id: "In 2025, the grievance count was 0."},
+        "quality_flags": {
+            planned.id: [
+                "partial_answer",
+                "missing_quantitative_metric_result",
+                "writer said this needs manual checking",
+            ]
+        },
+        "qa_results": {planned.id: QAResult(status="passed", notes=["grounded"])},
+    }
+
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(state)
+
+    assert set(result["quality_flags"][planned.id]) <= CANONICAL_FLAGS
+    assert "missing_quantitative_metric_result" not in result["quality_flags"][planned.id]
+    assert "writer said this needs manual checking" in result["qa_results"][planned.id].notes
+
+
 def test_draft_only_approved_claim_fails_but_attributed_proposal_is_kept():
     planned = _planned(pillar="Strategy", item="Strategy", description="Policy direction")
     state = _semantic_state(planned, "The policy is approved and implemented.", tier="tier_4_draft")
@@ -545,6 +674,34 @@ def test_q094_redaction_removes_role_only_parenthetical_and_all_names():
         "redacted_person_name",
         "removed_role_only_parenthetical",
     }
+
+
+def test_pii_redaction_preserves_q079_charter_phrase():
+    planned = _planned(qid="Q079", pillar="Metrics", item="이사회 구성", description="활동 현황")
+    answer = "정관상 이사는 3명 이상이며 대표이사가 위원장을 맡습니다."
+
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run({
+        "planned_questions": [planned],
+        "final_answers": {planned.id: answer},
+        "quality_flags": {planned.id: []},
+    })
+
+    assert result["final_answers"][planned.id] == answer
+    assert "pii_redacted" not in result["quality_flags"][planned.id]
+
+
+def test_pii_redaction_preserves_q087_new_hire_compound_word():
+    planned = _planned(qid="Q087", pillar="Metrics", item="준법 교육", description="교육 현황")
+    answer = "반기별 신입사원 및 인턴 대상 교육을 운영합니다."
+
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run({
+        "planned_questions": [planned],
+        "final_answers": {planned.id: answer},
+        "quality_flags": {planned.id: []},
+    })
+
+    assert result["final_answers"][planned.id] == answer
+    assert "pii_redacted" not in result["quality_flags"][planned.id]
 
 
 def test_markdown_normalization_does_not_add_claims():

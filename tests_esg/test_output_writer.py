@@ -17,7 +17,14 @@ from esgagents.output_writer import (
     build_coverage_summary,
     clean_excel_text,
 )
-from esgagents.schemas import AnswerRecord, QAResult, QuantitativeResult, RagRequestTrace, RunArtifacts
+from esgagents.schemas import (
+    AnswerRecord,
+    ClaimSupport,
+    QAResult,
+    QuantitativeResult,
+    RagRequestTrace,
+    RunArtifacts,
+)
 
 
 def _audit_value(worksheet, column_name, row=2):
@@ -64,6 +71,17 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
                     "locator": {"page": 3, "section": "Governance"},
                 }],
                 qa=QAResult(status="passed", notes=["grounded"]),
+                claim_support=[
+                    ClaimSupport(
+                        claim_id="c1",
+                        claim_text="answer",
+                        source_ids=["src_123"],
+                        support_tier="tier_1_governing",
+                        support_status="grounded",
+                        facets=["accountable_body", "role"],
+                        reporting_period="2025",
+                    )
+                ],
                 retrieval_attempts=[
                     {"top_k": 5, "retry_reason": "initial", "eligible_item_count": 0},
                     {"top_k": 12, "retry_reason": "empty evidence", "eligible_item_count": 1},
@@ -112,6 +130,18 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
     assert payload["answers"][0]["qa_failure_stage"] == "skill_policy_critic"
     assert payload["answers"][0]["sanitizer_actions"] == ["removed_unsupported_numeric_claim:30%"]
     assert payload["answers"][0]["sources"][0]["source_tier"] == "tier_1_governing"
+    assert payload["answers"][0]["claim_support"] == [
+        {
+            "claim_id": "c1",
+            "claim_text": "answer",
+            "source_ids": ["src_123"],
+            "support_tier": "tier_1_governing",
+            "support_status": "grounded",
+            "facets": ["accountable_body", "role"],
+            "reporting_period": "2025",
+            "attribution_required": False,
+        }
+    ]
     assert payload["rag_request_traces"][0]["generated_at"] == "2025-08-01T00:00:00Z"
     assert written.output_paths["json"].endswith("qualitative_run.json")
     assert written.output_paths["coverage_summary"].endswith("coverage_summary.json")

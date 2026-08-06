@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import re
 
 from esgagents.schemas import EvidenceItem
 
@@ -10,7 +11,17 @@ def has_evidence_text(item: EvidenceItem) -> bool:
 
 
 def has_source_path(item: EvidenceItem) -> bool:
-    return bool(item.source_path.strip())
+    return is_traceable_source_path(item.source_path)
+
+
+TRACEABLE_SOURCE_RE = re.compile(
+    r"(?:^https?://|\.(?:pdf|pptx?|docx?|xlsx?|csv|tsv|html?|txt)(?:[?#].*)?$)",
+    re.IGNORECASE,
+)
+
+
+def is_traceable_source_path(value: str) -> bool:
+    return bool(TRACEABLE_SOURCE_RE.search(str(value or "").strip()))
 
 
 def has_accepted_label(item: EvidenceItem, rejected_labels: Iterable[str]) -> bool:

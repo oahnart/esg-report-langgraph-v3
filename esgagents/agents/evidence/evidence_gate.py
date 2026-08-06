@@ -38,11 +38,6 @@ class EvidenceGateAgent:
             if rag is None:
                 gate[planned.id] = {"accepted": False, "reason": "missing RAG result"}
                 continue
-            if rag.is_v3:
-                v3_rejection = self._v3_rejection_reason(rag)
-                if v3_rejection:
-                    gate[planned.id] = {"accepted": False, "reason": v3_rejection}
-                    continue
             if not rag.items:
                 gate[planned.id] = {"accepted": False, "reason": "empty evidence"}
             else:
@@ -73,6 +68,17 @@ class EvidenceGateAgent:
                         "reason": f"answer_status={rag.answer_status or 'empty'}",
                     }
                     continue
+                policy_exception = ""
+                failure_code = str(rag.failure_code or "").strip().upper()
+                if rag.is_v3 and failure_code == "DRAFT_ONLY" and self._draft_only_evidence(accepted_label_items):
+                    policy_exception = "accepted_draft_evidence"
+                elif rag.is_v3 and failure_code == "ASSESSMENT_ONLY" and self._assessment_only_evidence(accepted_label_items):
+                    policy_exception = "accepted_assessment_evidence"
+                if rag.is_v3 and not policy_exception:
+                    v3_rejection = self._v3_rejection_reason(rag)
+                    if v3_rejection:
+                        gate[planned.id] = {"accepted": False, "reason": v3_rejection}
+                        continue
                 if not evidence_with_text:
                     gate[planned.id] = {"accepted": False, "reason": "empty evidence"}
                 elif not accepted_label_items:
@@ -82,8 +88,12 @@ class EvidenceGateAgent:
                     }
                 elif not any(has_source_path(item) for item in accepted_label_items):
                     gate[planned.id] = {"accepted": False, "reason": "missing source_path"}
+                elif policy_exception:
+                    gate[planned.id] = {"accepted": True, "reason": policy_exception}
                 elif self._draft_only_evidence(accepted_label_items):
                     gate[planned.id] = {"accepted": True, "reason": "accepted_draft_evidence"}
+                elif self._assessment_only_evidence(accepted_label_items):
+                    gate[planned.id] = {"accepted": True, "reason": "accepted_assessment_evidence"}
                 else:
                     gate[planned.id] = {"accepted": True, "reason": accepted_reason}
         return {"evidence_gate": gate}
@@ -108,6 +118,12 @@ class EvidenceGateAgent:
             or classification.document_status.strip().casefold() in DRAFT_STATUSES
             for classification in classifications
         )
+
+    @staticmethod
+    def _assessment_only_evidence(items: list[Any]) -> bool:
+        if not items:
+            return False
+        return all(classify_source(item).source_tier == "tier_3_assessment" for item in items)
 
     @staticmethod
     def _allows_draft_evidence(planned: Any) -> bool:

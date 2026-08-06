@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+import re
 from typing import Any
 
-from esgagents.schemas import EvidenceItem, model_to_dict
+from esgagents.schemas import EvidenceFact, EvidenceItem, model_to_dict
 
 from .policy import is_usable_evidence, source_name_from_path
 from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
@@ -41,6 +42,10 @@ class EvidenceNormalizerAgent:
                 source_path = item.source_path.strip()
                 source_name = item.source_name.strip() or source_name_from_path(source_path)
                 normalized_item = item.model_copy(update={"source_name": source_name, "source_path": source_path})
+                if not normalized_item.facts:
+                    inferred_facts = self._infer_structured_facts(normalized_item)
+                    if inferred_facts:
+                        normalized_item = normalized_item.model_copy(update={"facts": inferred_facts})
                 classification = classify_source(normalized_item)
                 if self.source_policy_enabled:
                     normalized_item = normalized_item.model_copy(update=classification.__dict__)
@@ -89,13 +94,30 @@ class EvidenceNormalizerAgent:
                     "vector_score": item.vector_score,
                     "score": item.score,
                     "classification_reason": item.classification_reason,
+                    "chunk_ids": [item.chunk_id] if item.chunk_id else [],
+                    "locators": [model_to_dict(item.locator)],
                 }
                 source_key = self._source_dedup_key(source, is_v3=rag.is_v3)
-                if not any(
-                    self._source_dedup_key(existing, is_v3=rag.is_v3) == source_key
-                    for existing in sources
-                ):
+                existing = next(
+                    (
+                        candidate
+                        for candidate in sources
+                        if self._source_dedup_key(candidate, is_v3=rag.is_v3) == source_key
+                    ),
+                    None,
+                )
+                if existing is None:
                     sources.append(source)
+                else:
+                    existing["chunk_ids"] = list(
+                        dict.fromkeys([*existing.get("chunk_ids", []), *source["chunk_ids"]])
+                    )
+                    existing["locators"] = list(
+                        {
+                            tuple(sorted(locator.items())): locator
+                            for locator in [*existing.get("locators", []), *source["locators"]]
+                        }.values()
+                    )
             normalized[qid] = {
                 "items": ranked,
                 "evidence_summary": "\n".join(summary_parts),
@@ -119,9 +141,52 @@ class EvidenceNormalizerAgent:
     @staticmethod
     def _source_dedup_key(source: dict[str, Any], *, is_v3: bool) -> tuple[str, str]:
         canonical_id = str(source.get("canonical_source_id") or "")
-        chunk_id = str(source.get("chunk_id") or "")
-        if not is_v3 and canonical_id:
+        if canonical_id:
             return canonical_id, ""
-        if canonical_id and chunk_id:
-            return canonical_id, chunk_id
         return str(source.get("source_path") or ""), str(source.get("source_name") or "")
+
+    @staticmethod
+    def _infer_structured_facts(item: EvidenceItem) -> list[EvidenceFact]:
+        text = " ".join((item.raw_evidence_ko or "").split())
+        waste = re.search(
+            r"폐기물\s*발생량\s*합계\s*톤\s*"
+            r"([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)",
+            text,
+        )
+        recycling = re.search(
+            r"폐기물\s*재활용률\s*%\s*"
+            r"([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)",
+            text,
+        )
+        if not waste or not recycling:
+            return []
+        columns = (
+            ("2023", "actual"),
+            ("2024", "actual"),
+            ("2025", "target"),
+            ("2025", "actual"),
+            ("2026", "target"),
+        )
+        facts: list[EvidenceFact] = []
+        for index, (period, role) in enumerate(columns, start=1):
+            facts.extend(
+                [
+                    EvidenceFact(
+                        metric="waste_generation",
+                        period=period,
+                        value=waste.group(index),
+                        unit="t",
+                        value_role=role,
+                        locator=item.locator,
+                    ),
+                    EvidenceFact(
+                        metric="waste_recycling_rate",
+                        period=period,
+                        value=recycling.group(index),
+                        unit="%",
+                        value_role=role,
+                        locator=item.locator,
+                    ),
+                ]
+            )
+        return facts

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -12,6 +12,7 @@ from esgagents.llm_clients.structured import bind_structured
 from esgagents.schemas import QAResult, SemanticReview
 from skills.agents.context_builder import compact
 
+from .claim_support import build_claim_support
 from .question_contracts import QuestionContract, build_question_contract
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ DATA_GAP_TERMS = (
     "공개된 내용이 없",
     "제공되지",
     "명시되어 있지",
+    "명시되지",
     "확인되지",
     "미공시",
     "자료가 없",
@@ -98,12 +100,73 @@ FACET_TERMS = {
     "monitoring_follow_up": ("모니터링", "점검", "추적", "후속", "검토", "monitor", "follow-up", "track", "review"),
 }
 
+METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
+    "occupational_accident_count": (r"(?:산업|업무).{0,8}재해.{0,8}(?:건|명|count)", r"occupational accident"),
+    "ltifr": (r"ltifr", r"재해율"),
+    "safety_training": (r"안전(?:보건)?.{0,8}교육", r"safety training"),
+    "human_rights_grievances": (r"인권.{0,8}고충", r"human rights?.{0,8}grievance"),
+    "product_recall_count": (r"제품.{0,8}리콜", r"product recall"),
+    "product_safety_incident_count": (r"제품.{0,8}안전.{0,8}사고", r"product safety incident"),
+    "quality_complaint_count": (r"품질.{0,8}(?:불만|민원)", r"quality complaint"),
+    "privacy_breach_count": (r"개인정보.{0,8}(?:침해|유출)", r"privacy breach"),
+    "data_leak_incident_count": (r"데이터.{0,8}유출", r"data (?:leak|breach)"),
+    "security_violation_count": (r"정보보안.{0,8}(?:법규|규정).{0,8}위반", r"security.{0,8}violation"),
+    "water_reuse_rate": (r"용수.{0,5}(?:재사용|재이용)률", r"water reuse rate"),
+    "waste_recycling_rate": (r"폐기물.{0,5}재활용률", r"waste recycling rate"),
+    "environmental_violation_count": (r"환경.{0,8}(?:법규|법령).{0,8}위반", r"environmental.{0,8}violation"),
+    "environmental_accident_count": (r"환경.{0,8}(?:사고|incident)", r"environmental accident"),
+    "ethics_violation_reports": (r"윤리.{0,8}(?:위반|신고)", r"ethics?.{0,8}(?:violation|report)"),
+    "corruption_incidents": (r"(?:부패|뇌물).{0,8}(?:사건|건)", r"corruption incident"),
+    "whistleblowing_cases_resolved": (r"(?:내부|익명).{0,5}신고.{0,12}(?:처리|완료)", r"whistleblow.{0,12}(?:resolved|closed)"),
+    "scope_1_emissions": (r"scope\s*1", r"스코프\s*1"),
+    "scope_2_emissions": (r"scope\s*2", r"스코프\s*2"),
+    "scope_3_emissions": (r"scope\s*3", r"스코프\s*3"),
+    "energy_use": (r"에너지.{0,8}(?:사용|소비)", r"energy (?:use|consumption)"),
+    "waste_generation": (r"폐기물.{0,8}발생량", r"waste generation"),
+    "water_consumption": (r"용수.{0,5}(?:사용량|소비량)", r"water (?:use|consumption)"),
+    "wastewater_discharge": (r"폐수.{0,5}배출량", r"wastewater discharge"),
+    "habitat_protection_activity": (r"서식지.{0,8}(?:보호|보전)", r"habitat protection"),
+    "ecosystem_restoration_activity": (r"생태계.{0,8}복원", r"ecosystem restoration"),
+    "air_pollutant_emissions": (r"대기오염물질.{0,8}(?:배출|원단위)", r"air pollutant emission"),
+    "water_pollutant_emissions": (r"수질오염물질.{0,8}(?:배출|원단위)", r"water pollutant emission"),
+    "eco_friendly_product_count": (r"친환경.{0,8}제품", r"eco-friendly product"),
+    "environmental_certification_count": (r"환경.{0,8}인증", r"environmental certification"),
+    "product_recovery_recycling": (r"제품.{0,8}(?:회수|재활용)", r"product.{0,8}(?:recovery|recycling)"),
+    "environmental_regulatory_response": (r"환경.{0,8}(?:규제|법규).{0,8}(?:대응|준수)", r"environmental regulat.{0,8}(?:response|compliance)"),
+    "employee_training_hours": (r"임직원.{0,8}교육.{0,8}시간", r"employee training hours"),
+    "training_investment": (r"교육.{0,8}(?:투자|비용|금액)", r"training investment"),
+    "turnover_rate": (r"이직률", r"turnover rate"),
+    "workforce_gender_mix": (r"성별.{0,8}(?:구성|인원|비율)", r"gender.{0,8}(?:mix|composition|ratio)"),
+    "workforce_age_mix": (r"연령별.{0,8}(?:구성|인원|비율)", r"age.{0,8}(?:mix|composition|ratio)"),
+    "female_manager_ratio": (r"여성.{0,8}관리자.{0,8}비율", r"female manager ratio"),
+    "supplier_esg_assessment_count": (r"협력사.{0,8}esg.{0,8}평가", r"supplier esg assessment"),
+    "supplier_improvement_support": (r"협력사.{0,8}(?:개선|지원)", r"supplier.{0,8}improvement support"),
+    "community_investment": (r"사회공헌.{0,8}(?:투자|금액)", r"community investment"),
+    "volunteer_participation": (r"봉사활동.{0,8}(?:참여|시간|인원)", r"volunteer.{0,8}participation"),
+    "committee_meeting_count": (r"위원회.{0,15}(?:개최|회의).{0,8}(?:회|건)",),
+    "committee_activity_count": (r"위원회.{0,15}(?:안건|활동).{0,8}(?:건|개)",),
+    "board_composition": (r"이사회.{0,12}(?:구성|총\s*\d+\s*인)",),
+    "independent_director_ratio": (r"(?:사외|독립)이사.{0,12}(?:비율|%|분의)",),
+    "board_meeting_count": (r"이사회.{0,15}(?:개최|회의).{0,8}(?:회|건)",),
+    "board_attendance_rate": (r"이사회.{0,15}(?:참석률|출석률|attendance)",),
+    "esg_target": (r"esg.{0,12}(?:목표|target)",),
+    "esg_target_progress": (r"esg.{0,15}(?:이행|진척|달성|progress)",),
+    "compliance_violation_cases": (r"(?:법규|규제|준법).{0,12}(?:위반|행정처분|업무정지|회수)",),
+    "fine_amount": (r"(?:과징금|과태료|벌금|fine).{0,12}(?:원|만원|억원|krw|usd)",),
+    "compliance_training": (r"(?:준법|컴플라이언스|정보보호).{0,12}교육",),
+    "shareholder_composition": (r"주주.{0,8}(?:구성|현황|비율)", r"shareholder composition"),
+    "dividend_policy": (r"배당.{0,8}(?:정책|성향|금액|수익률)", r"dividend (?:policy|payout|yield)"),
+    "shareholder_meeting": (r"주주총회.{0,8}(?:개최|참석|의결)", r"shareholder meeting"),
+    "stakeholder_communication_activity": (r"이해관계자.{0,15}(?:소통|fg[iI]|설문|고충)",),
+}
+
 
 class SemanticCompletenessCriticAgent:
     def __init__(self, config: dict[str, Any] | None = None, llm: Any | None = None):
         self.config = config or {}
         self.enabled = bool(self.config.get("semantic_qa_enabled", True))
         self.concurrency = max(1, int(self.config.get("semantic_qa_concurrency", 4)))
+        self.llm_timeout_seconds = max(1.0, float(self.config.get("llm_timeout_seconds", 120)))
         self.llm = llm
         self.structured_llm = bind_structured(llm, SemanticReview, "Semantic Completeness Critic")
 
@@ -136,9 +199,10 @@ class SemanticCompletenessCriticAgent:
         ]
         reviews.update(deterministic)
         if llm_candidates:
-            with ThreadPoolExecutor(max_workers=min(self.concurrency, len(llm_candidates))) as executor:
-                futures = {executor.submit(self._llm_review, state, item): item.id for item in llm_candidates}
-                for future in as_completed(futures):
+            executor = ThreadPoolExecutor(max_workers=min(self.concurrency, len(llm_candidates)))
+            futures = {executor.submit(self._llm_review, state, item): item.id for item in llm_candidates}
+            try:
+                for future in as_completed(futures, timeout=self.llm_timeout_seconds):
                     qid = futures[future]
                     try:
                         reviews[qid] = self._merge_reviews(
@@ -149,6 +213,19 @@ class SemanticCompletenessCriticAgent:
                     except Exception as exc:
                         logger.warning("Semantic review failed for %s; using deterministic fallback: %s", qid, exc)
                         fallback_qids.add(qid)
+            except FuturesTimeoutError:
+                pending = [qid for future, qid in futures.items() if not future.done()]
+                for future in futures:
+                    if not future.done():
+                        future.cancel()
+                fallback_qids.update(pending)
+                logger.warning(
+                    "Semantic review timed out after %.1fs for %s; using deterministic fallback",
+                    self.llm_timeout_seconds,
+                    ", ".join(sorted(pending)) or "pending reviews",
+                )
+            finally:
+                executor.shutdown(wait=False, cancel_futures=True)
 
         for item in planned:
             reviews[item.id] = self._apply_rag_constraints(
@@ -158,18 +235,45 @@ class SemanticCompletenessCriticAgent:
                 deterministic[item.id],
             )
 
+        claim_support = dict(state.get("claim_support", {}))
+        for item in planned:
+            qid = item.id
+            answer = final_answers.get(qid) or state.get("draft_answers", {}).get(qid, "")
+            supports = build_claim_support(
+                answer,
+                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+            )
+            contract = build_question_contract(item)
+            supports = [
+                support.model_copy(update={"facets": self._claim_facets(support.claim_text, contract)})
+                if support.support_status in {"grounded", "partial"}
+                else support
+                for support in supports
+            ]
+            claim_support[qid] = supports
+            reviews[qid] = self._apply_claim_source_policy(reviews[qid], supports)
+
         for item in planned:
             qid = item.id
             review = reviews[qid]
             contract = build_question_contract(item)
             flags = quality_flags.setdefault(qid, [])
-            if self._draft_only_sources(state, qid):
+            draft_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_4_draft" and support.support_status in {"grounded", "partial"}]
+            assessment_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_3_assessment" and support.support_status in {"grounded", "partial"}]
+            if draft_claims or self._draft_only_sources(state, qid):
                 flags.append("draft_based_answer")
                 if review.source_usage != "overstated" and self._has_draft_attribution(
                     final_answers.get(qid) or state.get("draft_answers", {}).get(qid, "")
                 ):
                     flags.append("draft_attributed")
+            if assessment_claims:
+                flags.append("assessment_based_answer")
+                if review.source_usage != "overstated":
+                    flags.append("assessment_attributed")
             if "missing data disclosed" in review.notes:
+                flags.append("disclosed_data_gap")
+            answer_text = final_answers.get(qid) or state.get("draft_answers", {}).get(qid, "")
+            if self._discloses_data_gap(answer_text):
                 flags.append("disclosed_data_gap")
             if qid in fallback_qids:
                 flags.append("semantic_review_fallback")
@@ -178,7 +282,7 @@ class SemanticCompletenessCriticAgent:
                 [
                     f"question_alignment: {review.alignment}",
                     f"source_usage: {review.source_usage}",
-                    *(f"facet_{facet}: {'missing' if facet in review.missing_facets else 'covered'}" for facet in contract.required_facets + contract.expected_facets),
+                    *(f"facet_{facet}: {'missing' if facet in review.missing_facets else 'covered'}" for facet in contract.required_facets + contract.expected_facets + tuple(f"metric_{dimension}" for dimension in contract.metric_dimensions)),
                 ]
             )
             skill_checks[qid] = sorted(set(checks))
@@ -203,6 +307,7 @@ class SemanticCompletenessCriticAgent:
 
         return {
             "semantic_reviews": reviews,
+            "claim_support": claim_support,
             "qa_results": qa_results,
             "final_answers": final_answers,
             "quality_flags": quality_flags,
@@ -210,6 +315,34 @@ class SemanticCompletenessCriticAgent:
             "last_rejected_answers": last_rejected_answers,
             "qa_failure_stages": qa_failure_stages,
         }
+
+    def _apply_claim_source_policy(self, review: SemanticReview, supports: list[Any]) -> SemanticReview:
+        notes = list(review.notes)
+        overstated = False
+        for support in supports:
+            if not support.attribution_required or support.support_status not in {"grounded", "partial"}:
+                continue
+            claim = support.claim_text
+            lower = unicodedata.normalize("NFKC", claim).casefold()
+            if support.support_tier == "tier_4_draft":
+                attributed = self._has_draft_attribution(claim)
+                if not attributed or self._has_definitive_draft_claim(claim):
+                    overstated = True
+                    notes.append(f"claim source attribution missing or overstated: {support.claim_id}")
+            elif support.support_tier == "tier_3_assessment":
+                attributed = any(term in lower for term in ("평가에 따르면", "평가 결과", "assessment", "assessed"))
+                if not attributed:
+                    overstated = True
+                    notes.append(f"claim assessment attribution missing: {support.claim_id}")
+        if not overstated:
+            return review
+        return review.model_copy(
+            update={
+                "alignment": "insufficient",
+                "source_usage": "overstated",
+                "notes": sorted(set(notes)),
+            }
+        )
 
     def _deterministic_review(self, state: dict[str, Any], planned: Any) -> SemanticReview:
         qid = planned.id
@@ -228,9 +361,15 @@ class SemanticCompletenessCriticAgent:
                 covered.append("reporting_period")
             else:
                 missing.append("reporting_period")
+            for dimension in contract.metric_dimensions:
+                facet = f"metric_{dimension}"
+                if self._has_metric_dimension(answer, dimension):
+                    covered.append(facet)
+                else:
+                    missing.append(facet)
         else:
             for facet in contract.required_facets + contract.expected_facets:
-                if any(term in lower for term in FACET_TERMS.get(facet, ())):
+                if self._has_supported_facet(answer, facet):
                     covered.append(facet)
                 else:
                     missing.append(facet)
@@ -238,10 +377,19 @@ class SemanticCompletenessCriticAgent:
         source_usage = self._source_usage(state, qid, answer)
         alignment = "aligned"
         data_gap_disclosed = self._discloses_data_gap(answer)
-        supported_metric_answer = self._has_metric_result(answer) or self._has_non_gap_statement(answer)
+        covered_dimensions = {
+            f"metric_{dimension}" for dimension in contract.metric_dimensions
+        }.intersection(covered)
+        supported_metric_answer = (
+            bool(covered_dimensions)
+            if contract.metric_dimensions
+            else self._has_metric_result(answer) or self._has_non_gap_statement(answer)
+        )
         if contract.pillar == "metrics" and missing and data_gap_disclosed and supported_metric_answer:
             alignment = "partial"
         elif contract.pillar == "metrics" and missing:
+            alignment = "insufficient"
+        elif missing and data_gap_disclosed and not covered:
             alignment = "insufficient"
         elif missing:
             alignment = "partial"
@@ -284,6 +432,7 @@ class SemanticCompletenessCriticAgent:
             f"Pillar: {contract.pillar}",
             f"Required facets: {', '.join(contract.required_facets)}",
             f"Expected facets: {', '.join(contract.expected_facets) or 'none'}",
+            f"Metric dimensions: {', '.join(contract.metric_dimensions) or 'none'}",
             f"RAG coverage status: {getattr(rag, 'coverage_status', '')}",
             f"RAG covered facets: {', '.join(getattr(rag, 'covered_facets', []) or []) or 'none'}",
             f"RAG missing facets (minimum constraints): {', '.join(getattr(rag, 'missing_facets', []) or []) or 'none'}",
@@ -503,6 +652,62 @@ class SemanticCompletenessCriticAgent:
         return any(term in lower for term in DATA_GAP_TERMS)
 
     @staticmethod
+    def _statements(answer: str) -> list[str]:
+        return [
+            " ".join(statement.split())
+            for statement in re.split(r"[.!?。！？\n]+", unicodedata.normalize("NFKC", answer or ""))
+            if statement.strip()
+        ]
+
+    @classmethod
+    def _has_supported_facet(cls, answer: str, facet: str) -> bool:
+        for statement in cls._statements(answer):
+            lower = statement.casefold()
+            if any(term in lower for term in DATA_GAP_TERMS):
+                continue
+            if any(term in lower for term in FACET_TERMS.get(facet, ())):
+                return True
+        return False
+
+    @classmethod
+    def _has_metric_dimension(cls, answer: str, dimension: str) -> bool:
+        patterns = METRIC_DIMENSION_PATTERNS.get(dimension, ())
+        for statement in cls._statements(answer):
+            lower = statement.casefold()
+            if any(term in lower for term in DATA_GAP_TERMS):
+                continue
+            if (
+                dimension in {"committee_meeting_count", "committee_activity_count"}
+                and "위원회" in lower
+                and cls._has_metric_result(statement)
+            ):
+                return True
+            if any(re.search(pattern, lower, flags=re.IGNORECASE) for pattern in patterns):
+                return True
+        return False
+
+    @classmethod
+    def _claim_facets(cls, claim: str, contract: QuestionContract) -> list[str]:
+        facets: list[str] = []
+        if contract.pillar == "metrics":
+            if cls._has_metric_result(claim):
+                facets.append("metric_result")
+            if cls._has_reporting_period(claim):
+                facets.append("reporting_period")
+            facets.extend(
+                f"metric_{dimension}"
+                for dimension in contract.metric_dimensions
+                if cls._has_metric_dimension(claim, dimension)
+            )
+        else:
+            facets.extend(
+                facet
+                for facet in (*contract.required_facets, *contract.expected_facets)
+                if cls._has_supported_facet(claim, facet)
+            )
+        return sorted(set(facets))
+
+    @staticmethod
     def _merge_reviews(
         deterministic: SemanticReview,
         llm_review: SemanticReview,
@@ -511,6 +716,8 @@ class SemanticCompletenessCriticAgent:
         covered_set = set(deterministic.covered_facets)
         missing_set = set(deterministic.missing_facets)
         for facet in llm_review.covered_facets:
+            if contract.pillar == "metrics" and facet in deterministic.missing_facets:
+                continue
             covered_set.add(facet)
             missing_set.discard(facet)
         for facet in llm_review.missing_facets:
@@ -631,6 +838,7 @@ class SemanticCompletenessCriticAgent:
                 "semantic_review_fallback",
                 "disclosed_data_gap",
                 "draft_attributed",
+                "missing_quantitative_metric_result",
             }
             and not flag.startswith("missing_facet:")
         ]

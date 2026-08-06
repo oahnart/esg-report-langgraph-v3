@@ -26,7 +26,7 @@ class QuantitativeInputError(RuntimeError):
     pass
 
 
-HttpGet = Callable[[str, dict[str, str], float], Any]
+HttpRequest = Callable[[str, dict[str, str], float, str, dict[str, Any] | None], Any]
 
 LIST_KEYS = ("items", "data", "records", "evidence", "rows", "results", "metrics")
 TOPIC_KEYS = (
@@ -354,10 +354,157 @@ def map_quantitative_values(
     return results
 
 
+def _is_quant_210_response(raw: Any) -> bool:
+    return (
+        isinstance(raw, dict)
+        and raw.get("kind") == "quantitative"
+        and raw.get("catalog_pack") == "quant_210"
+    )
+
+
+def _validate_quant_210_response(raw: dict[str, Any], company: NormalizedCompany) -> list[dict[str, Any]]:
+    if raw.get("company_id") != company.company_id:
+        raise QuantitativeInputError(
+            "quant_210 response company_id does not match request"
+        )
+    if int(raw.get("year") or 0) != company.year:
+        raise QuantitativeInputError("quant_210 response year does not match request")
+    items = raw.get("items")
+    if not isinstance(items, list):
+        raise QuantitativeInputError("quant_210 response items must be an array")
+    total = raw.get("total")
+    if total is not None and int(total) != len(items):
+        raise QuantitativeInputError("quant_210 response total does not match items length")
+    return [item for item in items if isinstance(item, dict)]
+
+
+def _answer_status(item: dict[str, Any]) -> str:
+    answer = item.get("answer")
+    if not isinstance(answer, dict):
+        return "missing"
+    return str(answer.get("status") or "missing").strip().lower()
+
+
+def _answer_payload(item: dict[str, Any]) -> dict[str, Any]:
+    answer = item.get("answer")
+    return answer if isinstance(answer, dict) else {}
+
+
+def _best_evidence_source(answer: dict[str, Any]) -> str:
+    if answer.get("source"):
+        return str(answer.get("source") or "")
+    evidence = answer.get("evidence")
+    if isinstance(evidence, list) and evidence:
+        first = evidence[0]
+        if isinstance(first, dict):
+            return str(first.get("source") or "")
+    return ""
+
+
+def _evidence_locator(answer: dict[str, Any]) -> dict[str, Any]:
+    evidence = answer.get("evidence")
+    if not isinstance(evidence, list) or not evidence:
+        return {}
+    first = evidence[0]
+    if not isinstance(first, dict):
+        return {}
+    return {
+        key: first.get(key)
+        for key in (
+            "page",
+            "section_path",
+            "sheet",
+            "cell",
+            "year_column",
+            "row_context",
+            "record_id",
+            "source_path",
+        )
+        if first.get(key) not in (None, "")
+    }
+
+
+def map_quant_210_values(
+    raw: dict[str, Any],
+    *,
+    company: NormalizedCompany,
+) -> tuple[list[QuantitativeResult], dict[str, int]]:
+    items = _validate_quant_210_response(raw, company)
+    results: list[QuantitativeResult] = []
+    counts = {"answered": 0, "missing": 0, "needs_confirmation": 0}
+    for index, item in enumerate(items, start=1):
+        status = _answer_status(item)
+        if status not in counts:
+            counts["missing"] += 1
+            status = "missing"
+        else:
+            counts[status] += 1
+
+        answer = _answer_payload(item)
+        publishable = status == "answered"
+        metric_id = str(item.get("item_id") or f"quant_210_{index}")
+        value = answer.get("value") if publishable else None
+        source = _best_evidence_source(answer) if publishable else ""
+        confidence = {
+            "high": 1.0,
+            "medium": 0.7,
+            "low": 0.3,
+        }.get(str(answer.get("confidence") or "").lower(), 0.0 if not publishable else 0.7)
+        answer_reason = str(answer.get("reason") or "")
+        if status == "needs_confirmation":
+            answer_reason = "needs_confirmation: value withheld pending unit/customer confirmation"
+        metadata = {
+            "catalog_pack": raw.get("catalog_pack"),
+            "api_kind": raw.get("kind"),
+            "mapped_qualitative_qid": (
+                item.get("mapped_qualitative_qid")
+                or answer.get("mapped_qualitative_qid")
+                or ""
+            ),
+            "source_id": item.get("source_id") or answer.get("source_id") or "",
+            "domain": item.get("domain") or "",
+            "category": item.get("category") or "",
+            "subcategory": item.get("subcategory") or "",
+            "question": item.get("question") or "",
+            "answer_status": status,
+            "answer_reason": answer_reason,
+            "answer_text": answer.get("text") if publishable else None,
+            "normalized_value": answer.get("normalized_value") if publishable else None,
+            "year": answer.get("year") or raw.get("year"),
+            "evidence": answer.get("evidence") if publishable else [],
+            "evidence_locator": _evidence_locator(answer) if publishable else {},
+            "standards": item.get("standards") or {},
+        }
+        if status == "needs_confirmation":
+            metadata["needs_confirmation"] = True
+            metadata["withheld_value_reason"] = answer_reason
+        results.append(
+            QuantitativeResult(
+                metric_id=metric_id,
+                index=index,
+                metric_name=item.get("item") or item.get("subcategory") or metric_id,
+                value=value,
+                unit=answer.get("unit") or item.get("unit"),
+                source=source,
+                status="filled" if publishable else "missing",
+                confidence=confidence if publishable else 0.0,
+                metadata=metadata,
+            )
+        )
+    stats = {
+        "total": len(results),
+        "filled": counts["answered"],
+        "missing": counts["missing"],
+        "needs_confirmation": counts["needs_confirmation"],
+        "published": counts["answered"],
+    }
+    return results, stats
+
+
 class QuantitativeInputLoader:
-    def __init__(self, config: dict[str, Any], http_get: HttpGet | None = None):
+    def __init__(self, config: dict[str, Any], http_get: HttpRequest | None = None):
         self.config = config
-        self.http_get = http_get
+        self.http_request = http_get
 
     def load(self, company: NormalizedCompany) -> tuple[Any, str]:
         mode = str(self.config.get("quantitative_input_mode", "file")).strip().lower()
@@ -392,19 +539,40 @@ class QuantitativeInputLoader:
             raise QuantitativeInputError(
                 "ESG_QUANTITATIVE_API_BASE_URL is required in api mode"
             )
+        method = str(self.config.get("quantitative_api_method") or "GET").strip().upper()
+        if method not in {"GET", "POST"}:
+            raise QuantitativeInputError(
+                "ESG_QUANTITATIVE_API_METHOD must be either 'GET' or 'POST'"
+            )
         path = str(
             self.config.get("quantitative_api_path")
             or "/companies/{company_id}/{year}/quantitative"
-        ).format(company_id=company.company_id, year=company.year)
+        ).format(
+            company_id=company.company_id,
+            company_name=company.company_name,
+            year=company.year,
+        )
         url = f"{base_url}/{path.lstrip('/')}"
         headers = {"Accept": "application/json"}
         api_key = str(self.config.get("quantitative_api_key") or "")
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
         timeout = float(self.config.get("quantitative_api_timeout_seconds", 30))
+        payload = None
+        if method == "POST":
+            headers["Content-Type"] = "application/json"
+            payload = {
+                "company_id": company.company_id,
+                "company_name": company.company_name,
+                "year": company.year,
+            }
         try:
-            if self.http_get:
-                raw = self.http_get(url, headers, timeout)
+            if self.http_request:
+                raw = self.http_request(url, headers, timeout, method, payload)
+            elif method == "POST":
+                response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+                response.raise_for_status()
+                raw = response.json()
             else:
                 response = requests.get(url, headers=headers, timeout=timeout)
                 response.raise_for_status()
@@ -442,27 +610,39 @@ class QuantitativeAgent:
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         company: NormalizedCompany = state["company"]
-        metrics = [
-            QuantitativeMetric.model_validate(item)
-            for item in self.templates.load_quantitative_items()
-        ]
         raw, source_path = self.input_loader.load(company)
-        evidence = normalize_quantitative_evidence(
-            raw,
-            company_id=company.company_id,
-            year=company.year,
-        )
-        results = map_quantitative_values(metrics, evidence)
-        filled = sum(1 for result in results if result.status == "filled")
-        return {
-            "quantitative_results": [model_to_dict(result) for result in results],
-            "quantitative_stats": {
+        is_quant_210 = _is_quant_210_response(raw)
+        if is_quant_210:
+            results, stats = map_quant_210_values(raw, company=company)
+            bridge_update: dict[str, Any] = self._bridge_metric_qids(
+                state,
+                results,
+                source_path,
+                exact_only=True,
+            )
+        else:
+            metrics = [
+                QuantitativeMetric.model_validate(item)
+                for item in self.templates.load_quantitative_items()
+            ]
+            evidence = normalize_quantitative_evidence(
+                raw,
+                company_id=company.company_id,
+                year=company.year,
+            )
+            results = map_quantitative_values(metrics, evidence)
+            filled = sum(1 for result in results if result.status == "filled")
+            stats = {
                 "total": len(results),
                 "filled": filled,
                 "missing": len(results) - filled,
-            },
+            }
+            bridge_update = self._bridge_metric_qids(state, results, source_path)
+        return {
+            "quantitative_results": [model_to_dict(result) for result in results],
+            "quantitative_stats": stats,
             "quantitative_source_path": source_path,
-            **self._bridge_metric_qids(state, results, source_path),
+            **bridge_update,
         }
 
     def _bridge_metric_qids(
@@ -470,6 +650,7 @@ class QuantitativeAgent:
         state: dict[str, Any],
         results: list[QuantitativeResult],
         quantitative_source_path: str,
+        exact_only: bool = False,
     ) -> dict[str, Any]:
         if not bool(self.config.get("metric_qid_bridge_enabled", True)):
             return {}
@@ -498,7 +679,7 @@ class QuantitativeAgent:
 
         filled = [result for result in results if result.status == "filled"]
         for planned in planned_metrics:
-            matches = self._match_metric_question(planned, filled)
+            matches = self._match_metric_question(planned, filled, exact_only=exact_only)
             if not matches:
                 quality_flags[planned.id] = sorted(
                     set(quality_flags.get(planned.id, []) + ["missing_quantitative_metric_result"])
@@ -602,6 +783,7 @@ class QuantitativeAgent:
         self,
         planned: Any,
         filled_results: list[QuantitativeResult],
+        exact_only: bool = False,
     ) -> list[QuantitativeResult]:
         exact = [
             result
@@ -614,6 +796,8 @@ class QuantitativeAgent:
         ]
         if exact:
             return sorted(exact, key=lambda result: result.confidence, reverse=True)
+        if exact_only:
+            return []
 
         question_tokens = _tokens(
             " ".join(

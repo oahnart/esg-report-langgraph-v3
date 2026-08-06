@@ -7,10 +7,14 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.llm_clients.structured import bind_structured
-from esgagents.agents.evidence.source_policy import attribute_draft_statement
+from esgagents.agents.evidence.source_policy import (
+    attribute_assessment_statement,
+    attribute_draft_statement,
+)
 from esgagents.schemas import SkillDraft
 from skills.agents.context_builder import compact
 
+from .claim_support import build_claim_support
 from .question_contracts import build_question_contract
 from .revision_selection import eligible_revision_qids
 
@@ -56,17 +60,21 @@ class RevisionAgent:
 
             revised, actions = sanitize_revised_answer(revised, state["qa_results"][qid].notes)
             gate_reason = state.get("evidence_gate", {}).get(qid, {}).get("reason", "")
-            if revised and (
-                gate_reason == "accepted_draft_evidence"
-                or "draft_based_answer" in quality_flags.get(qid, [])
-            ):
-                revised = attribute_draft_statement(
-                    revised,
-                    str(getattr(state.get("company"), "output_language", "") or ""),
-                )
+            revised, attribution_flags = self._attribute_supported_claims(
+                revised,
+                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                str(getattr(state.get("company"), "output_language", "") or ""),
+            )
+            if revised and gate_reason == "accepted_draft_evidence" and not attribution_flags:
+                revised = attribute_draft_statement(revised, str(getattr(state.get("company"), "output_language", "") or ""))
+                attribution_flags.extend(["draft_attributed", "draft_based_answer"])
+            if revised and gate_reason == "accepted_assessment_evidence" and not attribution_flags:
+                revised = attribute_assessment_statement(revised, str(getattr(state.get("company"), "output_language", "") or ""))
+                attribution_flags.extend(["assessment_attributed", "assessment_based_answer"])
+            if attribution_flags:
                 quality_flags[qid] = self._with_flags(
                     quality_flags.get(qid, []),
-                    ["draft_attributed", "draft_based_answer"],
+                    attribution_flags,
                 )
             if actions:
                 sanitizer_actions[qid] = self._with_flags(sanitizer_actions.get(qid, []), actions)
@@ -173,6 +181,30 @@ class RevisionAgent:
     @staticmethod
     def _with_flags(existing: list[str], additions: list[str]) -> list[str]:
         return sorted(set(existing + additions))
+
+    @staticmethod
+    def _attribute_supported_claims(
+        answer: str,
+        evidence_items: list[Any],
+        output_language: str,
+    ) -> tuple[str, list[str]]:
+        if not answer:
+            return "", []
+        supports = build_claim_support(answer, evidence_items)
+        if not supports:
+            return answer, []
+        claims: list[str] = []
+        flags: list[str] = []
+        for support in supports:
+            claim = support.claim_text
+            if support.support_status in {"grounded", "partial"} and support.support_tier == "tier_4_draft":
+                claim = attribute_draft_statement(claim, output_language)
+                flags.extend(["draft_attributed", "draft_based_answer"])
+            elif support.support_status in {"grounded", "partial"} and support.support_tier == "tier_3_assessment":
+                claim = attribute_assessment_statement(claim, output_language)
+                flags.extend(["assessment_attributed", "assessment_based_answer"])
+            claims.append(claim)
+        return " ".join(claims), sorted(set(flags))
 
 
 def sanitize_revised_answer(answer: str, qa_notes: list[str]) -> tuple[str, list[str]]:

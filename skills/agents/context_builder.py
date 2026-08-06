@@ -30,7 +30,9 @@ def _format_evidence_line(item: Any) -> str:
         metadata.append(f"chunk_id={item.chunk_id}")
     if locator:
         metadata.append(f"locator={locator}")
-    return f"[{'; '.join(metadata)}] {compact(item.raw_evidence_ko)}"
+    facts = [model_to_dict(fact) for fact in getattr(item, "facts", [])]
+    fact_text = f" structured_facts={facts}" if facts else ""
+    return f"[{'; '.join(metadata)}]{fact_text} {compact(item.raw_evidence_ko)}"
 
 
 class SkillContextBuilderAgent:
@@ -68,6 +70,7 @@ class SkillContextBuilderAgent:
                         f"Question contract pillar: {contract.pillar}",
                         f"Required facets: {', '.join(contract.required_facets) or 'none'}",
                         f"Expected facets: {', '.join(contract.expected_facets) or 'none'}",
+                        f"Required metric dimensions: {', '.join(contract.metric_dimensions) or 'none'}",
                         f"Evidence gate: {gate.get('reason', '')}",
                         f"RAG coverage status: {rag.coverage_status if rag else ''}",
                         f"RAG answerable: {rag.answerable if rag else ''}",

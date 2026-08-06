@@ -404,6 +404,29 @@ def test_q004_iso_identifier_and_spaced_dates_match_evidence():
     assert result["final_answers"]["Q004"] == answer
 
 
+def test_q035_table_header_percent_unit_supports_actual_and_target_values():
+    answer = (
+        "Waste generation/recycling were 1,159 t / 34.1% in 2023 actual, "
+        "985 t / 50.9% in 2024 actual, 1,340 t / 54.5% for the 2025 target, "
+        "1,250 t / 62.9% in 2025 actual, and 1,444 t / 62.5% for the 2026 target."
+    )
+    evidence = (
+        "2023 actual 2024 actual 2025 target 2025 actual 2026 target | "
+        "폐기물 발생량 합계 톤 1,159 985 1,340 1,250 1,444 | "
+        "폐기물 재활용률 % 34.1 50.9 54.5 62.9 62.5"
+    )
+
+    result = SkillPolicyCriticAgent().run(
+        _grounded_critic_state(qid="Q035", answer=answer, evidence=evidence)
+    )
+
+    assert result["qa_results"]["Q035"].status == "passed"
+    assert not any(
+        note.startswith("unsupported numeric claim:")
+        for note in result["qa_results"]["Q035"].notes
+    )
+
+
 def test_q017_topic_phrase_is_not_question_leakage_but_full_prompt_is():
     topic = "정보보호 관리 조직"
     answer = "정보보호 관리 조직은 산업기술보호책임자와 전담조직으로 구성됩니다."
@@ -605,6 +628,55 @@ def test_revision_writer_applies_sanitizer_before_next_critic_pass():
     assert result["draft_answers"]["Q001"] == "The company disclosed Scope 1 emissions."
     assert result["sanitizer_actions"]["Q001"] == ["removed_unsupported_numeric_claim:30%"]
     assert "sanitizer_applied" in result["quality_flags"]["Q001"]
+
+
+def test_revision_attributes_only_the_claim_supported_by_draft_evidence():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "The company operates its incident reporting channel. "
+                    "A biodiversity target for 2030 is under review."
+                )
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            assert schema is SkillDraft
+            return Structured()
+
+    planned = _planned("Q042", "Biodiversity governance")
+    state = _revision_state(
+        [planned],
+        {"Q042": QAResult(status="failed", notes=["claim source attribution missing"])},
+        {"Q042": "Unsafe draft."},
+    )
+    state["normalized_evidence"]["Q042"]["items"] = [
+        EvidenceItem(
+            raw_evidence_ko="The company operates its incident reporting channel.",
+            source_name="incident_policy.pdf",
+            source_path="ESG/incident_policy.pdf",
+            canonical_source_id="operational",
+            source_tier="tier_1_governing",
+        ),
+        EvidenceItem(
+            raw_evidence_ko="A biodiversity target for 2030 is under review.",
+            source_name="biodiversity_draft.docx",
+            source_path="ESG/biodiversity_draft.docx",
+            canonical_source_id="draft",
+            source_tier="tier_4_draft",
+            document_status="draft",
+        ),
+    ]
+
+    result = RevisionAgent({"max_revision_rounds": 2}, LLM()).run(state)
+
+    assert result["final_answers"]["Q042"].startswith(
+        "The company operates its incident reporting channel."
+    )
+    assert "under review" in result["final_answers"]["Q042"]
+    assert "draft_based_answer" in result["quality_flags"]["Q042"]
+    assert "draft_attributed" in result["quality_flags"]["Q042"]
 
 
 def test_revision_writer_keeps_failed_draft_empty_when_llm_is_unavailable():

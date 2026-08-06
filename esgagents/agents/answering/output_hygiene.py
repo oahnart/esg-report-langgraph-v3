@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from esgagents.quality_flags import canonicalize_quality_flags
+
 
 IDENTITY_REQUEST_TERMS = ("성명", "이름", "실명", "담당자명", "name of", "who is")
 KOREAN_SURNAMES = (
@@ -14,9 +16,16 @@ ROLE_PATTERN = (
     r"대표이사|사외이사|대표|부장|과장|차장|팀장|사원|이사|상무|전무|임원|위원장"
 )
 KOREAN_NAME_ROLE_RE = re.compile(
-    rf"(?<![가-힣A-Za-z])([{KOREAN_SURNAMES}][가-힣]{{1,2}})\s*"
+    rf"(?<![가-힣A-Za-z])([{KOREAN_SURNAMES}][가-힣]{{1,2}})\s+"
     rf"({ROLE_PATTERN})(?=\s|,|\)|\.|과|와|이|가|을|를|은|는|$)"
 )
+KOREAN_NAME_FALSE_POSITIVES = {
+    "정관상",
+    "구성된",
+    "고려한",
+    "선임된",
+    "포함한",
+}
 ENGLISH_NAME_ROLE_RE = re.compile(
     r"\b(?:[A-Z][a-z]+\s+){2,3}(CEO|Director|Manager|Officer|Chair|President)\b"
 )
@@ -40,15 +49,14 @@ class OutputHygieneAgent:
         sanitizer_actions = {
             qid: list(actions) for qid, actions in state.get("sanitizer_actions", {}).items()
         }
+        qa_results = dict(state.get("qa_results", {}))
         planned_by_id = {planned.id: planned for planned in state.get("planned_questions", [])}
 
         for qid, original in list(final_answers.items()):
-            if not original:
-                continue
-            normalized = normalize_markdown(original)
+            normalized = normalize_markdown(original) if original else ""
             flags = quality_flags.setdefault(qid, [])
             actions = sanitizer_actions.setdefault(qid, [])
-            if normalized != original:
+            if original and normalized != original:
                 flags.append("markdown_normalized")
 
             planned = planned_by_id.get(qid)
@@ -60,7 +68,7 @@ class OutputHygieneAgent:
                 )
             ).casefold()
             redacted = normalized
-            if not any(term in question_text for term in IDENTITY_REQUEST_TERMS):
+            if normalized and not any(term in question_text for term in IDENTITY_REQUEST_TERMS):
                 redacted, pii_actions = sanitize_person_names(normalized)
                 actions.extend(pii_actions)
 
@@ -69,16 +77,26 @@ class OutputHygieneAgent:
                 redacted = rescanned
                 actions.extend(rescan_actions)
 
-            if redacted != normalized:
+            if normalized and redacted != normalized:
                 flags.append("pii_redacted")
+            gate_reason = str(state.get("evidence_gate", {}).get(qid, {}).get("reason", "") or "")
+            if not redacted and gate_reason.startswith("accepted"):
+                flags.append("writer_empty")
+            canonical_flags, flag_notes = canonicalize_quality_flags(flags)
+            qa = qa_results.get(qid)
+            if qa is not None and flag_notes:
+                qa_results[qid] = qa.model_copy(
+                    update={"notes": list(dict.fromkeys([*qa.notes, *flag_notes]))}
+                )
             final_answers[qid] = redacted
-            quality_flags[qid] = sorted(set(flags))
+            quality_flags[qid] = canonical_flags
             sanitizer_actions[qid] = list(dict.fromkeys(actions))
 
         return {
             "final_answers": final_answers,
             "quality_flags": quality_flags,
             "sanitizer_actions": sanitizer_actions,
+            "qa_results": qa_results,
         }
 
 
@@ -98,7 +116,12 @@ def normalize_markdown(text: str) -> str:
 
 def sanitize_person_names(text: str) -> tuple[str, list[str]]:
     actions: list[str] = []
-    value = KOREAN_NAME_ROLE_RE.sub(lambda match: match.group(2), text)
+    value = KOREAN_NAME_ROLE_RE.sub(
+        lambda match: match.group(0)
+        if match.group(1) in KOREAN_NAME_FALSE_POSITIVES
+        else match.group(2),
+        text,
+    )
     value = ENGLISH_NAME_ROLE_RE.sub(lambda match: match.group(1), value)
     if value != text:
         actions.append("redacted_person_name")

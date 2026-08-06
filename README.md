@@ -85,6 +85,7 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | `ESG_QUANTITATIVE_INPUT_DIR`      |                                 `data/inputs` | Thu muc input dinh luong theo cong ty/nam.                                                   |
 | `ESG_QUANTITATIVE_API_BASE_URL`   |                                          rong | Base URL cho API dinh luong khi dung `api`.                                                  |
 | `ESG_QUANTITATIVE_API_PATH`       | `/companies/{company_id}/{year}/quantitative` | GET path dinh luong.                                                                         |
+| `ESG_QUANTITATIVE_API_METHOD`     |                                         `GET` | `GET` legacy hoac `POST` cho RAG `/quantitative/answers`.                                    |
 | `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                        `true` | Bom metric da map vao evidence cho cac cau qualitative dang `Metrics`.                       |
 | `ESG_OUTPUT_TIMEZONE`             |                                `Asia/Bangkok` | Mui gio dung trong ten workbook tong hop.                                                    |
 | `ESG_AGENT_MODE`                  |                                        `auto` | `auto`, `llm`, hoac `offline`.                                                               |
@@ -565,9 +566,37 @@ co the them optional fields `mapped_qualitative_qid`, `source_id`,
 gan flag `reporting_period_defaulted`. Neu file khong ton tai, run van thanh
 cong va tra du 251 dong `missing`.
 
-API mode goi GET path trong `ESG_QUANTITATIVE_API_PATH`, co Bearer token neu
-`ESG_QUANTITATIVE_API_KEY` duoc cau hinh, va luu response snapshot trong
-`data/cache/quantitative/{company_id}/{year}/{run_id}/`.
+API mode mac dinh goi GET path trong `ESG_QUANTITATIVE_API_PATH`; neu
+`ESG_QUANTITATIVE_API_METHOD=POST` thi runtime gui JSON body theo cong ty/nam.
+Bearer token duoc them neu `ESG_QUANTITATIVE_API_KEY` duoc cau hinh, va response
+snapshot duoc luu trong `data/cache/quantitative/{company_id}/{year}/{run_id}/`.
+
+RAG quantitative API moi dung catalog `quant_210`:
+
+```env
+ESG_QUANTITATIVE_INPUT_MODE=api
+ESG_QUANTITATIVE_API_BASE_URL=https://your-rag-service
+ESG_QUANTITATIVE_API_PATH=/quantitative/answers
+ESG_QUANTITATIVE_API_METHOD=POST
+```
+
+Runtime POST body:
+
+```json
+{
+  "company_id": "daewoong",
+  "company_name": "대웅제약",
+  "year": 2025
+}
+```
+
+Khi response co `kind="quantitative"` va `catalog_pack="quant_210"`, pipeline
+dung 210 item tu RAG lam output native, khong map sang catalog legacy
+`QUANT-0001..QUANT-0251`. Item `answered` duoc publish thanh `filled`; item
+`missing` giu reason; item `needs_confirmation` duoc ghi audit nhung khong
+publish value vao JSON/workbook. Neu can bridge sang cau qualitative `Metrics`,
+RAG phai cung cap exact `mapped_qualitative_qid` hoac `source_id`; runtime
+khong fuzzy-match `quant_210` sang 251 de tranh bom sai so vao disclosure.
 
 ## Evidence Policy
 

@@ -478,6 +478,71 @@ def test_v3_draft_only_current_state_question_enters_attributed_cautious_path():
     assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
 
 
+def test_v3_draft_only_failure_code_is_handled_by_source_policy_gate():
+    config = load_config({"agent_mode": "offline"})
+    planned = SimpleNamespace(id="Q080", item_ko="ESG strategy", description_ko="Current system")
+    rag = RagQuestionResult(
+        question_id="Q080",
+        answer_status="insufficient",
+        coverage_status="insufficient",
+        answerable=False,
+        failure_code="DRAFT_ONLY",
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="ESG TFT 구성 제안",
+                source_path="ESG/strategy_draft.docx",
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+                document_status="draft",
+            )
+        ],
+    )
+
+    gate = EvidenceGateAgent(config).run(
+        {"planned_questions": [planned], "rag_results": {planned.id: rag}}
+    )["evidence_gate"][planned.id]
+
+    assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
+
+
+def test_v3_assessment_only_failure_code_enters_attributed_cautious_path():
+    config = load_config({"agent_mode": "offline"})
+    planned = SimpleNamespace(id="Q008", item_ko="Human rights assessment", description_ko="Result")
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="insufficient",
+        coverage_status="insufficient",
+        answerable=False,
+        failure_code="ASSESSMENT_ONLY",
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="인권영향평가 결과",
+                source_path="ESG/assessment.xlsx",
+                semantic_label="useful",
+                source_tier="tier_3_assessment",
+                document_status="external_assessment",
+            )
+        ],
+    )
+
+    gate = EvidenceGateAgent(config).run(
+        {"planned_questions": [planned], "rag_results": {planned.id: rag}}
+    )["evidence_gate"][planned.id]
+
+    assert gate == {"accepted": True, "reason": "accepted_assessment_evidence"}
+
+
+def test_non_path_source_reference_cannot_pass_evidence_gate():
+    planned, _, gate = _gate_result(
+        answer_status="high_confidence",
+        semantic_label="strong",
+        source_path="12",
+    )
+
+    assert planned.id == "Q016"
+    assert gate == {"accepted": False, "reason": "missing source_path"}
+
+
 def test_draft_only_evidence_can_enter_writer_with_draft_reason():
     planned = SimpleNamespace(id="Q016", item_ko="Human rights policy", description_ko="Explain the current approved policy and response activities.", example_ko="")
     rag = RagQuestionResult(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import re
 from typing import Any, Callable
 
 import requests
@@ -122,6 +123,10 @@ _V3_SOURCE_TIERS = {
     "tier_4_draft",
     "tier_unknown",
 }
+_TRACEABLE_SOURCE_RE = re.compile(
+    r"(?:^https?://|\.(?:pdf|pptx?|docx?|xlsx?|csv|tsv|html?|txt)(?:[?#].*)?$)",
+    re.IGNORECASE,
+)
 _V3_FAILURE_CODES = {
     "NO_EVIDENCE",
     "ALL_EVIDENCE_WEAK",
@@ -135,7 +140,11 @@ _V3_FAILURE_CODES = {
     "UNSUPPORTED_REPORTING_PERIOD",
     "INTERNAL_RETRIEVAL_ERROR",
 }
-_V3_UNANSWERABLE_FAILURE_CODES = _V3_FAILURE_CODES - {"SCOPE_LIMITED"}
+_V3_UNANSWERABLE_FAILURE_CODES = _V3_FAILURE_CODES - {
+    "SCOPE_LIMITED",
+    "DRAFT_ONLY",
+    "ASSESSMENT_ONLY",
+}
 
 
 class TeamRagClient:
@@ -365,6 +374,21 @@ class TeamRagClient:
                 )
                 if "locator" in item and not isinstance(item.get("locator"), dict):
                     violations.append(f"evidence item {index} locator must be an object")
+                if not _TRACEABLE_SOURCE_RE.search(str(item.get("source_path") or "").strip()):
+                    violations.append(f"evidence item {index} has invalid source_path")
+                facts = item.get("facts", [])
+                if "facts" in item and not isinstance(facts, list):
+                    violations.append(f"evidence item {index} facts must be an array")
+                elif isinstance(facts, list):
+                    for fact_index, fact in enumerate(facts):
+                        if not isinstance(fact, dict):
+                            violations.append(
+                                f"evidence item {index} fact {fact_index} must be an object"
+                            )
+                        elif fact.get("value_role", "unknown") not in {"actual", "target", "unknown"}:
+                            violations.append(
+                                f"evidence item {index} fact {fact_index} has invalid value_role"
+                            )
                 if item.get("semantic_label") not in _V3_SEMANTIC_LABELS:
                     violations.append(f"evidence item {index} has invalid semantic_label")
                 if item.get("source_type") not in _V3_SOURCE_TYPES:

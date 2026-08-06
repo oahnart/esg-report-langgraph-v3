@@ -7,7 +7,7 @@ from requests import ConnectionError as RequestsConnectionError
 from requests import Response
 
 from esgagents.rag_client import TeamRagClient, TeamRagError
-from esgagents.schemas import NormalizedCompany, RagResponse
+from esgagents.schemas import EvidenceItem, NormalizedCompany, RagQuestionResult, RagResponse
 
 
 def _v3_item(*, chunk_id="chunk-1", status="approved", tier="tier_1_governing"):
@@ -168,6 +168,102 @@ def test_v3_accepts_reference_complete_partial_and_insufficient_results():
         ("Q047", "insufficient", False),
     ]
     assert response.request_id == "rag-req-1"
+
+
+@pytest.mark.parametrize("failure_code", ["DRAFT_ONLY", "ASSESSMENT_ONLY"])
+def test_v3_source_status_does_not_force_answerable_false(failure_code):
+    row = _v3_result(
+        "Q080",
+        coverage_status="partial",
+        answerable=True,
+        failure_code=failure_code,
+    )
+    client = TeamRagClient("https://rag.example", transport=lambda *_: _v3_response([row]))
+
+    result = client.fetch_evidence("iljinhysolus", ["Q080"], 5, 2025).results[0]
+
+    assert result.answerable is True
+    assert result.failure_code == failure_code
+    assert result.client_contract_violations == []
+
+
+def test_v3_accepts_optional_structured_facts():
+    item = _v3_item()
+    item["facts"] = [
+        {
+            "metric": "waste_recycling_rate",
+            "period": "2025",
+            "value": "62.9",
+            "unit": "%",
+            "value_role": "actual",
+            "scope": "company",
+            "locator": {"sheet_name": "KPI", "cell_range": "F12"},
+        }
+    ]
+    row = _v3_result("Q035", items=[item])
+    client = TeamRagClient("https://rag.example", transport=lambda *_: _v3_response([row]))
+
+    fact = client.fetch_evidence("iljinhysolus", ["Q035"], 5, 2025).results[0].items[0].facts[0]
+
+    assert (fact.metric, fact.period, fact.value, fact.unit, fact.value_role) == (
+        "waste_recycling_rate",
+        "2025",
+        "62.9",
+        "%",
+        "actual",
+    )
+    assert fact.locator.cell_range == "F12"
+
+
+def test_facet_retry_prefers_operational_metric_table_over_draft_at_equal_coverage():
+    agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
+    draft = RagQuestionResult(
+        question_id="Q035",
+        coverage_status="partial",
+        answerable=True,
+        failure_code="DRAFT_ONLY",
+        missing_facets=["waste_recycling_rate"],
+        retrieval_confidence=0.99,
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="Draft waste target.",
+                source_name="draft.docx",
+                source_path="ESG/draft.docx",
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+            )
+        ],
+    )
+    operational = RagQuestionResult(
+        question_id="Q035",
+        coverage_status="partial",
+        answerable=True,
+        failure_code="SCOPE_LIMITED",
+        missing_facets=["waste_recycling_rate"],
+        retrieval_confidence=0.70,
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="2025 waste generation was 1,250 t.",
+                source_name="waste_kpi.xlsx",
+                source_path="ESG/waste_kpi.xlsx",
+                semantic_label="useful",
+                source_tier="tier_2_operational",
+                facts=[
+                    {
+                        "metric": "waste_generation",
+                        "period": "2025",
+                        "value": "1,250",
+                        "unit": "t",
+                        "value_role": "actual",
+                    }
+                ],
+            )
+        ],
+    )
+
+    preferred, _ = agent._preferred_v3_result(draft, operational)
+
+    assert preferred is operational
 
 
 def test_v3_synthesizes_missing_result_and_records_contract_violation():

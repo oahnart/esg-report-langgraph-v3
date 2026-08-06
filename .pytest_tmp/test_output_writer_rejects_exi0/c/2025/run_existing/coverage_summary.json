@@ -1,0 +1,95 @@
+{
+  "run_id": "run_existing",
+  "company": {
+    "company_id": "c",
+    "company_name": "C",
+    "year": 2025
+  },
+  "total_qids": 0,
+  "stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "bucket_stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "final_answer_stats": {
+    "non_empty": 0,
+    "empty": 0
+  },
+  "qa_stats": {
+    "passed": 0,
+    "failed": 0,
+    "empty": 0
+  },
+  "quality_grade_stats": {
+    "full": 0,
+    "partial": 0,
+    "cautious": 0,
+    "failed": 0
+  },
+  "quality_grade_qids": {
+    "full": [],
+    "partial": [],
+    "cautious": [],
+    "failed": []
+  },
+  "coverage_reason_stats": {},
+  "coverage_reason_qids": {},
+  "coverage_issue_stats": {},
+  "coverage_issue_qids": {},
+  "coverage_matrix": {
+    "full": {},
+    "partial": {},
+    "cautious": {},
+    "failed": {}
+  },
+  "provenance": {},
+  "rag": {
+    "coverage_status_stats": {},
+    "coverage_status_qids": {},
+    "answerable_stats": {
+      "true": 0,
+      "false": 0,
+      "unknown": 0
+    },
+    "answerable_qids": {
+      "true": [],
+      "false": [],
+      "unknown": []
+    },
+    "failure_code_stats": {},
+    "failure_code_qids": {},
+    "contract_violation_count": 0,
+    "contract_violation_qids": {},
+    "request_ids": [],
+    "api_versions": [],
+    "rag_versions": [],
+    "index_versions": [],
+    "request_traces": []
+  },
+  "empty_final_answer_qids": [],
+  "top_failure_notes": [],
+  "groups": {
+    "empty_evidence": [],
+    "metrics_missing": [],
+    "draft_evidence": [],
+    "draft_based_answers": [],
+    "partial_answers": [],
+    "missing_required_facets": [],
+    "missing_expected_facets": [],
+    "source_overstated": [],
+    "unsupported_claim": []
+  },
+  "retrieval": {
+    "retried_qids": [],
+    "retry_helped_qids": [],
+    "retry_unresolved_qids": [],
+    "attempts_by_qid": {}
+  }
+}

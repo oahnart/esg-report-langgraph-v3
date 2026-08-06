@@ -166,6 +166,7 @@ class RagBatchAgent:
                 or result.failure_code in {
                     "WRONG_TOPIC",
                     "DRAFT_ONLY",
+                    "ASSESSMENT_ONLY",
                     "MISSING_REQUIRED_FACETS",
                     "CLIENT_CONTRACT_MISSING_RESULT",
                     "CLIENT_CONTRACT_VIOLATION",
@@ -294,10 +295,19 @@ class RagBatchAgent:
             None: 0,
         }
 
-        def quality(result: RagQuestionResult) -> tuple[int, int, float]:
+        def quality(result: RagQuestionResult) -> tuple[int, int, int, int, float]:
+            eligible = self._eligible_retry_items(result.items)
+            preferred_source_count = sum(
+                str(getattr(item, "source_tier", "") or "")
+                in {"tier_1_governing", "tier_2_operational"}
+                for item in eligible
+            )
+            structured_fact_count = sum(len(getattr(item, "facts", []) or []) for item in eligible)
             return (
                 coverage_rank.get(result.coverage_status, 0),
                 -len(result.missing_facets),
+                preferred_source_count,
+                structured_fact_count,
                 float(result.retrieval_confidence or 0.0),
             )
 

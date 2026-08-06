@@ -67,6 +67,7 @@ class ReportManagerAgent:
                 sanitizer_actions=state.get("sanitizer_actions", {}).get(planned.id, []),
                 evidence_summary=normalized.get("evidence_summary", ""),
                 sources=normalized.get("sources", []),
+                claim_support=state.get("claim_support", {}).get(planned.id, []),
                 qa=qa,
                 agent_profile=state.get("agent_profiles", {}).get(planned.id, "general_section"),
                 skill_key=selection.get("skill_key", state.get("agent_profiles", {}).get(planned.id, "general_section")),

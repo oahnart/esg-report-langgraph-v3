@@ -13,6 +13,10 @@ from esgagents.schemas import CompanyInput, model_to_dict
 app = typer.Typer(help="ESG qualitative report generator")
 
 
+def _progress_observer(node_name: str, status: str) -> None:
+    typer.echo(f"[progress] {node_name}: {status}", err=True)
+
+
 @app.callback()
 def main():
     """Run ESG qualitative report workflows."""
@@ -47,7 +51,7 @@ def generate_qualitative(
         run_id=run_id,
     )
     try:
-        artifacts = ESGQualitativeGraph().generate(input_payload)
+        artifacts = ESGQualitativeGraph(progress_observer=_progress_observer).generate(input_payload)
     except OutputRunExistsError:
         typer.echo("Error: output run already exists", err=True)
         raise typer.Exit(code=1)
