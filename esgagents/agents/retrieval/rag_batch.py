@@ -13,7 +13,7 @@ from esgagents.schemas import (
     model_to_dict,
 )
 
-from esgagents.agents.evidence.policy import has_evidence_text, has_source_path
+from esgagents.agents.evidence.policy import has_evidence_text, has_stable_provenance
 from esgagents.agents.evidence.source_policy import evidence_fingerprint
 
 
@@ -161,16 +161,7 @@ class RagBatchAgent:
             return True
         if result.is_v3:
             return (
-                result.answerable is False
-                or result.coverage_status in {"insufficient", "no_evidence"}
-                or result.failure_code in {
-                    "WRONG_TOPIC",
-                    "DRAFT_ONLY",
-                    "ASSESSMENT_ONLY",
-                    "MISSING_REQUIRED_FACETS",
-                    "CLIENT_CONTRACT_MISSING_RESULT",
-                    "CLIENT_CONTRACT_VIOLATION",
-                }
+                result.answer_status.strip().casefold() in {"insufficient", "no_evidence"}
                 or bool(result.client_contract_violations)
             )
         return not self._eligible_retry_items(result.items)
@@ -181,17 +172,13 @@ class RagBatchAgent:
         if result.is_v3:
             if result.client_contract_violations:
                 return "v3 contract violation"
-            if result.failure_code:
-                return result.failure_code
-            if result.coverage_status:
-                return result.coverage_status
-            if result.answerable is False:
-                return "unanswerable"
+            if result.answer_status:
+                return result.answer_status
         if not result.items:
             return "empty evidence"
         if not self._eligible_retry_items(result.items):
-            if not any(has_source_path(item) for item in result.items):
-                return "missing source_path"
+            if not any(has_stable_provenance(item) for item in result.items):
+                return "missing stable provenance"
             return "all evidence semantic labels are weak"
         return "eligible evidence available"
 
@@ -257,7 +244,7 @@ class RagBatchAgent:
             item
             for item in items
             if has_evidence_text(item)
-            and has_source_path(item)
+            and has_stable_provenance(item)
             and item.semantic_label.strip().lower() not in rejected_labels
         ]
 
@@ -287,12 +274,12 @@ class RagBatchAgent:
         original: RagQuestionResult,
         retry: RagQuestionResult,
     ) -> tuple[RagQuestionResult, RagQuestionResult]:
-        coverage_rank = {
-            "complete": 4,
-            "partial": 3,
+        status_rank = {
+            "high_confidence": 5,
+            "medium_confidence": 4,
+            "thin_but_usable": 3,
             "insufficient": 2,
             "no_evidence": 1,
-            None: 0,
         }
 
         def quality(result: RagQuestionResult) -> tuple[int, int, int, int, float]:
@@ -304,10 +291,10 @@ class RagBatchAgent:
             )
             structured_fact_count = sum(len(getattr(item, "facts", []) or []) for item in eligible)
             return (
-                coverage_rank.get(result.coverage_status, 0),
-                -len(result.missing_facets),
+                status_rank.get(result.answer_status.strip().casefold(), 0),
                 preferred_source_count,
                 structured_fact_count,
+                len(eligible),
                 float(result.retrieval_confidence or 0.0),
             )
 

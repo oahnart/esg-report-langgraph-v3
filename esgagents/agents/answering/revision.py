@@ -8,14 +8,19 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.llm_clients.structured import bind_structured
-from esgagents.agents.evidence.source_policy import (
-    attribute_assessment_statement,
-    attribute_draft_statement,
-)
+from esgagents.agents.evidence.source_policy import attribute_assessment_statement, attribute_draft_statement
 from esgagents.schemas import SkillDraft
 from skills.agents.context_builder import compact
 
-from .claim_support import build_claim_support
+from .attribution import (
+    attribute_supported_claims,
+    salvage_source_overstatement,
+    salvage_supported_claims,
+)
+from esgagents.agents.evidence.metric_facts import (
+    metric_facts_prompt_lines,
+    salvage_conflicting_metric_claims,
+)
 from .question_contracts import build_question_contract
 from .revision_selection import eligible_revision_qids
 
@@ -69,12 +74,27 @@ class RevisionAgent:
                 continue
 
             revised, actions = sanitize_revised_answer(revised, state["qa_results"][qid].notes)
+            revised, conflict_actions = salvage_conflicting_metric_claims(
+                revised,
+                state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {}),
+            )
+            revised, claim_actions = salvage_supported_claims(
+                revised,
+                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {}),
+            )
+            actions = sorted(set([*actions, *conflict_actions, *claim_actions]))
             gate_reason = state.get("evidence_gate", {}).get(qid, {}).get("reason", "")
-            revised, attribution_flags = self._attribute_supported_claims(
+            revised, attribution_flags = attribute_supported_claims(
                 revised,
                 state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
                 str(getattr(state.get("company"), "output_language", "") or ""),
             )
+            revised, source_actions = salvage_source_overstatement(
+                revised,
+                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+            )
+            actions = sorted(set([*actions, *source_actions]))
             if revised and gate_reason == "accepted_draft_evidence" and not attribution_flags:
                 revised = attribute_draft_statement(revised, str(getattr(state.get("company"), "output_language", "") or ""))
                 attribution_flags.extend(["draft_attributed", "draft_based_answer"])
@@ -142,8 +162,11 @@ class RevisionAgent:
                 continue
             evidence_lines.append(
                 f"- [{getattr(item, 'source_tier', '')}; {getattr(item, 'document_status', '')}] {text} "
-                f"(source: {getattr(item, 'source_name', '')} | {getattr(item, 'source_path', '')})"
+                f"(source: {getattr(item, 'source_name', '')} | "
+                f"{getattr(item, 'source_path', '') or getattr(item, 'canonical_source_id', '') or '|'.join(filter(None, [str(getattr(item, 'document_id', '') or ''), str(getattr(item, 'chunk_id', '') or '')]))})"
             )
+        metric_audit = evidence.get("metric_audit", {})
+        metric_fact_lines = metric_facts_prompt_lines(metric_audit)
 
         system_prompt = (
             "You are an ESG final-answer revision writer. Return only a customer-ready, "
@@ -171,13 +194,20 @@ class RevisionAgent:
                 f"Current Final Answer: {state['draft_answers'][qid]}",
                 "QA failures:",
                 *(f"- {note}" for note in qa.notes),
+                "Accepted structured metric facts:",
+                *(metric_fact_lines or ["- none"]),
+                "Rejected metric conflicts:",
+                *(
+                    f"- {conflict.get('metric', '')} | {conflict.get('period', '')} | values={conflict.get('values', [])}"
+                    for conflict in metric_audit.get("conflicts", [])
+                ),
                 f"Evidence summary: {compact(evidence.get('evidence_summary', ''))}",
                 "Evidence items:",
                 *evidence_lines,
                 "Sources:",
                 *(
                     f"- [{source.get('source_tier', '')}; {source.get('source_type', '')}; {source.get('document_status', '')}] "
-                    f"{source.get('source_name', '')} | {source.get('source_path', '')}"
+                    f"{source.get('source_name', '')} | {source.get('provenance_key', '') or source.get('source_path', '')}"
                     for source in evidence.get("sources", [])
                 ),
                 "Rewrite instructions:",
@@ -196,31 +226,6 @@ class RevisionAgent:
     @staticmethod
     def _with_flags(existing: list[str], additions: list[str]) -> list[str]:
         return sorted(set(existing + additions))
-
-    @staticmethod
-    def _attribute_supported_claims(
-        answer: str,
-        evidence_items: list[Any],
-        output_language: str,
-    ) -> tuple[str, list[str]]:
-        if not answer:
-            return "", []
-        supports = build_claim_support(answer, evidence_items)
-        if not supports:
-            return answer, []
-        claims: list[str] = []
-        flags: list[str] = []
-        for support in supports:
-            claim = support.claim_text
-            if support.support_status in {"grounded", "partial"} and support.support_tier == "tier_4_draft":
-                claim = attribute_draft_statement(claim, output_language)
-                flags.extend(["draft_attributed", "draft_based_answer"])
-            elif support.support_status in {"grounded", "partial"} and support.support_tier == "tier_3_assessment":
-                claim = attribute_assessment_statement(claim, output_language)
-                flags.extend(["assessment_attributed", "assessment_based_answer"])
-            claims.append(claim)
-        return " ".join(claims), sorted(set(flags))
-
 
 def sanitize_revised_answer(answer: str, qa_notes: list[str]) -> tuple[str, list[str]]:
     """Remove claims already proven unsafe by the prior critic pass.

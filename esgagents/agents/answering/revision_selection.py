@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from esgagents.agents.evidence.policy import has_stable_source
+
 
 def eligible_revision_qids(state: dict[str, Any], max_revision_rounds: int) -> list[str]:
     """Return only failed drafts that can be safely sent to a revision writer."""
@@ -23,7 +25,7 @@ def eligible_revision_qids(state: dict[str, Any], max_revision_rounds: int) -> l
             and bool(draft_answers.get(qid, "").strip())
             and bool(evidence.get("items"))
             and any(
-                str(source.get("source_path", "")).strip()
+                has_stable_source(source)
                 for source in evidence.get("sources", [])
                 if isinstance(source, dict)
             )

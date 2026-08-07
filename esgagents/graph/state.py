@@ -18,6 +18,8 @@ class ESGState(TypedDict, total=False):
     retrieval_attempts: dict[str, list[dict[str, Any]]]
     rag_request_traces: list[Any]
     evidence_gate: dict[str, Any]
+    upstream_hints: dict[str, dict[str, Any]]
+    upstream_coverage_mismatches: dict[str, bool]
     normalized_evidence: dict[str, Any]
     quantitative_results: list[dict[str, Any]]
     quantitative_stats: dict[str, int]

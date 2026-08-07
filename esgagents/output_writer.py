@@ -35,6 +35,11 @@ AUDIT_COLUMNS = [
     "RAG Failure Reason",
     "RAG Retrieval Notes",
     "RAG Contract Violations",
+    "RAG Contract Warnings",
+    "Consumer Decision",
+    "Upstream Hints",
+    "Upstream Coverage Mismatch",
+    "Metric Audit",
     "QA Grade",
     "Final Answer",
     "Evidence Summary",
@@ -279,6 +284,11 @@ class OutputWriter:
                 answer.rag_failure_reason,
                 "; ".join(answer.rag_retrieval_notes),
                 "; ".join(answer.rag_contract_violations),
+                "; ".join(answer.rag_contract_warnings),
+                answer.consumer_decision,
+                json.dumps(answer.upstream_hints, ensure_ascii=False, sort_keys=True),
+                answer.upstream_coverage_mismatch,
+                json.dumps(answer.metric_audit, ensure_ascii=False, sort_keys=True),
                 quality.grade,
                 answer.final_answer,
                 answer.evidence_summary,
@@ -308,7 +318,7 @@ class OutputWriter:
                 "; ".join(answer.sanitizer_actions),
             ])
 
-        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 14, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
+        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 72, 14, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
         for idx, width in enumerate(widths, start=1):
             ws.column_dimensions[get_column_letter(idx)].width = width
         ws.freeze_panes = "A2"
@@ -516,11 +526,49 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
     rag_failure_code_stats: dict[str, int] = {}
     rag_failure_code_qids: dict[str, list[str]] = {}
     rag_contract_violation_qids: dict[str, list[str]] = {}
+    rag_contract_warning_qids: dict[str, list[str]] = {}
+    consumer_decision_stats: dict[str, int] = {}
+    consumer_decision_qids: dict[str, list[str]] = {}
+    consumer_funnel = {
+        "total": len(artifacts.answers),
+        "api_status_eligible": 0,
+        "draft_non_empty": 0,
+        "qa_passed": 0,
+        "final_non_empty": 0,
+    }
+    metric_summary = {
+        "qids_with_metric_rows": [],
+        "metric_row_count": 0,
+        "parsed_metric_row_count": 0,
+        "malformed_metric_row_count": 0,
+        "accepted_fact_count": 0,
+        "conflict_count": 0,
+        "conflict_qids": [],
+        "all_numeric_facts_conflicted_qids": [],
+    }
+    provenance_fallback_qids: list[str] = []
+    upstream_mismatch_qids: list[str] = []
+    salvaged_claim_qids: list[str] = []
+    salvaged_claim_count = 0
     empty_final_answer_qids = []
     for answer in artifacts.answers:
         qid = answer.qid
+        decision = str(getattr(answer, "consumer_decision", "") or "blocked_evidence")
+        consumer_decision_stats[decision] = consumer_decision_stats.get(decision, 0) + 1
+        consumer_decision_qids.setdefault(decision, []).append(qid)
+        if str(answer.answer_status or "").casefold() in {
+            "high_confidence",
+            "medium_confidence",
+            "thin_but_usable",
+        }:
+            consumer_funnel["api_status_eligible"] += 1
+        if answer.draft_answer:
+            consumer_funnel["draft_non_empty"] += 1
+        if str(getattr(answer.qa, "status", "") or "") == "passed":
+            consumer_funnel["qa_passed"] += 1
         if answer.final_answer:
             final_answer_stats["non_empty"] += 1
+            consumer_funnel["final_non_empty"] += 1
         else:
             final_answer_stats["empty"] += 1
             empty_final_answer_qids.append(qid)
@@ -552,6 +600,35 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             rag_failure_code_qids.setdefault(answer.rag_failure_code, []).append(qid)
         for violation in answer.rag_contract_violations:
             rag_contract_violation_qids.setdefault(violation, []).append(qid)
+        for warning in getattr(answer, "rag_contract_warnings", []) or []:
+            rag_contract_warning_qids.setdefault(warning, []).append(qid)
+        metric_audit = getattr(answer, "metric_audit", {}) or {}
+        metric_rows = int(metric_audit.get("metric_row_count", 0) or 0)
+        if metric_rows:
+            metric_summary["qids_with_metric_rows"].append(qid)
+        for key in (
+            "metric_row_count",
+            "parsed_metric_row_count",
+            "malformed_metric_row_count",
+            "accepted_fact_count",
+            "conflict_count",
+        ):
+            metric_summary[key] += int(metric_audit.get(key, 0) or 0)
+        if int(metric_audit.get("conflict_count", 0) or 0):
+            metric_summary["conflict_qids"].append(qid)
+        if metric_audit.get("all_numeric_facts_conflicted"):
+            metric_summary["all_numeric_facts_conflicted_qids"].append(qid)
+        if any(source.get("provenance_fallback") for source in answer.sources):
+            provenance_fallback_qids.append(qid)
+        if getattr(answer, "upstream_coverage_mismatch", False):
+            upstream_mismatch_qids.append(qid)
+        salvage_actions = [
+            action for action in (answer.sanitizer_actions or [])
+            if str(action).startswith("removed_claim:")
+        ]
+        if salvage_actions:
+            salvaged_claim_qids.append(qid)
+            salvaged_claim_count += len(salvage_actions)
         notes = list(getattr(answer.qa, "notes", []) or [])
         flags = list(answer.quality_flags or [])
         checks = list(answer.skill_checks or [])
@@ -638,11 +715,45 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
                 violation: sorted(qids)
                 for violation, qids in sorted(rag_contract_violation_qids.items())
             },
+            "contract_warning_count": sum(
+                len(qids) for qids in rag_contract_warning_qids.values()
+            ),
+            "contract_warning_qids": {
+                warning: sorted(qids)
+                for warning, qids in sorted(rag_contract_warning_qids.items())
+            },
             "request_ids": sorted({trace.request_id for trace in artifacts.rag_request_traces if trace.request_id}),
             "api_versions": sorted({trace.api_version for trace in artifacts.rag_request_traces if trace.api_version}),
             "rag_versions": sorted({trace.rag_version for trace in artifacts.rag_request_traces if trace.rag_version}),
             "index_versions": sorted({trace.index_version for trace in artifacts.rag_request_traces if trace.index_version}),
             "request_traces": [model_to_dict(trace) for trace in artifacts.rag_request_traces],
+        },
+        "consumer_funnel": consumer_funnel,
+        "consumer_decision_stats": dict(sorted(consumer_decision_stats.items())),
+        "consumer_decision_qids": {
+            decision: sorted(qids)
+            for decision, qids in sorted(consumer_decision_qids.items())
+        },
+        "metric_facts": {
+            **metric_summary,
+            "qids_with_metric_rows": sorted(set(metric_summary["qids_with_metric_rows"])),
+            "conflict_qids": sorted(set(metric_summary["conflict_qids"])),
+            "all_numeric_facts_conflicted_qids": sorted(
+                set(metric_summary["all_numeric_facts_conflicted_qids"])
+            ),
+        },
+        "provenance_fallback": {
+            "count": len(set(provenance_fallback_qids)),
+            "qids": sorted(set(provenance_fallback_qids)),
+        },
+        "upstream_mismatch": {
+            "count": len(set(upstream_mismatch_qids)),
+            "qids": sorted(set(upstream_mismatch_qids)),
+        },
+        "claim_salvage": {
+            "claim_count": salvaged_claim_count,
+            "qid_count": len(set(salvaged_claim_qids)),
+            "qids": sorted(set(salvaged_claim_qids)),
         },
         "empty_final_answer_qids": sorted(empty_final_answer_qids),
         "top_failure_notes": [
@@ -682,6 +793,7 @@ def _combined_status(answer: Any) -> str:
     quality = resolved_answer_quality(answer)
     return (
         f"Answer: {answer_status}\n"
+        f"Consumer Decision: {getattr(answer, 'consumer_decision', '') or 'unknown'}\n"
         f"QA Grade: {quality.grade}\n"
         f"Coverage: {quality.reason}\n"
         f"RAG Coverage: {getattr(answer, 'rag_coverage_status', '') or 'unknown'}\n"
@@ -703,7 +815,11 @@ def _evidence_sources(sources: list[dict[str, Any]]) -> str:
     return "\n".join(
         _format_source(source)
         for source in sources
-        if source.get("source_name") or source.get("source_path")
+        if source.get("source_name")
+        or source.get("source_path")
+        or source.get("provenance_key")
+        or source.get("canonical_source_id")
+        or (source.get("document_id") and source.get("chunk_id"))
     )
 
 
@@ -715,6 +831,9 @@ def _format_source(source: dict[str, Any]) -> str:
             "document_id",
             "chunk_id",
             "canonical_source_id",
+            "provenance_key",
+            "provenance_method",
+            "provenance_fallback",
             "source_tier",
             "source_type",
             "document_status",
@@ -738,7 +857,15 @@ def _format_source(source: dict[str, Any]) -> str:
     )
     if locator_text:
         metadata = "; ".join(filter(None, [metadata, f"locator({locator_text})"]))
-    location = f"{source.get('source_name', '')} | {source.get('source_path', '')}".strip(" |")
+    location = " | ".join(
+        str(value)
+        for value in (
+            source.get("source_name"),
+            source.get("source_path"),
+            source.get("provenance_key"),
+        )
+        if value
+    )
     return f"[{metadata}] {location}" if metadata else location
 
 

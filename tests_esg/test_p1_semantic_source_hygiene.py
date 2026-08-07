@@ -227,7 +227,7 @@ def test_non_metrics_missing_facets_are_kept_as_partial(pillar, answer, missing_
     assert f"missing_facet:{missing_facet}" in result["quality_flags"][planned.id]
 
 
-def test_v3_missing_facets_remain_minimum_semantic_constraints():
+def test_v3_missing_facets_are_audit_hints_not_semantic_constraints():
     planned = _planned(
         qid="Q016",
         pillar="Strategy",
@@ -249,9 +249,9 @@ def test_v3_missing_facets_remain_minimum_semantic_constraints():
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     review = result["semantic_reviews"]["Q016"]
-    assert "target" in review.missing_facets
-    assert "target" not in review.covered_facets
-    assert "RAG missing facet: target" in review.notes
+    assert "target" not in review.missing_facets
+    assert "target" in review.covered_facets
+    assert result["qa_results"]["Q016"].status == "passed"
 
 
 def test_metrics_grounded_result_and_period_override_stale_v3_missing_facets():

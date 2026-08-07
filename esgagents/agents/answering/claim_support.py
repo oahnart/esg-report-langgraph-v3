@@ -37,6 +37,16 @@ STOPWORDS = {
     "for",
     "with",
     "company",
+    "was",
+    "were",
+    "is",
+    "are",
+    "has",
+    "have",
+    "had",
+    "reported",
+    "recorded",
+    "according",
 }
 TIER_RANK = {
     "tier_1_governing": 5,
@@ -111,9 +121,9 @@ def build_claim_support(answer: str, evidence_items: list[Any]) -> list[ClaimSup
 def _split_claims(answer: str) -> list[str]:
     normalized = unicodedata.normalize("NFKC", answer or "")
     return [
-        " ".join(part.split()).strip(" •")
-        for part in re.split(r"(?<=[.!?。！？])\s+|\n+|\s*•\s*", normalized)
-        if part.strip(" •")
+        " ".join(part.split()).strip(" •·")
+        for part in re.split(r"(?<=[.!?。！？])\s+|\n+|\s*[•·]\s*", normalized)
+        if part.strip(" •·")
     ]
 
 

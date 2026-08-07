@@ -159,7 +159,9 @@ def test_graph_uses_v3_metric_items_without_quantitative_loader(tmp_path):
     answer = artifacts.answers[0]
     assert artifacts.quantitative_results == []
     assert artifacts.quantitative_stats == {}
-    assert answer.final_answer == "Scope 1 emissions | tCO2e | 2025=100.0"
+    assert "Scope 1 emissions" in answer.final_answer
+    assert "2025" in answer.final_answer
+    assert "100.0 tCO2e" in answer.final_answer
     assert answer.sources[0]["semantic_label"] == "metric_row"
     assert answer.sources[0]["locator"]["spans_units"] == ["tCO2e"]
     workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)
@@ -213,7 +215,9 @@ def test_quantitative_output_does_not_overwrite_v3_qualitative_metric_evidence(t
 
     answer = artifacts.answers[0]
     assert artifacts.quantitative_results[0].value == 999
-    assert answer.final_answer == "Scope 1 emissions | tCO2e | 2025=100.0"
+    assert "Scope 1 emissions" in answer.final_answer
+    assert "2025" in answer.final_answer
+    assert "100.0 tCO2e" in answer.final_answer
     assert "quantitative_metric_bridge" not in answer.quality_flags
     assert "999" not in answer.evidence_summary
     workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)

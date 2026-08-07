@@ -193,7 +193,7 @@ def test_skill_policy_critic_flags_hard_failures_and_clears_final_answer():
     assert "unsupported numeric claim: 30%" not in result["quality_flags"]["Q031"]
 
 
-def test_skill_policy_critic_flags_ai_delivery_metadata():
+def test_skill_policy_critic_salvages_grounded_claim_after_delivery_metadata():
     state = {
         "planned_questions": [_planned()],
         "draft_answers": {"Q016": "The company operates an ethics reporting channel. Drafted with AI assistance."},
@@ -211,8 +211,9 @@ def test_skill_policy_critic_flags_ai_delivery_metadata():
 
     result = SkillPolicyCriticAgent().run(state)
 
-    assert result["qa_results"]["Q016"].status == "failed"
-    assert "final answer contains delivery metadata" in result["qa_results"]["Q016"].notes
+    assert result["qa_results"]["Q016"].status == "passed"
+    assert result["final_answers"]["Q016"] == "The company operates an ethics reporting channel."
+    assert "removed_claim:delivery_metadata" in result["sanitizer_actions"]["Q016"]
 
 
 def test_skill_policy_critic_rejects_empty_source_metadata_dict():
@@ -234,7 +235,7 @@ def test_skill_policy_critic_rejects_empty_source_metadata_dict():
     result = SkillPolicyCriticAgent().run(state)
 
     assert result["qa_results"]["Q016"].status == "failed"
-    assert result["hard_failures"]["Q016"] == ["missing source_path"]
+    assert result["hard_failures"]["Q016"] == ["missing stable provenance"]
     assert result["final_answers"]["Q016"] == ""
 
 

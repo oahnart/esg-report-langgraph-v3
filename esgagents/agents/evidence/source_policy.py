@@ -213,7 +213,16 @@ def attribute_assessment_statement(text: str, output_language: str = "") -> str:
     if not value:
         return value
     lower = unicodedata.normalize("NFKC", value).casefold()
-    if any(term in lower for term in ("평가에 따르면", "평가 결과", "assessment", "assessed")):
+    if any(
+        term in lower
+        for term in (
+            "평가에 따르면",
+            "평가 자료에 따르면",
+            "평가 결과",
+            "assessment",
+            "assessed",
+        )
+    ):
         return value
     language = (output_language or "").strip().casefold()
     if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):

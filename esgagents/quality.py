@@ -64,7 +64,11 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
         issues.add("rag_wrong_topic")
     if "writer_empty" in combined:
         issues.add("writer_empty")
-    if "missing source_path" in combined or "missing source path" in combined:
+    if (
+        "missing source_path" in combined
+        or "missing source path" in combined
+        or "missing stable provenance" in combined
+    ):
         issues.add("missing_source_path")
     if "all evidence semantic labels are weak" in combined:
         issues.add("weak_semantic_labels")

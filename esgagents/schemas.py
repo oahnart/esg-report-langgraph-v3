@@ -171,7 +171,9 @@ class RagQuestionResult(BaseModel):
     retrieval_notes: list[str] = Field(default_factory=list)
     coverage: RagCoverage = Field(default_factory=RagCoverage)
     client_contract_violations: list[str] = Field(default_factory=list)
+    client_contract_warnings: list[str] = Field(default_factory=list)
     items: list[EvidenceItem] = Field(default_factory=list)
+    is_v3_payload: bool = Field(default=False, exclude=True)
 
     @field_validator("question_ko", "normalized_answer_ko", "answer_status", "failure_reason", mode="before")
     @classmethod
@@ -180,7 +182,7 @@ class RagQuestionResult(BaseModel):
 
     @property
     def is_v3(self) -> bool:
-        return self.coverage_status is not None or self.answerable is not None
+        return self.is_v3_payload or self.coverage_status is not None or self.answerable is not None
 
 
 class RagResponse(BaseModel):
@@ -321,6 +323,18 @@ class AnswerRecord(BaseModel):
     rag_failure_reason: str = ""
     rag_retrieval_notes: list[str] = Field(default_factory=list)
     rag_contract_violations: list[str] = Field(default_factory=list)
+    rag_contract_warnings: list[str] = Field(default_factory=list)
+    consumer_decision: Literal[
+        "answered",
+        "answered_partial",
+        "blocked_api_status",
+        "blocked_evidence",
+        "blocked_provenance",
+        "blocked_qa",
+    ] = "blocked_evidence"
+    upstream_hints: dict[str, Any] = Field(default_factory=dict)
+    upstream_coverage_mismatch: bool = False
+    metric_audit: dict[str, Any] = Field(default_factory=dict)
     result_bucket: Literal["answered", "empty", "weak", "failed"] | None = None
     draft_answer: str = ""
     final_answer: str = ""

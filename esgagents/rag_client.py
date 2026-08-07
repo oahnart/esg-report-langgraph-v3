@@ -43,19 +43,8 @@ _REQUIRED_V3_RESPONSE_FIELDS = {
 }
 _REQUIRED_V3_RESULT_FIELDS = {
     "question_id",
-    "question_ko",
-    "pillar",
     "normalized_answer_ko",
     "answer_status",
-    "retrieval_confidence",
-    "coverage_status",
-    "answerable",
-    "covered_facets",
-    "missing_facets",
-    "failure_code",
-    "failure_reason",
-    "retrieval_notes",
-    "coverage",
     "items",
 }
 _REQUIRED_V3_EVIDENCE_FIELDS = {
@@ -341,12 +330,12 @@ class TeamRagClient:
             f"missing result field: {field}"
             for field in sorted(_REQUIRED_V3_RESULT_FIELDS - raw.keys())
         ]
-        nullable_result_fields = {"failure_code"}
         violations.extend(
             f"result field must not be null: {field}"
-            for field in sorted(_REQUIRED_V3_RESULT_FIELDS - nullable_result_fields)
+            for field in sorted(_REQUIRED_V3_RESULT_FIELDS)
             if field in raw and raw.get(field) is None
         )
+        warnings: list[str] = []
         coverage = raw.get("coverage")
         if "coverage" in raw and not isinstance(coverage, dict):
             violations.append("coverage must be an object")
@@ -375,7 +364,15 @@ class TeamRagClient:
                 if "locator" in item and not isinstance(item.get("locator"), dict):
                     violations.append(f"evidence item {index} locator must be an object")
                 if not _TRACEABLE_SOURCE_RE.search(str(item.get("source_path") or "").strip()):
-                    violations.append(f"evidence item {index} has invalid source_path")
+                    has_fallback = bool(str(item.get("canonical_source_id") or "").strip()) or bool(
+                        str(item.get("document_id") or "").strip()
+                        and str(item.get("chunk_id") or "").strip()
+                    )
+                    message = f"evidence item {index} has invalid source_path"
+                    if has_fallback:
+                        warnings.append(message)
+                    else:
+                        violations.append(message)
                 facts = item.get("facts", [])
                 if "facts" in item and not isinstance(facts, list):
                     violations.append(f"evidence item {index} facts must be an array")
@@ -405,48 +402,63 @@ class TeamRagClient:
         answerable = raw.get("answerable")
         answer_status = raw.get("answer_status")
         failure_code = raw.get("failure_code")
-        if raw.get("pillar") not in _V3_PILLARS:
-            violations.append("invalid pillar")
+        if "pillar" in raw and raw.get("pillar") is not None and raw.get("pillar") not in _V3_PILLARS:
+            warnings.append("invalid optional pillar")
         if answer_status not in _V3_ANSWER_STATUSES:
             violations.append("invalid answer_status")
-        if status in {"complete", "partial"} and answerable is not True:
-            violations.append(f"coverage_status={status} requires answerable=true")
-        if status in {"insufficient", "no_evidence"} and answerable is not False:
-            violations.append(f"coverage_status={status} requires answerable=false")
-        if answer_status == "high_confidence" and (status != "complete" or answerable is not True):
-            violations.append("answer_status=high_confidence requires complete and answerable=true")
+        if status in {"complete", "partial"} and answerable is not None and answerable is not True:
+            warnings.append(f"coverage_status={status} conflicts with answerable=false")
+        if status in {"insufficient", "no_evidence"} and answerable is not None and answerable is not False:
+            warnings.append(f"coverage_status={status} conflicts with answerable=true")
         expected_answer_statuses = {
             "complete": {"high_confidence", "medium_confidence"},
             "partial": {"thin_but_usable", "medium_confidence"},
             "insufficient": {"insufficient"},
             "no_evidence": {"no_evidence"},
         }
-        if (
+        if status is not None and (
             status == "partial"
             and answer_status == "medium_confidence"
             and failure_code != "SCOPE_LIMITED"
         ):
-            violations.append("partial medium_confidence requires failure_code=SCOPE_LIMITED")
+            warnings.append("partial medium_confidence normally uses failure_code=SCOPE_LIMITED")
         elif status in expected_answer_statuses and answer_status not in expected_answer_statuses[status]:
-            violations.append(
+            warnings.append(
                 f"answer_status={answer_status or 'empty'} conflicts with coverage_status={status}"
             )
         if status == "no_evidence" and items:
-            violations.append("coverage_status=no_evidence requires items=[]")
+            warnings.append("coverage_status=no_evidence conflicts with non-empty items")
         if status == "complete" and failure_code is not None:
-            violations.append("coverage_status=complete requires failure_code=null")
-        if status and status != "complete" and not failure_code:
-            violations.append("non-complete coverage requires failure_code")
+            warnings.append("coverage_status=complete normally uses failure_code=null")
         if failure_code is not None and failure_code not in _V3_FAILURE_CODES:
-            violations.append("invalid failure_code")
-        if failure_code in _V3_UNANSWERABLE_FAILURE_CODES and answerable is not False:
-            violations.append(f"failure_code={failure_code} requires answerable=false")
+            warnings.append("invalid optional failure_code")
+        if failure_code in _V3_UNANSWERABLE_FAILURE_CODES and answerable is True:
+            warnings.append(f"failure_code={failure_code} conflicts with answerable=true")
 
         candidate = dict(raw)
+        candidate["is_v3_payload"] = True
+        candidate["client_contract_warnings"] = list(dict.fromkeys(warnings))
+        if candidate.get("pillar") not in _V3_PILLARS:
+            candidate["pillar"] = None
+        if candidate.get("coverage_status") not in {
+            "complete",
+            "partial",
+            "insufficient",
+            "no_evidence",
+        }:
+            candidate["coverage_status"] = None
+        if not isinstance(candidate.get("answerable"), bool):
+            candidate["answerable"] = None
+        confidence = candidate.get("retrieval_confidence")
+        if not isinstance(confidence, (int, float)) or isinstance(confidence, bool) or not 0 <= confidence <= 1:
+            candidate["retrieval_confidence"] = None
         if not isinstance(candidate.get("items"), list):
             candidate["items"] = []
         if not isinstance(candidate.get("coverage"), dict):
             candidate["coverage"] = {}
+        for key in ("covered_facets", "missing_facets", "retrieval_notes"):
+            if not isinstance(candidate.get(key), list):
+                candidate[key] = []
         if violations:
             original_failure = str(candidate.get("failure_reason") or "").strip()
             candidate.update(
@@ -456,6 +468,7 @@ class TeamRagClient:
                 failure_code="CLIENT_CONTRACT_VIOLATION",
                 failure_reason="; ".join(filter(None, [original_failure, *violations])),
                 client_contract_violations=violations,
+                client_contract_warnings=list(dict.fromkeys(warnings)),
             )
         try:
             return RagQuestionResult.model_validate(candidate)
@@ -476,7 +489,9 @@ class TeamRagClient:
                 failure_reason="; ".join(all_violations),
                 retrieval_notes=["Invalid v3 fields were discarded by the client."],
                 client_contract_violations=all_violations,
+                client_contract_warnings=list(dict.fromkeys(warnings)),
                 items=[],
+                is_v3_payload=True,
             )
 
     def _format_http_error(self, exc: HTTPError, payload: dict[str, Any]) -> TeamRagError:

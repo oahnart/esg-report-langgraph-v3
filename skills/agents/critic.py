@@ -7,6 +7,7 @@ from typing import Any
 
 from skills.agents.context_builder import compact
 from esgagents.schemas import QAResult
+from esgagents.agents.evidence.policy import has_stable_source
 
 
 PROMOTIONAL_TERMS = (
@@ -73,6 +74,7 @@ HARD_FAILURE_NOTES = {
     "unsupported double-materiality claim",
     "no source metadata",
     "missing source_path",
+    "missing stable provenance",
 }
 
 
@@ -86,8 +88,15 @@ def _evidence_corpus(normalized: dict[str, Any]) -> str:
     evidence_parts = []
     for item in normalized.get("items", []):
         text = compact(_item_field(item, "raw_evidence_ko"))
-        source_path = _item_field(item, "source_path").strip()
-        if text and source_path:
+        stable_source = has_stable_source(
+            {
+                "source_path": _item_field(item, "source_path"),
+                "canonical_source_id": _item_field(item, "canonical_source_id"),
+                "document_id": _item_field(item, "document_id"),
+                "chunk_id": _item_field(item, "chunk_id"),
+            }
+        )
+        if text and stable_source:
             evidence_parts.append(text)
     if evidence_parts:
         return "\n".join(evidence_parts)
@@ -204,7 +213,16 @@ def _source_metadata_text(normalized: dict[str, Any]) -> str:
     parts: list[str] = []
     for source in normalized.get("sources", []):
         if isinstance(source, dict):
-            parts.extend(str(source.get(field, "") or "") for field in ("source_name", "source_path"))
+            parts.extend(
+                str(source.get(field, "") or "")
+                for field in (
+                    "source_name",
+                    "source_path",
+                    "canonical_source_id",
+                    "document_id",
+                    "chunk_id",
+                )
+            )
     for item in normalized.get("items", []):
         for field in ("source_name", "source_path", "reporting_period"):
             value = _item_field(item, field)
@@ -288,6 +306,10 @@ class SkillPolicyCriticAgent:
         hard_failures: dict[str, list[str]] = {}
         last_rejected_answers = dict(state.get("last_rejected_answers", {}))
         qa_failure_stages = dict(state.get("qa_failure_stages", {}))
+        sanitizer_actions = {
+            qid: list(actions)
+            for qid, actions in state.get("sanitizer_actions", {}).items()
+        }
 
         for planned in state["planned_questions"]:
             qid = planned.id
@@ -295,7 +317,7 @@ class SkillPolicyCriticAgent:
             gate = state["evidence_gate"].get(qid, {})
             if not answer:
                 reason = gate.get("reason", "empty answer")
-                missing_source = reason == "missing source_path"
+                missing_source = reason == "missing stable provenance"
                 qa[qid] = QAResult(status="failed" if missing_source else "empty", notes=[reason])
                 final_answers[qid] = ""
                 quality_flags[qid] = sorted(set(quality_flags.get(qid, []) + [reason]))
@@ -312,19 +334,33 @@ class SkillPolicyCriticAgent:
 
             normalized = state["normalized_evidence"].get(qid, {})
             evidence_text = _evidence_corpus(normalized)
-            notes: list[str] = []
-            notes.extend(self._question_leakage_notes(planned, answer))
-            if not any(
-                str(source.get("source_path", "")).strip()
-                for source in normalized.get("sources", [])
-                if isinstance(source, dict)
-            ):
-                notes.append("missing source_path")
-            notes.extend(self._unsupported_number_notes(answer, evidence_text, normalized))
-            notes.extend(self._unsupported_certification_notes(answer, evidence_text))
-            notes.extend(self._promotional_notes(answer))
-            notes.extend(self._delivery_metadata_notes(answer))
-            notes.extend(self._skill_notes(state, qid, answer, evidence_text))
+            notes = self._validation_notes(
+                planned,
+                state,
+                qid,
+                answer,
+                normalized,
+                evidence_text,
+            )
+            salvaged_answer, salvage_actions = self._salvage_repairable_claims(answer, notes)
+            if salvage_actions:
+                sanitizer_actions[qid] = sorted(
+                    set(sanitizer_actions.get(qid, []) + salvage_actions)
+                )
+                last_rejected_answers[qid] = answer
+                original_notes = list(notes)
+                notes = self._validation_notes(
+                    planned,
+                    state,
+                    qid,
+                    salvaged_answer,
+                    normalized,
+                    evidence_text,
+                ) if salvaged_answer else sorted(
+                    set([*original_notes, "no safe supported claim remains"])
+                )
+            else:
+                salvaged_answer = answer
 
             qid_hard_failures = [note for note in notes if self._is_hard_failure(note)]
             qid_disclosure_flags = self._disclosure_flags(state, qid, answer)
@@ -335,7 +371,7 @@ class SkillPolicyCriticAgent:
             merged_flags = sorted(set(quality_flags.get(qid, []) + qid_disclosure_flags))
             quality_flags[qid] = merged_flags
             qa[qid] = QAResult(status="failed" if notes else "passed", notes=notes or ["grounded"])
-            final_answers[qid] = "" if qid_hard_failures or notes else answer
+            final_answers[qid] = "" if notes else salvaged_answer
             skill_checks[qid] = qid_checks
             disclosure_flags[qid] = qid_disclosure_flags
             hard_failures[qid] = qid_hard_failures
@@ -355,7 +391,86 @@ class SkillPolicyCriticAgent:
             "hard_failures": hard_failures,
             "last_rejected_answers": last_rejected_answers,
             "qa_failure_stages": qa_failure_stages,
+            "sanitizer_actions": sanitizer_actions,
         }
+
+    def _validation_notes(
+        self,
+        planned: Any,
+        state: dict[str, Any],
+        qid: str,
+        answer: str,
+        normalized: dict[str, Any],
+        evidence_text: str,
+    ) -> list[str]:
+        notes: list[str] = []
+        notes.extend(self._question_leakage_notes(planned, answer))
+        if not any(
+            has_stable_source(source)
+            for source in normalized.get("sources", [])
+            if isinstance(source, dict)
+        ):
+            notes.append("missing stable provenance")
+        notes.extend(self._unsupported_number_notes(answer, evidence_text, normalized))
+        notes.extend(self._unsupported_certification_notes(answer, evidence_text))
+        notes.extend(self._promotional_notes(answer))
+        notes.extend(self._delivery_metadata_notes(answer))
+        notes.extend(self._skill_notes(state, qid, answer, evidence_text))
+        return sorted(set(notes))
+
+    def _salvage_repairable_claims(
+        self,
+        answer: str,
+        notes: list[str],
+    ) -> tuple[str, list[str]]:
+        if not answer or not notes or any(note == "missing stable provenance" for note in notes):
+            return answer, []
+        parts = [
+            part.strip()
+            for part in re.split(r"(?<=[.!?ă€‚])\s+|\n+|\s*â€¢\s*", answer)
+            if part.strip()
+        ]
+        if not parts:
+            parts = [answer.strip()]
+
+        def unsafe(part: str) -> str:
+            lower = part.casefold()
+            for note in notes:
+                if note.startswith("unsupported numeric claim:"):
+                    display = note.split(":", 1)[1].strip()
+                    if display and display.replace(" ", "") in part.replace(" ", ""):
+                        return "unsupported_numeric_claim"
+                elif note == "unsupported certification or initiative claim":
+                    if self._has_certification_claim(lower):
+                        return "unsupported_certification_or_initiative_claim"
+                elif note.startswith("unsupported promotional language:"):
+                    term = note.split(":", 1)[1].strip()
+                    if term and term in lower:
+                        return "unsupported_promotional_language"
+                elif note == "final answer contains delivery metadata":
+                    if any(re.search(pattern, part, flags=re.IGNORECASE) for pattern in DELIVERY_META_PATTERNS):
+                        return "delivery_metadata"
+                elif note == "unsupported offset claim" and "offset" in lower:
+                    return "unsupported_offset_claim"
+                elif note == "unsupported net-zero commitment" and ("net-zero" in lower or "net zero" in lower):
+                    return "unsupported_net_zero_claim"
+                elif note == "unsupported on-track status" and "on track" in lower:
+                    return "unsupported_on_track_claim"
+                elif note == "unsupported double-materiality claim" and "double materiality" in lower:
+                    return "unsupported_double_materiality_claim"
+            return ""
+
+        kept: list[str] = []
+        actions: list[str] = []
+        for part in parts:
+            reason = unsafe(part)
+            if reason:
+                actions.append(f"removed_claim:{reason}")
+            else:
+                kept.append(part)
+        if len(kept) == len(parts):
+            return answer, []
+        return compact(" ".join(kept)), sorted(set(actions))
 
     def _question_leakage_notes(self, planned: Any, answer: str) -> list[str]:
         normalized_answer = " ".join(unicodedata.normalize("NFKC", answer or "").split()).casefold()

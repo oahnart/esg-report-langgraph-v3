@@ -366,7 +366,7 @@ def test_v3_rejects_company_mismatch():
     assert exc_info.value.error_code == "CLIENT_CONTRACT_COMPANY_MISMATCH"
 
 
-def test_v3_downgrades_missing_fields_nulls_and_inconsistent_status():
+def test_v3_keeps_optional_fields_as_warnings_without_downgrading_status():
     raw = _v3_result("Q016")
     raw.pop("pillar")
     raw["retrieval_confidence"] = None
@@ -376,8 +376,10 @@ def test_v3_downgrades_missing_fields_nulls_and_inconsistent_status():
     result = client.fetch_evidence("iljinhysolus", ["Q016"], 5, 2025).results[0]
 
     assert result.answerable is False
-    assert result.failure_code == "CLIENT_CONTRACT_VIOLATION"
-    assert result.client_contract_violations
+    assert result.answer_status == "high_confidence"
+    assert result.failure_code is None
+    assert result.client_contract_violations == []
+    assert result.client_contract_warnings
 
 
 @pytest.mark.parametrize(

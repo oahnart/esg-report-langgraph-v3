@@ -11,6 +11,7 @@ from esgagents.schemas import (
 )
 from esgagents.quality import classify_answer_quality
 from esgagents.provenance import verify_runtime_provenance
+from esgagents.agents.answering.question_contracts import build_question_contract
 
 
 class ReportManagerAgent:
@@ -27,6 +28,12 @@ class ReportManagerAgent:
             rag = rag_results.get(planned.id)
             qa = state["qa_results"][planned.id]
             final_answer = state["final_answers"].get(planned.id, "")
+            if rag and rag.is_v3 and rag.answer_status.strip().casefold() not in {
+                "high_confidence",
+                "medium_confidence",
+                "thin_but_usable",
+            }:
+                final_answer = ""
             gate = state["evidence_gate"].get(planned.id, {})
             if final_answer:
                 result_bucket = "answered"
@@ -39,16 +46,26 @@ class ReportManagerAgent:
             stats[result_bucket] += 1
 
             normalized = state["normalized_evidence"].get(planned.id, {})
+            metric_audit = dict(normalized.get("metric_audit", {}))
+            local_dimensions = list(build_question_contract(planned).metric_dimensions)
+            if local_dimensions:
+                metric_audit["local_dimensions"] = local_dimensions
             quality_flags = state.get("quality_flags", {}).get(planned.id, [])
+            consumer_decision = self._consumer_decision(
+                final_answer=final_answer,
+                answer_status=rag.answer_status if rag else "",
+                gate=gate,
+                quality_flags=quality_flags,
+            )
             revision_count = int(state.get("revision_counts", {}).get(planned.id, 0))
             selection = state.get("skill_selections", {}).get(planned.id, {})
             record = AnswerRecord(
                 qid=planned.id,
                 source_id=planned.source_id,
                 category=planned.category_ko,
-                question=rag.question_ko if rag and rag.question_ko else planned.item_ko,
+                question=planned.item_ko,
                 answer_status=rag.answer_status if rag else "missing",
-                rag_pillar=rag.pillar if rag and rag.pillar else "",
+                rag_pillar=str(getattr(planned, "pillar", "") or ""),
                 rag_retrieval_confidence=rag.retrieval_confidence if rag else None,
                 rag_coverage_status=rag.coverage_status if rag and rag.coverage_status else "",
                 rag_answerable=rag.answerable if rag else None,
@@ -59,6 +76,13 @@ class ReportManagerAgent:
                 rag_failure_reason=rag.failure_reason if rag else "",
                 rag_retrieval_notes=list(rag.retrieval_notes) if rag else [],
                 rag_contract_violations=list(rag.client_contract_violations) if rag else [],
+                rag_contract_warnings=list(rag.client_contract_warnings) if rag else [],
+                consumer_decision=consumer_decision,
+                upstream_hints=dict(state.get("upstream_hints", {}).get(planned.id, {})),
+                upstream_coverage_mismatch=bool(
+                    state.get("upstream_coverage_mismatches", {}).get(planned.id, False)
+                ),
+                metric_audit=metric_audit,
                 result_bucket=result_bucket,
                 draft_answer=state.get("draft_answers", {}).get(planned.id, ""),
                 final_answer=final_answer,
@@ -103,3 +127,36 @@ class ReportManagerAgent:
             rag_request_traces=list(state.get("rag_request_traces", [])),
         )
         return {"artifacts": artifacts}
+
+    @staticmethod
+    def _consumer_decision(
+        *,
+        final_answer: str,
+        answer_status: str,
+        gate: dict[str, Any],
+        quality_flags: list[str],
+    ) -> str:
+        if final_answer:
+            partial_markers = {
+                "partial_answer",
+                "rag_partial_coverage",
+                "thin_evidence",
+                "conflicting_metric",
+            }
+            return (
+                "answered_partial"
+                if partial_markers.intersection(quality_flags)
+                else "answered"
+            )
+        if answer_status.strip().casefold() not in {
+            "high_confidence",
+            "medium_confidence",
+            "thin_but_usable",
+        }:
+            return "blocked_api_status"
+        reason = str(gate.get("reason", "") or "")
+        if "provenance" in reason or "source_path" in reason:
+            return "blocked_provenance"
+        if not gate.get("accepted"):
+            return "blocked_evidence"
+        return "blocked_qa"

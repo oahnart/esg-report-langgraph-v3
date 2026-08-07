@@ -186,14 +186,14 @@ def test_missing_source_path_is_a_hard_failure_and_failed_bucket():
     state.update(agents.report_manager(state))
 
     answer = state["artifacts"].answers[0]
-    assert state["evidence_gate"]["Q016"]["reason"] == "missing source_path"
+    assert state["evidence_gate"]["Q016"]["reason"] == "missing stable provenance"
     assert state["normalized_evidence"]["Q016"]["sources"] == []
     assert answer.final_answer == ""
     assert answer.qa.status == "failed"
     assert answer.qa_grade == "failed"
     assert answer.coverage_reason == "missing_source_path"
     assert "missing_source_path" in answer.coverage_issues
-    assert answer.hard_failures == ["missing source_path"]
+    assert answer.hard_failures == ["missing stable provenance"]
     assert answer.result_bucket == "failed"
 
 
@@ -425,7 +425,7 @@ def test_thin_evidence_rejects_weak_empty_or_untraceable_items():
     for semantic_label, source_path, expected_reason in (
         ("weak", "ESG/source.docx", "all evidence semantic labels are weak"),
         ("", "ESG/source.docx", "all evidence semantic labels are weak"),
-        ("useful", "", "missing source_path"),
+        ("useful", "", "missing stable provenance"),
     ):
         _, _, gate = _gate_result(
             answer_status="thin_but_usable",
@@ -449,7 +449,7 @@ def test_v3_complete_and_partial_are_accepted_with_coverage_reason():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q016", item_ko="Current policy", description_ko="", example_ko="")
     for coverage_status, missing, expected_reason in (
-        ("complete", [], "accepted_v3_complete"),
+        ("complete", [], "accepted_v3_high_confidence"),
         ("partial", ["oversight_cadence"], "accepted_v3_partial"),
     ):
         rag = RagQuestionResult(
@@ -519,7 +519,7 @@ def test_v3_metric_row_passes_gate_and_normalizer_extracts_facts():
         {"rag_results": {planned.id: rag}}
     )["normalized_evidence"][planned.id]
 
-    assert gate == {"accepted": True, "reason": "accepted_v3_partial"}
+    assert gate == {"accepted": True, "reason": "accepted_v3_medium_confidence"}
     assert normalized["items"][0].semantic_label == "metric_row"
     facts = normalized["items"][0].facts
     assert [(fact.metric, fact.period, fact.value, fact.unit) for fact in facts] == [
@@ -532,7 +532,7 @@ def test_v3_unanswerable_and_contract_violations_never_reach_writer():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q047", item_ko="Metric result", description_ko="", example_ko="")
     for violations, expected_reason in (
-        ([], "rag_v3:MISSING_REQUIRED_FACETS"),
+        ([], "answer_status=insufficient"),
         (["invalid invariant"], "rag_v3_contract_violation:invalid invariant"),
     ):
         rag = RagQuestionResult(
@@ -588,7 +588,7 @@ def test_v3_draft_only_current_state_question_enters_attributed_cautious_path():
     assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
 
 
-def test_v3_draft_only_failure_code_is_handled_by_source_policy_gate():
+def test_v3_draft_only_failure_code_cannot_override_insufficient_status():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q080", item_ko="ESG strategy", description_ko="Current system")
     rag = RagQuestionResult(
@@ -612,10 +612,10 @@ def test_v3_draft_only_failure_code_is_handled_by_source_policy_gate():
         {"planned_questions": [planned], "rag_results": {planned.id: rag}}
     )["evidence_gate"][planned.id]
 
-    assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
+    assert gate == {"accepted": False, "reason": "answer_status=insufficient"}
 
 
-def test_v3_assessment_only_failure_code_enters_attributed_cautious_path():
+def test_v3_assessment_only_failure_code_cannot_override_insufficient_status():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q008", item_ko="Human rights assessment", description_ko="Result")
     rag = RagQuestionResult(
@@ -639,7 +639,7 @@ def test_v3_assessment_only_failure_code_enters_attributed_cautious_path():
         {"planned_questions": [planned], "rag_results": {planned.id: rag}}
     )["evidence_gate"][planned.id]
 
-    assert gate == {"accepted": True, "reason": "accepted_assessment_evidence"}
+    assert gate == {"accepted": False, "reason": "answer_status=insufficient"}
 
 
 def test_non_path_source_reference_cannot_pass_evidence_gate():
@@ -650,7 +650,7 @@ def test_non_path_source_reference_cannot_pass_evidence_gate():
     )
 
     assert planned.id == "Q016"
-    assert gate == {"accepted": False, "reason": "missing source_path"}
+    assert gate == {"accepted": False, "reason": "missing stable provenance"}
 
 
 def test_draft_only_evidence_can_enter_writer_with_draft_reason():

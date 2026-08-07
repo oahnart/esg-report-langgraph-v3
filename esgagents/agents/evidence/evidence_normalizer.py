@@ -6,7 +6,8 @@ from typing import Any
 
 from esgagents.schemas import EvidenceFact, EvidenceItem, model_to_dict
 
-from .policy import is_usable_evidence, source_name_from_path
+from .metric_facts import resolve_metric_facts
+from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
 from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
 
 
@@ -49,10 +50,15 @@ class EvidenceNormalizerAgent:
                 classification = classify_source(normalized_item)
                 if self.source_policy_enabled:
                     normalized_item = normalized_item.model_copy(update=classification.__dict__)
+                    if rag.is_v3:
+                        normalized_item = normalized_item.model_copy(
+                            update={"canonical_source_id": upstream_canonical_id}
+                        )
                 if upstream_canonical_id and normalized_item.chunk_id:
                     key = f"{upstream_canonical_id}|{normalized_item.chunk_id}"
                 elif rag.is_v3:
-                    key = f"{source_path}|{evidence_fingerprint(item.raw_evidence_ko)}"
+                    provenance = resolve_provenance(normalized_item)
+                    key = f"{provenance['key']}|{evidence_fingerprint(item.raw_evidence_ko)}"
                 else:
                     key = f"{classification.canonical_source_id}|{evidence_fingerprint(item.raw_evidence_ko)}"
                 current = deduped.get(key)
@@ -69,6 +75,7 @@ class EvidenceNormalizerAgent:
                 else ""
             )
             summary_parts = [normalized_answer] if normalized_answer else []
+            metric_audit = resolve_metric_facts(ranked)
             sources = []
             for item in ranked[:5]:
                 text = " ".join(item.raw_evidence_ko.split())
@@ -94,6 +101,9 @@ class EvidenceNormalizerAgent:
                     "vector_score": item.vector_score,
                     "score": item.score,
                     "classification_reason": item.classification_reason,
+                    "provenance_key": resolve_provenance(item)["key"],
+                    "provenance_method": resolve_provenance(item)["method"],
+                    "provenance_fallback": resolve_provenance(item)["fallback"],
                     "chunk_ids": [item.chunk_id] if item.chunk_id else [],
                     "locators": [model_to_dict(item.locator)],
                 }
@@ -122,6 +132,7 @@ class EvidenceNormalizerAgent:
                 "items": ranked,
                 "evidence_summary": "\n".join(summary_parts),
                 "sources": sources,
+                "metric_audit": metric_audit,
             }
         return {"normalized_evidence": normalized}
 
@@ -143,6 +154,9 @@ class EvidenceNormalizerAgent:
         canonical_id = str(source.get("canonical_source_id") or "")
         if canonical_id:
             return canonical_id, ""
+        provenance_key = str(source.get("provenance_key") or "")
+        if provenance_key:
+            return provenance_key, ""
         return str(source.get("source_path") or ""), str(source.get("source_name") or "")
 
     @staticmethod
@@ -215,7 +229,7 @@ class EvidenceNormalizerAgent:
         year_values = []
         for part in parts[2:]:
             match = re.fullmatch(
-                r"((?:19|20)\d{2})\s*=\s*([+-]?\d+(?:,\d{3})*(?:\.\d+)?)",
+                r"((?:19|20)\d{2})\s*=\s*([+-]?\d+(?:,\d{3})*(?:\.\d+)?%?)",
                 part,
             )
             if match:
@@ -224,7 +238,12 @@ class EvidenceNormalizerAgent:
             return []
         metric_path = parts[0]
         metric_name = metric_path.rsplit(">", 1)[-1].strip() or metric_path
-        unit = parts[1]
+        row_unit = parts[1]
+        normalized_year_values = [
+            (period, value[:-1] if value.endswith("%") else value)
+            for period, value in year_values
+        ]
+        unit = row_unit or ("%" if any(value.endswith("%") for _, value in year_values) else "")
         return [
             EvidenceFact(
                 metric=metric_name,
@@ -234,5 +253,5 @@ class EvidenceNormalizerAgent:
                 value_role="actual",
                 locator=item.locator,
             )
-            for period, value in year_values
+            for period, value in normalized_year_values
         ]

@@ -1,0 +1,2095 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      [LangGraph][V3] Báo cáo ngày 07/08/2026 - kiểm tra run Daewoong ESG 2025
+    </title>
+    <style>
+      :root {
+        --bg: #f3f5f7;
+        --panel: #ffffff;
+        --ink: #16222e;
+        --ink-soft: #4c5a68;
+        --ink-faint: #8494a2;
+        --line: #dde3e9;
+        --ds: #a96a14;
+        --ds-soft: #f6eddd;
+        --cost: #0e7c6b;
+        --cost-soft: #e2f1ee;
+        --lg: #4553b8;
+        --lg-soft: #e7e9f8;
+        --warn: #b3452e;
+        --warn-soft: #f8e8e3;
+        --ok: #1c7a43;
+        --mono: "Consolas", "Courier New", monospace;
+        --sans:
+          Arial, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
+          "Noto Sans KR", Helvetica, sans-serif;
+        --radius: 10px;
+        --shadow: 0 18px 45px rgba(22, 34, 46, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--bg);
+        font-family: var(--sans);
+        line-height: 1.55;
+      }
+
+      body[data-lang="vi"] [lang="ko"] {
+        display: none;
+      }
+      body[data-lang="ko"] [lang="vi"] {
+        display: none;
+      }
+
+      .hero {
+        color: #fff;
+        background:
+          linear-gradient(
+            115deg,
+            rgba(22, 34, 46, 0.97),
+            rgba(69, 83, 184, 0.9)
+          ),
+          repeating-linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.1) 0 1px,
+            transparent 1px 24px
+          );
+        padding: 44px 28px 32px;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.82;
+      }
+
+      .title-row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .version-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 7px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        border-radius: 999px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.14);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      .lang-switch {
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        flex: 0 0 auto;
+      }
+
+      .lang-switch button {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 13px;
+        color: #fff;
+        background: transparent;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      body[data-lang="vi"] .lang-switch button[data-set-lang="vi"],
+      body[data-lang="ko"] .lang-switch button[data-set-lang="ko"] {
+        color: var(--ink);
+        background: #fff;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 940px;
+        font-size: 38px;
+        line-height: 1.12;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 920px;
+        margin: 16px 0 0;
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+        gap: 14px;
+        margin-top: 28px;
+      }
+
+      .hero-stat {
+        min-height: 108px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+
+      .hero-stat strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+
+      .hero-stat span {
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 13px;
+      }
+
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(10px);
+      }
+
+      nav .wrap {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 28px;
+      }
+
+      nav button {
+        flex: 0 0 auto;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      nav button.active {
+        color: #fff;
+        background: var(--lg);
+        border-color: var(--lg);
+      }
+
+      main {
+        padding: 26px 28px 54px;
+      }
+
+      section {
+        margin: 20px auto;
+        padding: 26px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 25px;
+        letter-spacing: 0;
+      }
+      h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .section-lead {
+        max-width: 920px;
+        color: var(--ink-soft);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 16px;
+      }
+
+      .tone-blue {
+        border-top: 4px solid var(--lg);
+      }
+      .tone-teal {
+        border-top: 4px solid var(--cost);
+      }
+      .tone-amber {
+        border-top: 4px solid var(--ds);
+      }
+      .tone-red {
+        border-top: 4px solid var(--warn);
+      }
+      .tone-green {
+        border-top: 4px solid var(--ok);
+      }
+      .tone-violet {
+        border-top: 4px solid var(--lg);
+      }
+
+      .metric {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .metric small {
+        display: block;
+        margin-top: 6px;
+        color: var(--ink-soft);
+        font-size: 13px;
+        font-weight: 400;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        vertical-align: top;
+        text-align: left;
+      }
+
+      th {
+        background: var(--ink);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      tr:nth-child(even) td {
+        background: #f8fafc;
+      }
+
+      .pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+      }
+
+      .ok {
+        background: var(--ok);
+      }
+      .warn {
+        background: var(--ds);
+      }
+      .bad {
+        background: var(--warn);
+      }
+      .info {
+        background: var(--lg);
+      }
+      .violet {
+        background: var(--lg);
+      }
+
+      .flow {
+        margin-top: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f8fbfd;
+      }
+
+      .flow svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-height: 520px;
+      }
+      .node-box {
+        fill: #fff;
+        stroke: #9eb3c7;
+        stroke-width: 1.2;
+      }
+      .node-blue {
+        fill: var(--lg-soft);
+        stroke: var(--lg);
+      }
+      .node-teal {
+        fill: var(--cost-soft);
+        stroke: var(--cost);
+      }
+      .node-amber {
+        fill: var(--ds-soft);
+        stroke: var(--ds);
+      }
+      .node-red {
+        fill: var(--warn-soft);
+        stroke: var(--warn);
+      }
+      .node-violet {
+        fill: var(--lg-soft);
+        stroke: var(--lg);
+      }
+      .svg-title {
+        font:
+          700 13px Arial,
+          Helvetica,
+          sans-serif;
+        fill: var(--ink);
+      }
+      .svg-small {
+        font:
+          12px Arial,
+          Helvetica,
+          sans-serif;
+        fill: var(--ink-soft);
+      }
+      .edge {
+        stroke: var(--ink-faint);
+        stroke-width: 1.5;
+        fill: none;
+        marker-end: url(#arrow);
+      }
+      .edge-loop {
+        stroke: var(--warn);
+        stroke-width: 1.6;
+        fill: none;
+        stroke-dasharray: 5 4;
+        marker-end: url(#arrow-red);
+      }
+
+      .bars {
+        display: grid;
+        gap: 9px;
+        margin-top: 12px;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 160px 1fr 82px;
+        gap: 10px;
+        align-items: center;
+        font-size: 14px;
+      }
+      .bar-track {
+        height: 12px;
+        background: #e5edf4;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+      }
+
+      .callout {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-left: 4px solid var(--cost);
+        background: var(--cost-soft);
+        border-radius: 6px;
+      }
+
+      .risk-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      @media (max-width: 900px) {
+        h1 {
+          font-size: 30px;
+        }
+        .topbar {
+          flex-direction: column;
+        }
+        .hero-grid,
+        .grid-2,
+        .grid-3,
+        .grid-4,
+        .risk-list {
+          grid-template-columns: 1fr;
+        }
+        section {
+          padding: 20px;
+        }
+        .bar-row {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+        .flow {
+          overflow-x: auto;
+        }
+        .flow svg {
+          width: 980px;
+        }
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+        nav {
+          position: static;
+        }
+        section {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+        .tab-panel {
+          display: block;
+        }
+        .hero {
+          color: #111;
+          background: #fff;
+          border-bottom: 2px solid #111;
+        }
+        .lead,
+        .hero-stat span {
+          color: #333;
+        }
+        .hero-stat {
+          border-color: #bbb;
+          background: #fff;
+        }
+        .lang-switch {
+          display: none;
+        }
+        body [lang] {
+          display: inline;
+        }
+      }
+    </style>
+  </head>
+  <body data-lang="vi">
+    <header class="hero">
+      <div class="wrap">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">
+              <span lang="vi">Báo cáo vận hành hệ thống ESG LangGraph - Daewoong 2025 - 07/08/2026</span>
+              <span lang="ko">ESG LangGraph 운영 보고서 - Daewoong 2025 - 2026/08/07</span>
+            </p>
+            <div class="title-row">
+              <h1>
+                <span lang="vi"
+                  >Graph hiện tại, kết quả định lượng - định tính và kế hoạch
+                  cải thiện</span
+                >
+                <span lang="ko">현재 그래프, 정량·정성 결과 및 개선 계획</span>
+              </h1>
+              <span class="version-badge">V3</span>
+            </div>
+            <p class="lead">
+              <span lang="vi"
+                >Báo cáo giải thích hệ thống theo góc nhìn nghiệp vụ: mỗi node
+                làm gì, dữ liệu đi qua graph như thế nào, kết quả hiện tại
+                tốt/yếu ở đâu và nên cải thiện theo thứ tự nào.</span
+              >
+              <span lang="ko"
+                >본 보고서는 업무 관점에서 각 노드의 역할, 데이터 흐름, 현재
+                결과의 강점과 약점, 개선 우선순위를 설명합니다.</span
+              >
+            </p>
+          </div>
+          <div class="lang-switch" aria-label="Language switcher">
+            <button type="button" data-set-lang="vi">VI</button>
+            <button type="button" data-set-lang="ko">KO</button>
+          </div>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-stat">
+            <strong>15</strong>
+            <span lang="vi">node chính trong graph xử lý báo cáo</span>
+            <span lang="ko">보고서 처리 그래프의 주요 노드</span>
+          </div>
+          <div class="hero-stat">
+            <strong>95</strong>
+            <span lang="vi">câu định tính trong bộ mẫu đầy đủ</span>
+            <span lang="ko">전체 템플릿의 정성 문항</span>
+          </div>
+          <div class="hero-stat">
+            <strong>109/210</strong>
+            <span lang="vi">metric định lượng đã điền trong run mới nhất</span>
+            <span lang="ko">최신 run에서 채워진 정량 metric</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav>
+      <div class="wrap">
+        <button type="button" class="active" data-tab-target="overview">
+          <span lang="vi">Tổng quan</span><span lang="ko">개요</span>
+        </button>
+        <button type="button" data-tab-target="nodes">
+          <span lang="vi">1. Node</span><span lang="ko">1. 노드</span>
+        </button>
+        <button type="button" data-tab-target="flow">
+          <span lang="vi">2. Flow & graph</span
+          ><span lang="ko">2. 흐름 및 그래프</span>
+        </button>
+        <button type="button" data-tab-target="results">
+          <span lang="vi">3. Kết quả</span><span lang="ko">3. 결과</span>
+        </button>
+        <button type="button" data-tab-target="updates">
+          <span lang="vi">4. Update hôm nay</span><span lang="ko">4. 오늘 업데이트</span>
+        </button>
+        <button type="button" data-tab-target="plan">
+          <span lang="vi">5. Cải thiện</span><span lang="ko">5. 개선 계획</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="wrap">
+      <section id="overview" class="tab-panel active">
+        <h2>
+          <span lang="vi">Tổng quan V3</span>
+          <span lang="ko">V3 개요</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Báo cáo này mô tả hệ thống LangGraph hiện tại theo góc nhìn vận
+            hành: graph có bao nhiêu bước, dữ liệu đi qua từng bước như thế nào,
+            kết quả hiện tại đáng tin ở đâu, yếu ở đâu và nên cải thiện theo thứ
+            tự nào. Nội dung được viết để người không làm dự án và không có nền
+            tảng code vẫn có thể nắm được bức tranh chung.</span
+          >
+          <span lang="ko"
+            >본 보고서는 현재 LangGraph 시스템을 운영 관점에서 설명합니다.
+            그래프 단계 수, 데이터 흐름, 현재 결과의 강점과 약점, 개선
+            우선순위를 코드 경험이 없는 독자도 이해할 수 있도록
+            정리했습니다.</span
+          >
+        </p>
+
+        <div class="grid-3" style="margin-top: 16px">
+          <div class="card tone-blue">
+            <div class="metric">
+              15<small
+                ><span lang="vi">node xử lý chính</span
+                ><span lang="ko">주요 처리 노드</span></small
+              >
+            </div>
+            <p>
+              <span lang="vi"
+                >Graph chia công việc thành các bước rõ ràng: chuẩn hóa đầu vào,
+                lấy chứng cứ, viết câu trả lời, kiểm tra chất lượng, sửa lỗi và
+                đóng gói kết quả.</span
+              ><span lang="ko"
+                >입력 정규화, 근거 수집, 답변 작성, 품질 검토, 수정, 결과
+                조립으로 업무를 나눕니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-teal">
+            <div class="metric">
+              109/210<small
+                ><span lang="vi">metric định lượng đã điền</span
+                ><span lang="ko">채워진 정량 metric</span></small
+              >
+            </div>
+            <p>
+              <span lang="vi"
+                >Run mới nhất đã có dữ liệu định lượng thực tế; phần còn thiếu
+                được giữ ở trạng thái missing hoặc cần xác nhận thay vì tự bịa
+                số.</span
+              ><span lang="ko"
+                >최신 run에는 실제 정량 데이터가 일부 반영되었고, 부족한 값은
+                임의 생성하지 않고 missing 또는 확인 필요로 유지합니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-amber">
+            <div class="metric">
+              35/95<small
+                ><span lang="vi">câu định tính có thể publish</span
+                ><span lang="ko">게시 가능한 정성 답변</span></small
+              >
+            </div>
+            <p>
+              <span lang="vi"
+                >Run mới cho thấy hệ thống publish 35 câu; 60 câu còn lại được
+                giữ lại vì RAG chưa đủ điều kiện hoặc QA chưa chấp nhận.</span
+              ><span lang="ko"
+                >최신 run에서는 35개 답변이 publish 가능하며, 나머지 60개는
+                RAG 조건 부족 또는 QA 미통과로 보류됩니다.</span
+              >
+            </p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong
+            ><span lang="vi">Kết luận nhanh:</span
+            ><span lang="ko">요약 결론:</span></strong
+          >
+          <span lang="vi">
+            V3 đã tốt hơn ở khả năng kiểm soát chứng cứ và tránh publish số liệu
+            không chắc chắn. Run mới có 35/95 câu publish được và 109/210 metric
+            định lượng đã điền. Điểm cần cải thiện tiếp theo là giảm 46 câu bị
+            chặn ở RAG, 14 câu bị chặn ở QA và 99 metric còn missing.</span
+          >
+          <span lang="ko">
+            V3는 근거 통제와 불확실한 수치 게시 방지 측면에서 개선되었습니다.
+            최신 run은 35/95개 답변을 publish 가능하게 만들었고 109/210개
+            정량 metric을 채웠습니다. 다음 개선 포인트는 RAG에서 차단된 46개,
+            QA에서 차단된 14개, missing metric 99개를 줄이는 것입니다.</span
+          >
+        </div>
+      </section>
+
+      <section id="nodes" class="tab-panel">
+        <h2>
+          <span lang="vi"
+            >1. Sử dụng bao nhiêu node, node làm gì, input/output và tools</span
+          >
+          <span lang="ko">1. 노드 수, 역할, 입력/출력 및 사용 도구</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Graph hiện tại có 15 node chính. “Tools” trong bảng này được hiểu
+            là nhóm năng lực mà node dùng, ví dụ bộ nạp dữ liệu, RAG API,
+            mapper, LLM hoặc bộ kiểm tra chất lượng.</span
+          >
+          <span lang="ko"
+            >현재 그래프는 15개의 주요 노드로 구성됩니다. 여기서 “도구”는 데이터
+            로더, RAG API, 매퍼, LLM, 품질 검사기처럼 노드가 사용하는 기능
+            그룹을 의미합니다.</span
+          >
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Node</span><span lang="ko">노드</span></th>
+              <th><span lang="vi">Làm gì</span><span lang="ko">역할</span></th>
+              <th><span lang="vi">Đầu vào</span><span lang="ko">입력</span></th>
+              <th><span lang="vi">Đầu ra</span><span lang="ko">출력</span></th>
+              <th><span lang="vi">Tools</span><span lang="ko">도구</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>01. Normalize Company Input</strong></td>
+              <td>
+                <span lang="vi"
+                  >Chuẩn hóa thông tin công ty để toàn hệ thống dùng
+                  chung.</span
+                ><span lang="ko">회사 정보를 표준 형식으로 정리합니다.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Mã công ty, tên, năm, quy mô, ngành, danh sách câu hỏi.</span
+                ><span lang="ko"
+                  >회사 ID, 이름, 연도, 규모, 산업, 문항 목록.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Company profile đã chuẩn hóa.</span
+                ><span lang="ko">정규화된 회사 프로필.</span>
+              </td>
+              <td><span class="pill info">2</span></td>
+            </tr>
+            <tr>
+              <td><strong>02. Select Reporting Template</strong></td>
+              <td>
+                <span lang="vi">Chọn bộ câu hỏi, template quy mô và ngành.</span
+                ><span lang="ko"
+                  >문항 세트와 규모/산업 템플릿을 선택합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Company profile.</span
+                ><span lang="ko">회사 프로필.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Câu hỏi được chọn, template, thống kê số câu.</span
+                ><span lang="ko">선택 문항, 템플릿, 문항 수.</span>
+              </td>
+              <td><span class="pill info">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>03. Plan Disclosure Questions</strong></td>
+              <td>
+                <span lang="vi"
+                  >Biến câu hỏi mẫu thành kế hoạch trả lời theo công ty.</span
+                ><span lang="ko"
+                  >템플릿 문항을 회사별 답변 계획으로 변환합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Câu hỏi, hướng dẫn ngành/quy mô.</span
+                ><span lang="ko">문항, 산업/규모 가이드.</span>
+              </td>
+              <td>
+                <span lang="vi">Planned questions có ngữ cảnh.</span
+                ><span lang="ko">맥락이 포함된 계획 문항.</span>
+              </td>
+              <td><span class="pill info">1</span></td>
+            </tr>
+            <tr>
+              <td><strong>04. Retrieve RAG Evidence</strong></td>
+              <td>
+                <span lang="vi"
+                  >Gọi RAG theo batch để lấy chứng cứ cho từng câu hỏi.</span
+                ><span lang="ko">문항별 근거를 배치로 검색합니다.</span>
+              </td>
+              <td>
+                <span lang="vi">Question IDs, công ty, năm, top-k.</span
+                ><span lang="ko">문항 ID, 회사, 연도, top-k.</span>
+              </td>
+              <td>
+                <span lang="vi">Kết quả RAG, chứng cứ thô, trace và retry.</span
+                ><span lang="ko"
+                  >RAG 결과, 원천 근거, trace 및 retry 정보.</span
+                >
+              </td>
+              <td><span class="pill violet">4</span></td>
+            </tr>
+            <tr>
+              <td><strong>05. Evaluate Evidence Eligibility</strong></td>
+              <td>
+                <span lang="vi"
+                  >Quyết định câu nào đủ chứng cứ để viết, câu nào phải
+                  chặn.</span
+                ><span lang="ko">답변 작성 가능 여부를 판단합니다.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >RAG coverage, nhãn semantic, nguồn chứng cứ.</span
+                ><span lang="ko">RAG coverage, semantic label, 출처 정보.</span>
+              </td>
+              <td>
+                <span lang="vi">Accepted/rejected và lý do.</span
+                ><span lang="ko">승인/차단 결과와 사유.</span>
+              </td>
+              <td><span class="pill violet">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>06. Normalize Evidence Sources</strong></td>
+              <td>
+                <span lang="vi">Làm sạch, xếp hạng và gom trùng chứng cứ.</span
+                ><span lang="ko">근거를 정리, 순위화, 중복 제거합니다.</span>
+              </td>
+              <td>
+                <span lang="vi">Chứng cứ đã qua gate.</span
+                ><span lang="ko">게이트를 통과한 근거.</span>
+              </td>
+              <td>
+                <span lang="vi">Evidence digest, nguồn chuẩn hóa.</span
+                ><span lang="ko">근거 정리본 및 정규화된 출처.</span>
+              </td>
+              <td><span class="pill violet">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>06B. Process Quantitative Metrics</strong></td>
+              <td>
+                <span lang="vi"
+                  >Nạp dữ liệu số, map metric và bơm số sang câu định tính dạng
+                  Metrics.</span
+                ><span lang="ko"
+                  >정량 데이터를 로드·매핑하고 Metrics 문항에 연결합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Dữ liệu định lượng, catalog metric, planned questions.</span
+                ><span lang="ko">정량 데이터, 지표 카탈로그, 계획 문항.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Metric filled/missing, thống kê, metric evidence.</span
+                ><span lang="ko">filled/missing 지표, 통계, metric 근거.</span>
+              </td>
+              <td><span class="pill warn">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>07. Select Specialist Skill</strong></td>
+              <td>
+                <span lang="vi"
+                  >Chọn chuyên môn viết: carbon, materiality, commitment hoặc
+                  general.</span
+                ><span lang="ko"
+                  >carbon, materiality, commitment, general writer를
+                  선택합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Câu hỏi và metadata chủ đề.</span
+                ><span lang="ko">문항 및 주제 메타데이터.</span>
+              </td>
+              <td>
+                <span lang="vi">Skill được chọn và lý do.</span
+                ><span lang="ko">선택된 skill과 선택 이유.</span>
+              </td>
+              <td><span class="pill info">2</span></td>
+            </tr>
+            <tr>
+              <td><strong>08. Build Specialist Context</strong></td>
+              <td>
+                <span lang="vi"
+                  >Đóng gói prompt: câu hỏi, yêu cầu, chứng cứ được phép
+                  dùng.</span
+                ><span lang="ko"
+                  >문항, 요구사항, 허용 근거를 prompt로 구성합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Skill, evidence, question contract.</span
+                ><span lang="ko">skill, 근거, 문항 contract.</span>
+              </td>
+              <td>
+                <span lang="vi">Prompt và evidence lines.</span
+                ><span lang="ko">prompt 및 근거 라인.</span>
+              </td>
+              <td><span class="pill info">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>09. Draft Evidence-Grounded Answers</strong></td>
+              <td>
+                <span lang="vi"
+                  >Viết bản nháp câu trả lời dựa trên chứng cứ.</span
+                ><span lang="ko">근거 기반 초안을 작성합니다.</span>
+              </td>
+              <td>
+                <span lang="vi">Prompt context, RAG normalized answer.</span
+                ><span lang="ko">prompt context, RAG 정규화 답변.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Draft answer, final answer tạm, quality flags.</span
+                ><span lang="ko">초안, 임시 final answer, quality flag.</span>
+              </td>
+              <td><span class="pill ok">4</span></td>
+            </tr>
+            <tr>
+              <td><strong>10. Review Draft Grounding</strong></td>
+              <td>
+                <span lang="vi"
+                  >Chặn số liệu bịa, chứng nhận bịa, nói quá, lộ metadata, chép
+                  câu hỏi.</span
+                ><span lang="ko"
+                  >허위 수치, 미지원 인증, 과장 표현, 메타데이터 노출, 문항
+                  복사를 차단합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Draft, evidence, source, skill.</span
+                ><span lang="ko">초안, 근거, 출처, skill.</span>
+              </td>
+              <td>
+                <span lang="vi">QA passed/failed/empty, hard failures.</span
+                ><span lang="ko">QA passed/failed/empty 및 hard failure.</span>
+              </td>
+              <td><span class="pill bad">5</span></td>
+            </tr>
+            <tr>
+              <td><strong>10B. Review Semantic Completeness</strong></td>
+              <td>
+                <span lang="vi"
+                  >Kiểm tra câu trả lời đúng ý câu hỏi, đủ facet và dùng đúng
+                  loại nguồn.</span
+                ><span lang="ko"
+                  >답변이 문항 의도, 필수 facet, 출처 사용 정책에 맞는지
+                  검토합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Final tạm, contract, evidence, QA trước đó.</span
+                ><span lang="ko">임시 final, contract, 근거, 이전 QA.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Semantic review, claim support, QA cập nhật.</span
+                ><span lang="ko"
+                  >semantic review, claim support, 업데이트된 QA.</span
+                >
+              </td>
+              <td><span class="pill bad">4</span></td>
+            </tr>
+            <tr>
+              <td><strong>11. Revise Review Failures</strong></td>
+              <td>
+                <span lang="vi"
+                  >Sửa câu fail còn có khả năng cứu bằng chứng cứ hợp lệ.</span
+                ><span lang="ko"
+                  >유효 근거로 복구 가능한 failed 답변을 수정합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Câu fail, QA notes, evidence, giới hạn vòng sửa.</span
+                ><span lang="ko"
+                  >failed 답변, QA notes, 근거, 수정 회수 제한.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Câu sửa, revision count, sanitizer actions.</span
+                ><span lang="ko"
+                  >수정 답변, revision count, sanitizer action.</span
+                >
+              </td>
+              <td><span class="pill bad">4</span></td>
+            </tr>
+            <tr>
+              <td><strong>11B. Normalize Final Answer Output</strong></td>
+              <td>
+                <span lang="vi"
+                  >Làm sạch markdown, xử lý tên người khi không cần, chuẩn hóa
+                  flags.</span
+                ><span lang="ko"
+                  >markdown 정리, 불필요한 개인명 처리, flag 표준화를
+                  수행합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Final answers, flags, QA.</span
+                ><span lang="ko">final answers, flags, QA.</span>
+              </td>
+              <td>
+                <span lang="vi">Final answers sạch hơn.</span
+                ><span lang="ko">정리된 final answers.</span>
+              </td>
+              <td><span class="pill info">3</span></td>
+            </tr>
+            <tr>
+              <td><strong>12. Assemble Report Output</strong></td>
+              <td>
+                <span lang="vi"
+                  >Gom toàn bộ kết quả thành artifact báo cáo cuối.</span
+                ><span lang="ko"
+                  >전체 결과를 최종 보고 artifact로 조립합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">State sau QA và hygiene.</span
+                ><span lang="ko">QA 및 hygiene 이후 state.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Answers, stats, quantitative results, trace.</span
+                ><span lang="ko"
+                  >answers, stats, quantitative results, trace.</span
+                >
+              </td>
+              <td><span class="pill ok">4</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="flow" class="tab-panel">
+        <h2>
+          <span lang="vi"
+            >2. Các node liên kết với nhau như nào? Flow chạy ra sao?</span
+          >
+          <span lang="ko">2. 노드 연결 방식과 실행 흐름</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Flow đi từ intake đến assembly. Sau semantic review có một vòng
+            lặp: nếu câu fail nhưng còn khả năng sửa, graph quay sang revision
+            rồi review lại. Nếu không còn câu cần sửa hoặc hết lượt sửa, graph
+            đi tiếp tới hygiene và assembly.</span
+          >
+          <span lang="ko"
+            >흐름은 intake에서 assembly까지 진행됩니다. semantic review 이후
+            수정 가능한 failed 문항이 있으면 revision으로 이동한 뒤 다시
+            review합니다. 수정 대상이 없거나 수정 한도에 도달하면 hygiene과
+            assembly로 진행합니다.</span
+          >
+        </p>
+
+        <div class="flow" aria-label="Graph flow">
+          <svg viewBox="0 0 1180 650" role="img">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--ink-faint)"></path>
+              </marker>
+              <marker
+                id="arrow-red"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--warn)"></path>
+              </marker>
+            </defs>
+            <rect
+              x="24"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="40" y="54" class="svg-title">01 Intake</text>
+            <text x="40" y="75" class="svg-small">Company input</text>
+            <rect
+              x="218"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="234" y="54" class="svg-title">02 Template</text>
+            <text x="234" y="75" class="svg-small">Question set</text>
+            <rect
+              x="412"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="428" y="54" class="svg-title">03 Planning</text>
+            <text x="428" y="75" class="svg-small">Planned QID</text>
+            <rect
+              x="606"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-violet"
+            ></rect>
+            <text x="622" y="54" class="svg-title">04 RAG</text>
+            <text x="622" y="75" class="svg-small">Evidence</text>
+            <rect
+              x="800"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-violet"
+            ></rect>
+            <text x="816" y="54" class="svg-title">05 Gate</text>
+            <text x="816" y="75" class="svg-small">Eligibility</text>
+            <rect
+              x="994"
+              y="28"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-violet"
+            ></rect>
+            <text x="1010" y="54" class="svg-title">06 Evidence</text>
+            <text x="1010" y="75" class="svg-small">Normalize</text>
+            <rect
+              x="994"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-amber"
+            ></rect>
+            <text x="1010" y="184" class="svg-title">06B Metrics</text>
+            <text x="1010" y="205" class="svg-small">Quantitative</text>
+            <rect
+              x="800"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="816" y="184" class="svg-title">07 Skill</text>
+            <text x="816" y="205" class="svg-small">Specialist</text>
+            <rect
+              x="606"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="622" y="184" class="svg-title">08 Context</text>
+            <text x="622" y="205" class="svg-small">Prompt</text>
+            <rect
+              x="412"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-teal"
+            ></rect>
+            <text x="428" y="184" class="svg-title">09 Draft</text>
+            <text x="428" y="205" class="svg-small">Answer</text>
+            <rect
+              x="218"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-red"
+            ></rect>
+            <text x="234" y="184" class="svg-title">10 Grounding</text>
+            <text x="234" y="205" class="svg-small">QA</text>
+            <rect
+              x="24"
+              y="158"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-red"
+            ></rect>
+            <text x="40" y="184" class="svg-title">10B Semantic</text>
+            <text x="40" y="205" class="svg-small">Completeness</text>
+            <rect
+              x="24"
+              y="318"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-red"
+            ></rect>
+            <text x="40" y="344" class="svg-title">11 Revision</text>
+            <text x="40" y="365" class="svg-small">Rewrite</text>
+            <rect
+              x="218"
+              y="318"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-blue"
+            ></rect>
+            <text x="234" y="344" class="svg-title">11B Hygiene</text>
+            <text x="234" y="365" class="svg-small">Clean output</text>
+            <rect
+              x="412"
+              y="318"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-teal"
+            ></rect>
+            <text x="428" y="344" class="svg-title">12 Assembly</text>
+            <text x="428" y="365" class="svg-small">Artifacts</text>
+            <rect
+              x="606"
+              y="318"
+              width="150"
+              height="64"
+              rx="8"
+              class="node-box node-teal"
+            ></rect>
+            <text x="632" y="344" class="svg-title">END</text>
+            <text x="632" y="365" class="svg-small">Done</text>
+
+            <path class="edge" d="M174 60 H218"></path>
+            <path class="edge" d="M368 60 H412"></path>
+            <path class="edge" d="M562 60 H606"></path>
+            <path class="edge" d="M756 60 H800"></path>
+            <path class="edge" d="M950 60 H994"></path>
+            <path class="edge" d="M1069 92 V158"></path>
+            <path class="edge" d="M994 190 H950"></path>
+            <path class="edge" d="M800 190 H756"></path>
+            <path class="edge" d="M606 190 H562"></path>
+            <path class="edge" d="M412 190 H368"></path>
+            <path class="edge" d="M218 190 H174"></path>
+            <path class="edge-loop" d="M99 222 V318"></path>
+            <path
+              class="edge-loop"
+              d="M174 350 C250 350 210 250 293 222"
+            ></path>
+            <path class="edge" d="M99 222 C99 270 216 273 293 318"></path>
+            <path class="edge" d="M368 350 H412"></path>
+            <path class="edge" d="M562 350 H606"></path>
+            <rect
+              x="190"
+              y="248"
+              width="230"
+              height="24"
+              rx="5"
+              fill="var(--warn-soft)"
+              stroke="var(--warn)"
+            ></rect>
+            <text x="202" y="264" class="svg-small" fill="var(--warn)">
+              failed + recoverable: revision loop
+            </text>
+            <rect
+              x="46"
+              y="286"
+              width="238"
+              height="24"
+              rx="5"
+              fill="var(--lg-soft)"
+              stroke="var(--lg)"
+            ></rect>
+            <text x="58" y="302" class="svg-small" fill="var(--lg)">
+              pass / empty / exhausted: continue
+            </text>
+          </svg>
+        </div>
+      </section>
+
+      <section id="results" class="tab-panel">
+        <h2>
+          <span lang="vi"
+            >3. Kết quả định lượng, định tính: đúng ở đâu, sai ở đâu</span
+          >
+          <span lang="ko">3. 정량·정성 결과: 잘된 점과 문제점</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Số liệu dưới đây lấy từ run mới nhất đã kiểm tra. Đây là ảnh chụp
+            tình trạng hiện tại, chưa phải benchmark cuối cùng cho mọi công ty
+            vì vẫn cần đối soát thủ công theo nghiệp vụ.</span
+          >
+          <span lang="ko"
+            >아래 수치는 확인된 최신 run 기준입니다. 모든 회사에 대한 최종
+            benchmark는 아니며, 업무 기준의 수작업 검증이 추가로
+            필요합니다.</span
+          >
+        </p>
+
+        <div class="grid-4">
+          <div class="card tone-green">
+            <div class="metric">
+              35/95<small
+                ><span lang="vi">câu định tính có final answer, 36,8%</span
+                ><span lang="ko"
+                  >final answer가 있는 정성 문항, 36.8%</span
+                ></small
+              >
+            </div>
+          </div>
+          <div class="card tone-amber">
+            <div class="metric">
+              46/95<small
+                ><span lang="vi">câu định tính weak, cần tăng coverage</span
+                ><span lang="ko"
+                  >weak 정성 문항, coverage 개선 필요</span
+                ></small
+              >
+            </div>
+          </div>
+          <div class="card tone-red">
+            <div class="metric">
+              14/95<small
+                ><span lang="vi">câu định tính failed, không nên publish</span
+                ><span lang="ko">failed 정성 문항, publish 불가</span></small
+              >
+            </div>
+          </div>
+          <div class="card tone-blue">
+            <div class="metric">
+              109/210<small
+                ><span lang="vi">metric định lượng đã được điền/published</span
+                ><span lang="ko">filled/published 정량 지표</span></small
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 16px">
+          <div class="card">
+            <h3>
+              <span lang="vi">Định tính: phân bố QA grade</span
+              ><span lang="ko">정성: QA grade 분포</span>
+            </h3>
+            <div class="bars">
+              <div class="bar-row">
+                <span>Full</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 14.7%; background: var(--ok)"
+                  ></div>
+                </div>
+                <strong>14</strong>
+              </div>
+              <div class="bar-row">
+                <span>Partial</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 13.7%; background: var(--ds)"
+                  ></div>
+                </div>
+                <strong>13</strong>
+              </div>
+              <div class="bar-row">
+                <span>Cautious</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 8.4%; background: var(--lg)"
+                  ></div>
+                </div>
+                <strong>8</strong>
+              </div>
+              <div class="bar-row">
+                <span>Failed</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 63.2%; background: var(--warn)"
+                  ></div>
+                </div>
+                <strong>60</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>
+              <span lang="vi">Funnel trước khi publish</span
+              ><span lang="ko">publish 전 funnel</span>
+            </h3>
+            <div class="bars">
+              <div class="bar-row">
+                <span>API eligible</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 51.6%; background: var(--ok)"
+                  ></div>
+                </div>
+                <strong>49</strong>
+              </div>
+              <div class="bar-row">
+                <span>Draft non-empty</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 51.6%; background: var(--ds)"
+                  ></div>
+                </div>
+                <strong>49</strong>
+              </div>
+              <div class="bar-row">
+                <span>QA passed</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 36.8%; background: var(--lg)"
+                  ></div>
+                </div>
+                <strong>35</strong>
+              </div>
+              <div class="bar-row">
+                <span>Final publishable</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    style="width: 36.8%; background: var(--cost)"
+                  ></div>
+                </div>
+                <strong>35</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>
+                <span lang="vi">Nhóm kết quả</span
+                ><span lang="ko">결과 그룹</span>
+              </th>
+              <th><span lang="vi">Con số</span><span lang="ko">수치</span></th>
+              <th>
+                <span lang="vi">Đọc theo nghiệp vụ</span
+                ><span lang="ko">업무 해석</span>
+              </th>
+              <th>
+                <span lang="vi">Kết luận</span><span lang="ko">결론</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span lang="vi">Định tính answered</span
+                ><span lang="ko">정성 answered</span>
+              </td>
+              <td>35</td>
+              <td>
+                <span lang="vi"
+                  >Có final answer được QA chấp nhận; 14 câu full, 13 câu
+                  partial và 8 câu cautious.</span
+                ><span lang="ko"
+                  >QA가 수용한 final answer가 있으며, full 14개, partial
+                  13개, cautious 8개입니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill ok"
+                  ><span lang="vi">Tốt</span><span lang="ko">양호</span></span
+                >
+                <span lang="vi"
+                  >Hệ thống viết được câu grounded khi chứng cứ đủ.</span
+                ><span lang="ko"
+                  >근거가 충분하면 grounded 답변을 생성할 수 있습니다.</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span lang="vi">Định tính weak</span
+                ><span lang="ko">정성 weak</span>
+              </td>
+              <td>46</td>
+              <td>
+                <span lang="vi"
+                  >Bị chặn chủ yếu vì trạng thái RAG chưa đủ điều kiện để đưa qua
+                  bước viết câu trả lời an toàn.</span
+                ><span lang="ko"
+                  >주로 RAG 상태가 안전한 답변 작성 단계로 넘기기에 부족해
+                  차단되었습니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill warn"
+                  ><span lang="vi">Cần tăng coverage</span
+                  ><span lang="ko">coverage 개선 필요</span></span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span lang="vi">Định tính empty</span
+                ><span lang="ko">정성 empty</span>
+              </td>
+              <td>0</td>
+              <td>
+                <span lang="vi"
+                  >Không có câu nào rơi vào nhóm empty riêng; câu không publish
+                  được đang nằm ở weak hoặc failed.</span
+                ><span lang="ko"
+                  >별도 empty 그룹은 없으며, publish 불가 문항은 weak 또는
+                  failed로 분류됩니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill warn"
+                  ><span lang="vi">Thiếu dữ liệu</span
+                  ><span lang="ko">데이터 부족</span></span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span lang="vi">Định tính failed</span
+                ><span lang="ko">정성 failed</span>
+              </td>
+              <td>14</td>
+              <td>
+                <span lang="vi"
+                  >Có draft hoặc chứng cứ nhưng QA phát hiện lỗi; không nên
+                  publish nếu chưa sửa.</span
+                ><span lang="ko"
+                  >초안 또는 근거는 있으나 QA 오류가 발견되어 수정 전
+                  publish하면 안 됩니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill bad"
+                  ><span lang="vi">Không publish</span
+                  ><span lang="ko">게시 불가</span></span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span lang="vi">Thiếu metric/kỳ báo cáo</span
+                ><span lang="ko">metric/보고기간 누락</span>
+              </td>
+              <td>8 issues</td>
+              <td>
+                <span lang="vi"
+                  >Các câu Metrics vẫn thường fail khi thiếu giá trị metric hoặc
+                  kỳ báo cáo rõ ràng.</span
+                ><span lang="ko"
+                  >Metrics 문항은 지표값 또는 보고기간이 명확하지 않을 때
+                  자주 fail됩니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill bad"
+                  ><span lang="vi">Lỗi trọng tâm</span
+                  ><span lang="ko">핵심 이슈</span></span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>Unsupported claim</td>
+              <td>2</td>
+              <td>
+                <span lang="vi"
+                  >Writer tạo hoặc giữ lại claim chưa được chứng cứ hỗ trợ
+                  đủ.</span
+                ><span lang="ko"
+                  >writer가 근거로 충분히 뒷받침되지 않는 claim을 생성하거나
+                  유지했습니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill bad"
+                  ><span lang="vi">Sai thật</span
+                  ><span lang="ko">실제 오류</span></span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span lang="vi">Định lượng run mới</span
+                ><span lang="ko">최신 run 정량 결과</span>
+              </td>
+              <td>
+                210 total, 109 filled/published, 99 missing, 2 cần xác nhận
+              </td>
+              <td>
+                <span lang="vi"
+                  >Định lượng đã được điền một phần theo catalog native 210. Hai
+                  chỉ số cần xác nhận được giữ lại, không publish như số chắc
+                  chắn.</span
+                ><span lang="ko"
+                  >native 210 카탈로그 기준으로 정량 값이 일부 채워졌습니다.
+                  확인이 필요한 2개 값은 확정 수치처럼 publish하지 않고
+                  보류됩니다.</span
+                >
+              </td>
+              <td>
+                <span class="pill ok"
+                  ><span lang="vi">Đã có dữ liệu</span
+                  ><span lang="ko">데이터 있음</span></span
+                >
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="risk-list">
+          <div class="card tone-green">
+            <h3>
+              <span lang="vi">Định tính tốt ở đâu?</span
+              ><span lang="ko">정성 결과의 강점</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Biết phân biệt câu đầy đủ, partial và cautious. Run mới cũng
+                cho thấy cơ chế salvage có tác dụng: 32 claim không an toàn được
+                xử lý trên 19 câu thay vì để toàn bộ nội dung đi thẳng tới
+                publish.</span
+              ><span lang="ko"
+                >full, partial, cautious 답변을 구분할 수 있습니다. 최신 run에서는
+                19개 문항에서 32개 불안전 claim이 처리되어, 전체 답변이 그대로
+                publish되는 위험을 줄였습니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-red">
+            <h3>
+              <span lang="vi">Định tính yếu ở đâu?</span
+              ><span lang="ko">정성 결과의 약점</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Nút nghẽn lớn nhất là 46 câu bị chặn vì RAG chưa đủ điều kiện,
+                tiếp theo là 14 câu không qua QA. Nhóm metric vẫn nhạy với lỗi
+                thiếu kỳ báo cáo, thiếu giá trị định lượng hoặc claim số liệu
+                chưa được hỗ trợ.</span
+              ><span lang="ko"
+                >가장 큰 병목은 RAG 조건 부족으로 차단된 46개 문항이며, 그다음은
+                QA를 통과하지 못한 14개 문항입니다. metric 문항은 보고기간,
+                정량값, 지원되지 않은 수치 claim에 여전히 민감합니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-green">
+            <h3>
+              <span lang="vi">Định lượng tốt ở đâu?</span
+              ><span lang="ko">정량 결과의 강점</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Run mới đã điền 109/210 metric, tăng mức sẵn sàng định lượng
+                so với bản trước. Hệ thống vẫn không tự bịa số, tách riêng 2
+                metric cần xác nhận và có cầu nối metric sang câu định tính.</span
+              ><span lang="ko"
+                >최신 run에서 109/210 metric이 채워져 이전보다 정량 준비도가
+                높아졌습니다. 수치를 임의 생성하지 않고 확인 필요 metric 2개를
+                분리하며, metric을 정성 문항과 연결합니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-red">
+            <h3>
+              <span lang="vi">Định lượng yếu ở đâu?</span
+              ><span lang="ko">정량 결과의 약점</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Vẫn còn 99 metric missing và 2 metric cần xác nhận. Ngoài ra,
+                metric facts phát hiện 9 xung đột số liệu ở 1 câu, nên phần đối
+                soát số vẫn cần được củng cố.</span
+              ><span lang="ko"
+                >아직 99개 metric은 missing이고 2개 metric은 확인이 필요합니다.
+                또한 1개 문항에서 9건의 수치 충돌이 발견되어 정량 검증을 계속
+                보강해야 합니다.</span
+              >
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="updates" class="tab-panel">
+        <h2>
+          <span lang="vi">4. Update hôm nay: đã đổi gì, ở đâu, bước nào, trước/sau ra sao</span>
+          <span lang="ko">4. 오늘 업데이트: 변경 내용, 위치, 단계, 전후 결과</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi">Mục này ghi lại các thay đổi trong ngày 07/08/2026 ở mức nghiệp vụ. “Ở đâu” được hiểu là khu vực chức năng hoặc node trong graph, không phải đường dẫn mã nguồn.</span>
+          <span lang="ko">이 섹션은 2026년 08월 07일 변경 사항을 업무 관점에서 정리합니다. “위치”는 코드 경로가 아니라 기능 영역 또는 그래프 노드를 의미합니다.</span>
+        </p>
+
+        <div class="grid-4" style="margin-top:16px;">
+          <div class="card tone-blue">
+            <div class="metric">5<small><span lang="vi">nhóm update chính</span><span lang="ko">주요 업데이트 그룹</span></small></div>
+          </div>
+          <div class="card tone-teal">
+            <div class="metric">04-12<small><span lang="vi">các bước graph bị ảnh hưởng</span><span lang="ko">영향을 받은 그래프 단계</span></small></div>
+          </div>
+          <div class="card tone-amber">
+            <div class="metric">QA<small><span lang="vi">trọng tâm là kiểm chứng trước publish</span><span lang="ko">게시 전 검증 중심</span></small></div>
+          </div>
+          <div class="card tone-red">
+            <div class="metric">Audit<small><span lang="vi">tăng khả năng truy vết sau run</span><span lang="ko">run 이후 추적성 강화</span></small></div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th><span lang="vi">Update</span><span lang="ko">업데이트</span></th>
+              <th><span lang="vi">Update ở đâu / bước nào</span><span lang="ko">위치 / 단계</span></th>
+              <th><span lang="vi">Trước khi update</span><span lang="ko">이전 상태</span></th>
+              <th><span lang="vi">Sau khi update</span><span lang="ko">업데이트 후</span></th>
+              <th><span lang="vi">Tác động kết quả</span><span lang="ko">결과 영향</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong><span lang="vi">Siết cổng chứng cứ RAG V3</span><span lang="ko">RAG V3 근거 게이트 강화</span></strong></td>
+              <td><span lang="vi">Bước 04 Retrieve RAG Evidence và bước 05 Evaluate Evidence Eligibility.</span><span lang="ko">04 RAG 근거 검색 및 05 근거 적격성 판단 단계.</span></td>
+              <td><span lang="vi">Graph dễ phụ thuộc vào nhiều trường coverage upstream. Khi RAG trả metadata không đồng nhất, trạng thái answerable/coverage có thể làm người đọc hiểu nhầm lý do bị chặn.</span><span lang="ko">그래프가 upstream coverage 필드에 많이 의존했습니다. RAG metadata가 일관되지 않으면 차단 사유를 오해할 수 있었습니다.</span></td>
+              <td><span lang="vi">Cổng quyết định theo answer_status đủ điều kiện, tách lỗi hợp đồng nghiêm trọng khỏi cảnh báo, đồng thời ghi lại upstream hints và mismatch để audit.</span><span lang="ko">적격 answer_status를 기준으로 판단하고, 심각한 contract violation과 warning을 분리하며, upstream hint와 mismatch를 audit에 남깁니다.</span></td>
+              <td><span class="pill ok"><span lang="vi">An toàn hơn</span><span lang="ko">더 안전</span></span> <span lang="vi">Giảm rủi ro publish câu không đủ điều kiện, nhưng vẫn giữ thông tin để phân tích vì sao bị chặn.</span><span lang="ko">부적격 답변 게시 위험을 줄이면서 차단 원인을 분석할 정보를 보존합니다.</span></td>
+            </tr>
+            <tr>
+              <td><strong><span lang="vi">Chuẩn hóa provenance ổn định</span><span lang="ko">안정적 provenance 표준화</span></strong></td>
+              <td><span lang="vi">Bước 05 Evidence Gate, bước 06 Normalize Evidence Sources và bước 10 Review Draft Grounding.</span><span lang="ko">05 Evidence Gate, 06 근거 정규화, 10 grounding 검토 단계.</span></td>
+              <td><span lang="vi">Một số kiểm tra chỉ nhìn vào source path. Nếu nguồn không có path nhưng có định danh tài liệu/chunk ổn định, dữ liệu có thể bị loại quá cứng hoặc audit thiếu thông tin.</span><span lang="ko">일부 검사는 source path 중심이었습니다. path는 없지만 안정적인 문서/chunk 식별자가 있는 경우 과도하게 제외되거나 audit 정보가 부족할 수 있었습니다.</span></td>
+              <td><span lang="vi">Hệ thống chấp nhận nhiều dạng provenance ổn định hơn, ghi nhận fallback provenance và đưa metadata nguồn vào kết quả kiểm tra.</span><span lang="ko">더 다양한 안정적 provenance를 인정하고 fallback provenance와 source metadata를 검토 결과에 반영합니다.</span></td>
+              <td><span class="pill ok"><span lang="vi">Ít loại nhầm hơn</span><span lang="ko">오분류 감소</span></span> <span lang="vi">Câu có chứng cứ hợp lệ nhưng thiếu path truyền thống có cơ hội được xử lý đúng hơn.</span><span lang="ko">전통적인 path가 없어도 유효 근거가 있는 답변을 더 정확히 처리할 수 있습니다.</span></td>
+            </tr>
+            <tr>
+              <td><strong><span lang="vi">Bổ sung metric facts và xử lý xung đột số liệu</span><span lang="ko">metric facts 및 수치 충돌 처리 추가</span></strong></td>
+              <td><span lang="vi">Bước 06B Process Quantitative Metrics, bước 09 Draft Evidence-Grounded Answers và bước 10B Review Semantic Completeness.</span><span lang="ko">06B 정량 metric 처리, 09 답변 초안, 10B semantic completeness 검토 단계.</span></td>
+              <td><span lang="vi">Metric có thể xuất hiện trong evidence nhưng writer/critic chưa luôn phân biệt được số được hỗ trợ, số xung đột, số malformed hoặc số chỉ là target.</span><span lang="ko">metric이 evidence에 있어도 writer/critic이 지원된 수치, 충돌 수치, malformed 수치, target 값을 항상 구분하지 못했습니다.</span></td>
+              <td><span lang="vi">Thêm audit metric facts, chặn khi toàn bộ số liệu bị xung đột, dùng structured metric fallback khi cần, và loại bỏ claim số liệu không được hỗ trợ.</span><span lang="ko">metric facts audit를 추가하고, 모든 수치가 충돌하면 차단하며, 필요 시 structured metric fallback을 사용하고, 지원되지 않은 수치 claim을 제거합니다.</span></td>
+              <td><span class="pill ok"><span lang="vi">Giảm sai số</span><span lang="ko">수치 오류 감소</span></span> <span lang="vi">Định lượng không chỉ “có/không có số” mà còn biết số nào an toàn để dùng.</span><span lang="ko">정량 결과가 단순히 수치 유무가 아니라 어떤 수치를 안전하게 쓸 수 있는지 판단합니다.</span></td>
+            </tr>
+            <tr>
+              <td><strong><span lang="vi">Salvage câu trả lời thay vì fail toàn bộ</span><span lang="ko">전체 실패 대신 답변 salvage</span></strong></td>
+              <td><span lang="vi">Bước 10 Review Draft Grounding, bước 10B Review Semantic Completeness và bước 11 Revise Review Failures.</span><span lang="ko">10 grounding 검토, 10B semantic review, 11 revision 단계.</span></td>
+              <td><span lang="vi">Nếu một câu có vài claim sai hoặc quá chắc so với nguồn, toàn bộ final answer dễ bị xóa dù vẫn còn phần đúng có thể giữ lại.</span><span lang="ko">일부 claim이 잘못되거나 source보다 과장되면, 안전한 부분이 남아 있어도 전체 final answer가 비워질 수 있었습니다.</span></td>
+              <td><span lang="vi">Hệ thống thử loại bỏ claim không an toàn, thêm attribution cho claim dựa trên draft/assessment, và ghi sanitizer actions để biết đã sửa gì.</span><span lang="ko">불안전한 claim을 제거하고 draft/assessment 기반 claim에 attribution을 붙이며, 무엇을 수정했는지 sanitizer action으로 기록합니다.</span></td>
+              <td><span class="pill warn"><span lang="vi">Tăng partial an toàn</span><span lang="ko">안전한 partial 증가</span></span> <span lang="vi">Có thể giữ lại phần trả lời đúng thay vì bỏ trắng toàn bộ, nhưng vẫn chặn khi không còn claim an toàn.</span><span lang="ko">전체 공백 대신 안전한 부분을 유지할 수 있지만, 안전한 claim이 없으면 차단합니다.</span></td>
+            </tr>
+            <tr>
+              <td><strong><span lang="vi">Mở rộng audit output và coverage summary</span><span lang="ko">audit output 및 coverage summary 확장</span></strong></td>
+              <td><span lang="vi">Bước 12 Assemble Report Output và phần xuất file audit sau khi graph chạy xong.</span><span lang="ko">12 결과 조립 단계 및 graph 실행 이후 audit 출력 영역.</span></td>
+              <td><span lang="vi">Audit chủ yếu cho biết answer, QA và một số lỗi RAG. Khó nhìn funnel từ RAG eligible → draft → QA passed → final publish.</span><span lang="ko">audit는 주로 answer, QA, 일부 RAG 오류를 보여주었습니다. RAG eligible → draft → QA passed → final publish funnel을 보기 어려웠습니다.</span></td>
+              <td><span lang="vi">Bổ sung contract warnings, consumer decision, upstream hints, upstream mismatch, metric audit, provenance fallback, claim salvage và consumer funnel.</span><span lang="ko">contract warning, consumer decision, upstream hint, upstream mismatch, metric audit, provenance fallback, claim salvage, consumer funnel을 추가했습니다.</span></td>
+              <td><span class="pill ok"><span lang="vi">Dễ quản trị hơn</span><span lang="ko">운영 가시성 향상</span></span> <span lang="vi">Người vận hành biết câu bị mất ở bước nào và nên sửa RAG, metric, provenance, writer hay QA.</span><span lang="ko">운영자가 답변이 어느 단계에서 손실됐는지 보고 RAG, metric, provenance, writer, QA 중 어디를 고칠지 판단할 수 있습니다.</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="risk-list">
+          <div class="card tone-green">
+            <h3><span lang="vi">Kết quả sau update tốt hơn ở đâu?</span><span lang="ko">업데이트 후 좋아진 점</span></h3>
+            <p><span lang="vi">Hệ thống có thêm lớp bảo vệ trước khi publish: không chỉ hỏi “có answer không”, mà còn hỏi answer có đủ điều kiện RAG V3, có provenance ổn định, có số liệu được hỗ trợ và có claim bị nói quá hay không.</span><span lang="ko">시스템은 게시 전 보호층이 늘었습니다. 답변 존재 여부뿐 아니라 RAG V3 적격성, 안정적 provenance, 지원된 수치, 과장 claim 여부를 함께 확인합니다.</span></p>
+          </div>
+          <div class="card tone-red">
+            <h3><span lang="vi">Vẫn còn vướng mắc gì?</span><span lang="ko">남은 과제</span></h3>
+            <p><span lang="vi">Các update này làm hệ thống thận trọng hơn, nên một số câu có thể chuyển từ publish sang blocked/partial nếu nguồn hoặc số liệu chưa đủ chắc. Muốn tăng tỷ lệ publish, cần bổ sung dữ liệu và benchmark thủ công thay vì nới lỏng QA.</span><span lang="ko">이번 업데이트로 시스템은 더 신중해졌기 때문에 근거 또는 수치가 약한 일부 답변은 publish에서 blocked/partial로 바뀔 수 있습니다. publish 비율을 높이려면 QA를 완화하기보다 데이터와 수작업 benchmark를 보강해야 합니다.</span></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="plan" class="tab-panel">
+        <h2>
+          <span lang="vi"
+            >5. Kế hoạch cải thiện và vướng mắc cần giải quyết</span
+          >
+          <span lang="ko">5. 개선 계획 및 해결 과제</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Ưu tiên cải thiện được sắp theo tác động: việc nào giúp tăng số câu
+            publish an toàn và giảm rủi ro sai số liệu sẽ được xử lý
+            trước.</span
+          >
+          <span lang="ko"
+            >개선 우선순위는 영향도 기준입니다. 안전하게 publish 가능한 답변을
+            늘리고 수치 오류 위험을 줄이는 항목을 먼저 처리합니다.</span
+          >
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>
+                <span lang="vi">Ưu tiên</span><span lang="ko">우선순위</span>
+              </th>
+              <th>
+                <span lang="vi">Việc cần làm</span><span lang="ko">작업</span>
+              </th>
+              <th><span lang="vi">Lý do</span><span lang="ko">이유</span></th>
+              <th>
+                <span lang="vi">Kết quả mong đợi</span
+                ><span lang="ko">기대 결과</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="pill bad">P0</span></td>
+              <td>
+                <span lang="vi"
+                  >Chuẩn hóa input định lượng và mapping metric.</span
+                ><span lang="ko"
+                  >정량 입력과 metric mapping을 표준화합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Run mới đã có 109/210 metric filled, nhưng vẫn còn 99 missing
+                  và 2 cần xác nhận; nhóm Metrics vẫn bị ảnh hưởng.</span
+                ><span lang="ko"
+                  >최신 run에서 109/210 metric은 filled지만 99 missing과 2
+                  confirmation-needed가 남아 Metrics 문항에 영향이
+                  있습니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Tăng metric filled, giảm lỗi missing metric/reporting
+                  period.</span
+                ><span lang="ko"
+                  >filled metric 증가, metric/보고기간 누락 감소.</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill bad">P0</span></td>
+              <td>
+                <span lang="vi"
+                  >Làm bộ đối soát thủ công cho một company mẫu.</span
+                ><span lang="ko"
+                  >샘플 회사 기준 수작업 검증 세트를 만듭니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >QA tự động chưa đủ để kết luận đúng bao nhiêu phần trăm theo
+                  chuẩn nghiệp vụ.</span
+                ><span lang="ko"
+                  >자동 QA만으로 업무 기준 정확도를 확정하기 어렵습니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Có benchmark đúng, sai, thiếu, cần xác nhận theo từng câu và
+                  từng metric.</span
+                ><span lang="ko"
+                  >문항/metric별 correct, incorrect, missing,
+                  confirmation-needed benchmark 확보.</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill warn">P1</span></td>
+              <td>
+                <span lang="vi"
+                  >Tối ưu RAG coverage cho nhóm insufficient/no evidence.</span
+                ><span lang="ko"
+                  >insufficient/no evidence 그룹의 RAG coverage를
+                  개선합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >47/95 câu trong mẫu không answerable; writer phía sau không
+                  thể tạo câu đầy đủ nếu retrieval sai.</span
+                ><span lang="ko"
+                  >샘플에서 47/95 문항이 answerable=false이며 retrieval이 틀리면
+                  writer가 완성 답변을 만들 수 없습니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Tăng số câu answerable, giảm empty answer.</span
+                ><span lang="ko">answerable 문항 증가, empty answer 감소.</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill warn">P1</span></td>
+              <td>
+                <span lang="vi"
+                  >Tăng chất lượng semantic routing cho nhóm câu khó.</span
+                ><span lang="ko"
+                  >어려운 문항 그룹의 semantic routing을 개선합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Một số câu có chứng cứ liên quan gần nhưng không trả lời đúng
+                  trọng tâm.</span
+                ><span lang="ko"
+                  >일부 문항은 관련성은 있으나 핵심 질문에 맞지 않는 근거를
+                  사용합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Giảm failed vì wrong-topic/thematic mismatch.</span
+                ><span lang="ko"
+                  >wrong-topic/thematic mismatch failed 감소.</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill warn">P1</span></td>
+              <td>
+                <span lang="vi">Cải thiện revision cho unsupported claim.</span
+                ><span lang="ko"
+                  >unsupported claim에 대한 revision을 강화합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Cần xóa claim không được chứng minh và giữ phần còn an
+                  toàn.</span
+                ><span lang="ko"
+                  >지원되지 않는 claim을 제거하고 안전한 부분은 유지해야
+                  합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi"
+                  >Giảm failed, tăng partial an toàn thay vì bỏ trống toàn
+                  bộ.</span
+                ><span lang="ko"
+                  >failed 감소, 전체 공백 대신 안전한 partial 증가.</span
+                >
+              </td>
+            </tr>
+            <tr>
+              <td><span class="pill info">P2</span></td>
+              <td>
+                <span lang="vi">Bổ sung dashboard coverage theo node.</span
+                ><span lang="ko">노드별 coverage dashboard를 추가합니다.</span>
+              </td>
+              <td>
+                <span lang="vi"
+                  >Người không làm code cần thấy câu bị mất ở RAG, Gate, Writer,
+                  Grounding, Semantic hay Metrics.</span
+                ><span lang="ko"
+                  >비개발자도 문항이 RAG, Gate, Writer, Grounding, Semantic,
+                  Metrics 중 어디에서 손실되는지 볼 수 있어야 합니다.</span
+                >
+              </td>
+              <td>
+                <span lang="vi">Xác định bottleneck nhanh hơn.</span
+                ><span lang="ko">bottleneck을 더 빠르게 파악합니다.</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="grid-3" style="margin-top: 16px">
+          <div class="card tone-red">
+            <h3>
+              <span lang="vi">Vướng mắc dữ liệu</span
+              ><span lang="ko">데이터 과제</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Cần dữ liệu định lượng đúng kỳ báo cáo, đúng đơn vị, có mapping
+                rõ sang metric hoặc câu hỏi liên quan.</span
+              ><span lang="ko"
+                >보고기간, 단위, metric 또는 관련 문항 mapping이 명확한 정량
+                데이터가 필요합니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-amber">
+            <h3>
+              <span lang="vi">Vướng mắc nghiệp vụ</span
+              ><span lang="ko">업무 기준 과제</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Cần định nghĩa “đúng” cho từng nhóm câu: full, partial chấp
+                nhận được, empty đúng vì thiếu chứng cứ, hay failed vì sai
+                thật.</span
+              ><span lang="ko"
+                >문항 그룹별로 full, 허용 가능한 partial, 근거 부족으로 인한
+                정당한 empty, 실제 오류 failed 기준을 정의해야 합니다.</span
+              >
+            </p>
+          </div>
+          <div class="card tone-blue">
+            <h3>
+              <span lang="vi">Vướng mắc vận hành</span
+              ><span lang="ko">운영 과제</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Cần chuẩn hóa cách chạy đánh giá định kỳ, lưu snapshot kết quả
+                và so sánh sau mỗi lần chỉnh RAG, metric mapper hoặc
+                prompt.</span
+              ><span lang="ko"
+                >정기 평가 실행 방식, 결과 snapshot 저장, RAG/metric
+                mapper/prompt 변경 후 비교 체계를 표준화해야 합니다.</span
+              >
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const buttons = document.querySelectorAll("[data-set-lang]");
+      const setLang = (lang) => {
+        document.body.dataset.lang = lang;
+        document.documentElement.lang = lang;
+        try {
+          localStorage.setItem("esg-report-lang", lang);
+        } catch (_) {}
+      };
+      buttons.forEach((button) =>
+        button.addEventListener("click", () => setLang(button.dataset.setLang)),
+      );
+      try {
+        const saved = localStorage.getItem("esg-report-lang");
+        if (saved === "vi" || saved === "ko") setLang(saved);
+      } catch (_) {}
+
+      const tabButtons = document.querySelectorAll("[data-tab-target]");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+      const activateTab = (targetId, updateHash = true) => {
+        const targetPanel = document.getElementById(targetId);
+        if (!targetPanel) return;
+        tabPanels.forEach((panel) =>
+          panel.classList.toggle("active", panel.id === targetId),
+        );
+        tabButtons.forEach((button) => {
+          const active = button.dataset.tabTarget === targetId;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        if (updateHash) {
+          history.replaceState(null, "", `#${targetId}`);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      tabButtons.forEach((button) => {
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-controls", button.dataset.tabTarget);
+        button.addEventListener("click", () =>
+          activateTab(button.dataset.tabTarget),
+        );
+      });
+      const initialTab = location.hash.replace("#", "");
+      if (
+        ["overview", "nodes", "flow", "results", "updates", "plan"].includes(initialTab)
+      ) {
+        activateTab(initialTab, false);
+      } else {
+        tabButtons[0]?.setAttribute("aria-selected", "true");
+      }
+    </script>
+  </body>
+</html>
