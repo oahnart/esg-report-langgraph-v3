@@ -7,7 +7,7 @@ from .policy import has_accepted_label, has_evidence_text, has_source_path
 from .source_policy import classify_source
 
 
-CONDITIONAL_SEMANTIC_LABELS = {"useful", "partial", "keep", "keep_supportive"}
+CONDITIONAL_SEMANTIC_LABELS = {"useful", "partial", "metric_row", "keep", "keep_supportive"}
 DRAFT_STATUSES = {"draft", "proposed", "proposal", "under_review", "under review"}
 FUTURE_PLAN_TERMS = (
     "plan",

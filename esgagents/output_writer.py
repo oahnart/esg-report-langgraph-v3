@@ -319,7 +319,6 @@ class OutputWriter:
         workbook = Workbook()
         qualitative = workbook.active
         qualitative.title = "Qualitative"
-        quantitative = workbook.create_sheet("Quantitative")
 
         self._append_excel_row(qualitative, COMBINED_QUALITATIVE_COLUMNS)
         for answer in artifacts.answers:
@@ -337,38 +336,39 @@ class OutputWriter:
                 ],
             )
 
-        self._append_excel_row(quantitative, QUANTITATIVE_COLUMNS)
-        for result in sorted(artifacts.quantitative_results, key=lambda item: item.index):
-            self._append_excel_row(
-                quantitative,
-                [
-                    result.metric_id,
-                    result.index,
-                    result.metric_name,
-                    result.value,
-                    result.unit,
-                    result.source,
-                    result.status,
-                    result.confidence,
-                    json.dumps(
-                        result.metadata,
-                        ensure_ascii=False,
-                        sort_keys=True,
-                        default=str,
-                    ),
-                ],
-            )
-
         self._style_report_sheet(
             qualitative,
             widths=[16, 22, 36, 52, 38, 52, 44, 64],
             wrap_columns=set(range(1, 9)),
         )
-        self._style_report_sheet(
-            quantitative,
-            widths=[18, 10, 36, 18, 14, 38, 14, 14, 56],
-            wrap_columns={3, 6, 9},
-        )
+        if artifacts.quantitative_results:
+            quantitative = workbook.create_sheet("Quantitative")
+            self._append_excel_row(quantitative, QUANTITATIVE_COLUMNS)
+            for result in sorted(artifacts.quantitative_results, key=lambda item: item.index):
+                self._append_excel_row(
+                    quantitative,
+                    [
+                        result.metric_id,
+                        result.index,
+                        result.metric_name,
+                        result.value,
+                        result.unit,
+                        result.source,
+                        result.status,
+                        result.confidence,
+                        json.dumps(
+                            result.metadata,
+                            ensure_ascii=False,
+                            sort_keys=True,
+                            default=str,
+                        ),
+                    ],
+                )
+            self._style_report_sheet(
+                quantitative,
+                widths=[18, 10, 36, 18, 14, 38, 14, 14, 56],
+                wrap_columns={3, 6, 9},
+            )
         workbook.save(path)
 
     def _style_report_sheet(

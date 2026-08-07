@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -47,13 +48,22 @@ class RevisionAgent:
         quality_flags = {qid: list(flags) for qid, flags in state.get("quality_flags", {}).items()}
         sanitizer_actions = {qid: list(actions) for qid, actions in state.get("sanitizer_actions", {}).items()}
         planned_by_id = {planned.id: planned for planned in state.get("planned_questions", [])}
+        eligible_qids = eligible_revision_qids(state, self.max_revision_rounds)
 
-        for qid in eligible_revision_qids(state, self.max_revision_rounds):
+        if eligible_qids:
+            self._progress(
+                f"revision eligible qids: {len(eligible_qids)} "
+                f"(max rounds={self.max_revision_rounds})"
+            )
+
+        for index, qid in enumerate(eligible_qids, start=1):
+            self._progress(f"revision {index}/{len(eligible_qids)} {qid}: started")
             revision_counts[qid] = int(revision_counts.get(qid, 0)) + 1
             try:
                 revised, revision_flags = self._rewrite(state, planned_by_id[qid])
             except Exception as exc:
                 logger.warning("Revision writer failed for %s: %s", qid, exc)
+                self._progress(f"revision {index}/{len(eligible_qids)} {qid}: failed")
                 final_answers[qid] = ""
                 quality_flags[qid] = self._with_flags(quality_flags.get(qid, []), ["revision_error"])
                 continue
@@ -90,6 +100,7 @@ class RevisionAgent:
                     quality_flags[qid],
                     ["revision_returned_empty"] if not actions else ["sanitizer_returned_empty"],
                 )
+            self._progress(f"revision {index}/{len(eligible_qids)} {qid}: completed")
 
         return {
             "draft_answers": draft_answers,
@@ -177,6 +188,10 @@ class RevisionAgent:
             ]
         )
         return [SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)]
+
+    @staticmethod
+    def _progress(message: str) -> None:
+        print(f"[progress] {message}", file=sys.stderr, flush=True)
 
     @staticmethod
     def _with_flags(existing: list[str], additions: list[str]) -> list[str]:

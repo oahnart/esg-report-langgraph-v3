@@ -59,6 +59,9 @@ def test_fastapi_maps_existing_output_to_409(monkeypatch):
 
 def test_cli_maps_existing_output_to_exit_code_one(monkeypatch):
     class ConflictGraph:
+        def __init__(self, *args, **kwargs):
+            pass
+
         def generate(self, payload):
             raise OutputRunExistsError("output run already exists")
 

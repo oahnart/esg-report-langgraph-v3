@@ -114,7 +114,7 @@ class EvidenceNormalizerAgent:
                     )
                     existing["locators"] = list(
                         {
-                            tuple(sorted(locator.items())): locator
+                            self._hashable_value(locator): locator
                             for locator in [*existing.get("locators", []), *source["locators"]]
                         }.values()
                     )
@@ -146,8 +146,22 @@ class EvidenceNormalizerAgent:
         return str(source.get("source_path") or ""), str(source.get("source_name") or "")
 
     @staticmethod
+    def _hashable_value(value: Any) -> Any:
+        if isinstance(value, dict):
+            return tuple(
+                (key, EvidenceNormalizerAgent._hashable_value(item))
+                for key, item in sorted(value.items())
+            )
+        if isinstance(value, list):
+            return tuple(EvidenceNormalizerAgent._hashable_value(item) for item in value)
+        return value
+
+    @staticmethod
     def _infer_structured_facts(item: EvidenceItem) -> list[EvidenceFact]:
         text = " ".join((item.raw_evidence_ko or "").split())
+        generic_metric_row = EvidenceNormalizerAgent._infer_metric_row_facts(item, text)
+        if generic_metric_row:
+            return generic_metric_row
         waste = re.search(
             r"폐기물\s*발생량\s*합계\s*톤\s*"
             r"([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)",
@@ -190,3 +204,35 @@ class EvidenceNormalizerAgent:
                 ]
             )
         return facts
+
+    @staticmethod
+    def _infer_metric_row_facts(item: EvidenceItem, text: str) -> list[EvidenceFact]:
+        if item.semantic_label.strip().casefold() != "metric_row" and "|" not in text:
+            return []
+        parts = [part.strip() for part in text.split("|")]
+        if len(parts) < 3:
+            return []
+        year_values = []
+        for part in parts[2:]:
+            match = re.fullmatch(
+                r"((?:19|20)\d{2})\s*=\s*([+-]?\d+(?:,\d{3})*(?:\.\d+)?)",
+                part,
+            )
+            if match:
+                year_values.append(match.groups())
+        if not year_values:
+            return []
+        metric_path = parts[0]
+        metric_name = metric_path.rsplit(">", 1)[-1].strip() or metric_path
+        unit = parts[1]
+        return [
+            EvidenceFact(
+                metric=metric_name,
+                period=period,
+                value=value,
+                unit=unit,
+                value_role="actual",
+                locator=item.locator,
+            )
+            for period, value in year_values
+        ]

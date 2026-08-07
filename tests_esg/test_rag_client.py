@@ -215,6 +215,63 @@ def test_v3_accepts_optional_structured_facts():
     assert fact.locator.cell_range == "F12"
 
 
+def test_v3_accepts_metric_row_items_from_qualitative_response():
+    item = _v3_item()
+    item.update(
+        {
+            "semantic_label": "metric_row",
+            "semantic_reason": "metric_lane_row",
+            "confidence_basis": "table_match",
+            "raw_evidence_ko": "Water > Withdrawal total | ton | 2022=310596.0 | 2023=343083.0 | 2024=400298.0",
+            "source_name": "metrics.xlsx",
+            "source_path": "ESG/metrics.xlsx",
+            "source_type": "operational_record",
+            "source_tier": "tier_2_operational",
+            "topic": "metrics",
+            "subtopic": "metric_lane",
+            "locator": {
+                "sheet_name": "Water",
+                "section": "Water > Withdrawal total",
+                "cell_range": "G27:P27",
+                "spans_units": ["ton"],
+                "confidence": "exact",
+            },
+        }
+    )
+    row = _v3_result(
+        "Q039",
+        coverage_status="partial",
+        answerable=True,
+        failure_code="SCOPE_LIMITED",
+        items=[item],
+    )
+    row.update(
+        {
+            "pillar": "metrics",
+            "answer_status": "medium_confidence",
+            "normalized_answer_ko": item["raw_evidence_ko"],
+            "covered_facets": ["metric_result", "reporting_period"],
+            "missing_facets": ["wastewater_discharge"],
+            "coverage": {
+                "direct_answer": True,
+                "supports_metric_result": True,
+                "supports_reporting_period": True,
+            },
+        }
+    )
+    client = TeamRagClient("https://rag.example", transport=lambda *_: _v3_response([row]))
+
+    result = client.fetch_evidence("iljinhysolus", ["Q039"], 5, 2025).results[0]
+
+    assert result.coverage_status == "partial"
+    assert result.answer_status == "medium_confidence"
+    assert result.failure_code == "SCOPE_LIMITED"
+    assert result.client_contract_violations == []
+    assert result.items[0].semantic_label == "metric_row"
+    assert result.items[0].locator.spans_units == ["ton"]
+    assert result.items[0].locator.confidence == "exact"
+
+
 def test_facet_retry_prefers_operational_metric_table_over_draft_at_equal_coverage():
     agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
     draft = RagQuestionResult(

@@ -81,12 +81,13 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | `ESG_TEMPLATE_DIR`                |                                 `template_v1` | Thu muc template cau hoi/quy mo/nganh.                                                       |
 | `ESG_OUTPUT_DIR`                  |                                `data/outputs` | Noi ghi output JSON va Excel.                                                                |
 | `ESG_CACHE_DIR`                   |                                  `data/cache` | Noi ghi checkpoint SQLite khi bat checkpoint.                                                |
-| `ESG_QUANTITATIVE_INPUT_MODE`     |                                        `file` | Nguon dinh luong: `file` hoac `api`.                                                         |
+| `ESG_QUANTITATIVE_OUTPUT_ENABLED` |                                       `false` | Bat sheet/artifact dinh luong rieng. Khi `false`, workflow qualitative khong goi loader/API dinh luong. |
+| `ESG_QUANTITATIVE_INPUT_MODE`     |                                        `file` | Nguon dinh luong output-only khi `ESG_QUANTITATIVE_OUTPUT_ENABLED=true`: `file` hoac `api`.   |
 | `ESG_QUANTITATIVE_INPUT_DIR`      |                                 `data/inputs` | Thu muc input dinh luong theo cong ty/nam.                                                   |
 | `ESG_QUANTITATIVE_API_BASE_URL`   |                                          rong | Base URL cho API dinh luong khi dung `api`.                                                  |
 | `ESG_QUANTITATIVE_API_PATH`       | `/companies/{company_id}/{year}/quantitative` | GET path dinh luong.                                                                         |
 | `ESG_QUANTITATIVE_API_METHOD`     |                                         `GET` | `GET` legacy hoac `POST` cho RAG `/quantitative/answers`.                                    |
-| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                        `true` | Bom metric da map vao evidence cho cac cau qualitative dang `Metrics`.                       |
+| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                       `false` | Deprecated. Cau qualitative Metrics dung evidence tu RAG v3 `items[]`, khong bridge tu API dinh luong rieng. |
 | `ESG_OUTPUT_TIMEZONE`             |                                `Asia/Bangkok` | Mui gio dung trong ten workbook tong hop.                                                    |
 | `ESG_AGENT_MODE`                  |                                        `auto` | `auto`, `llm`, hoac `offline`.                                                               |
 | `ESG_LLM_PROVIDER`                |                                      `openai` | Provider LLM: `openai` hoac `hallmdr`.                                                       |
@@ -468,6 +469,8 @@ V3 bat buoc tra metadata request/version/index va dung mot result cho moi QID. V
 
 V3 dung `answerable` va `coverage_status` lam quyet dinh chinh. Chi `answerable=true` voi `complete` hoac `partial` moi co the vao writer; evidence gate va semantic QA van co quyen chan them. Missing facet tu RAG khong duoc writer tu suy dien. Contract violation khong fallback am tham ve v2.
 
+Voi cau `Metrics`, RAG v3 phai mirror hang so lieu can dung vao `results[].items[]`, thuong voi `semantic_label="metric_row"`, `raw_evidence_ko` dang `... | unit | 2022=value | 2023=value`, va locator bang sheet/cell khi co. Runtime dung `items[]` nay lam nguon qualitative chinh; cac truong phu nhu `metric_evidence`, `primary_metric_evidence`, hoac `narrative_evidence` co the nam trong snapshot raw nhung khong can de writer tao cau tra loi.
+
 Rollback thu cong khi can:
 
 ```powershell
@@ -485,7 +488,7 @@ flowchart TD
   C --> D["Retrieve RAG Evidence"]
   D --> E["Evaluate Evidence Eligibility"]
   E --> F["Normalize Evidence Sources"]
-  F --> Q["Process Quantitative Metrics"]
+  F --> Q["Process Quantitative Metrics (optional output-only)"]
   Q --> G["Select Specialist Skill"]
   G --> H["Build Specialist Context"]
   H --> I["Draft Evidence-Grounded Answers"]
@@ -549,7 +552,13 @@ Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co hai sheet:
 
 `N` tang theo cung `company_id`, nam va ngay, ke ca khi nhieu run chay dong thoi.
 
-## Quantitative Input Contract
+## Quantitative Output Contract
+
+Quantitative output mac dinh bi tat. Bat khi can sheet/artifact dinh luong rieng:
+
+```env
+ESG_QUANTITATIVE_OUTPUT_ENABLED=true
+```
 
 File mode doc:
 
@@ -560,11 +569,9 @@ data/inputs/{company_id}/{year}/quantitative_raw.json
 Payload co the la array hoac object chua `items`, `data`, `records`,
 `evidence`, `rows`, `results` hoac `metrics`. Cac alias duoc ho tro gom
 `metric_name`, `indicator`, `value`, `amount`, `unit`, `source` va
-`source_pdf`. De map metric dinh luong ve cau qualitative dang `Metrics`,
-co the them optional fields `mapped_qualitative_qid`, `source_id`,
-`reporting_period`. Neu `reporting_period` thieu, bridge dung nam cong ty va
-gan flag `reporting_period_defaulted`. Neu file khong ton tai, run van thanh
-cong va tra du 251 dong `missing`.
+`source_pdf`. Du lieu nay chi tao output dinh luong rieng; no khong duoc bom
+vao evidence hay final answer qualitative. Neu file khong ton tai khi output
+dinh luong duoc bat, run van thanh cong va tra du 251 dong `missing`.
 
 API mode mac dinh goi GET path trong `ESG_QUANTITATIVE_API_PATH`; neu
 `ESG_QUANTITATIVE_API_METHOD=POST` thi runtime gui JSON body theo cong ty/nam.
@@ -594,9 +601,8 @@ Khi response co `kind="quantitative"` va `catalog_pack="quant_210"`, pipeline
 dung 210 item tu RAG lam output native, khong map sang catalog legacy
 `QUANT-0001..QUANT-0251`. Item `answered` duoc publish thanh `filled`; item
 `missing` giu reason; item `needs_confirmation` duoc ghi audit nhung khong
-publish value vao JSON/workbook. Neu can bridge sang cau qualitative `Metrics`,
-RAG phai cung cap exact `mapped_qualitative_qid` hoac `source_id`; runtime
-khong fuzzy-match `quant_210` sang 251 de tranh bom sai so vao disclosure.
+publish value vao JSON/workbook. Response nay khong bridge sang cau qualitative
+`Metrics`; qualitative Metrics phai dung evidence trong Team RAG v3 `items[]`.
 
 ## Evidence Policy
 
@@ -614,7 +620,7 @@ Pipeline nay uu tien tinh audit va tinh phong ve trong bao cao ESG:
 - Neu evidence co noi dung hop le nhung thieu `source_path`, QA danh fail va
   final answer de rong.
 - Neu draft co so lieu, chung nhan, net-zero/offset/on-track/double-materiality claim khong nam trong evidence, QA danh fail va final answer rong truoc khi revision.
-- Cac cau `Metrics` co the nhan evidence bo sung tu quantitative input; final
+- Cac cau `Metrics` dung evidence dinh luong tu Team RAG v3 `items[]`; final
   answer van bi semantic QA chan neu thieu gia tri metric hoac ky bao cao.
 - Moi draft QA fail co evidence/source hop le se duoc gui rieng den revision writer trong gioi han `ESG_MAX_REVISION_ROUNDS`, kem QA notes va evidence. Agent phai bo claim khong duoc chung minh hoac tra `final_answer` rong neu khong con noi dung an toan.
 

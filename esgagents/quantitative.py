@@ -11,12 +11,10 @@ from typing import Any, Callable, Iterable
 import requests
 
 from esgagents.schemas import (
-    EvidenceItem,
     NormalizedCompany,
     QuantitativeEvidence,
     QuantitativeMetric,
     QuantitativeResult,
-    RagQuestionResult,
     model_to_dict,
 )
 from esgagents.template_loader import TemplateRepository
@@ -609,17 +607,19 @@ class QuantitativeAgent:
         self.input_loader = input_loader or QuantitativeInputLoader(config)
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
+        if not bool(self.config.get("quantitative_output_enabled", False)):
+            return {
+                "quantitative_results": [],
+                "quantitative_stats": {},
+                "quantitative_source_path": "",
+                "metric_qid_bridge_results": {},
+            }
+
         company: NormalizedCompany = state["company"]
         raw, source_path = self.input_loader.load(company)
         is_quant_210 = _is_quant_210_response(raw)
         if is_quant_210:
             results, stats = map_quant_210_values(raw, company=company)
-            bridge_update: dict[str, Any] = self._bridge_metric_qids(
-                state,
-                results,
-                source_path,
-                exact_only=True,
-            )
         else:
             metrics = [
                 QuantitativeMetric.model_validate(item)
@@ -637,12 +637,11 @@ class QuantitativeAgent:
                 "filled": filled,
                 "missing": len(results) - filled,
             }
-            bridge_update = self._bridge_metric_qids(state, results, source_path)
         return {
             "quantitative_results": [model_to_dict(result) for result in results],
             "quantitative_stats": stats,
             "quantitative_source_path": source_path,
-            **bridge_update,
+            "metric_qid_bridge_results": {},
         }
 
     def _bridge_metric_qids(
@@ -652,132 +651,7 @@ class QuantitativeAgent:
         quantitative_source_path: str,
         exact_only: bool = False,
     ) -> dict[str, Any]:
-        if not bool(self.config.get("metric_qid_bridge_enabled", True)):
-            return {}
-
-        company: NormalizedCompany = state["company"]
-        planned_metrics = [
-            planned
-            for planned in state.get("planned_questions", [])
-            if _is_metric_question(planned)
-        ]
-        if not planned_metrics:
-            return {}
-
-        rag_results = dict(state.get("rag_results", {}))
-        evidence_gate = dict(state.get("evidence_gate", {}))
-        normalized_evidence = {
-            qid: {
-                "items": list(value.get("items", [])),
-                "evidence_summary": value.get("evidence_summary", ""),
-                "sources": list(value.get("sources", [])),
-            }
-            for qid, value in state.get("normalized_evidence", {}).items()
-        }
-        quality_flags = {qid: list(flags) for qid, flags in state.get("quality_flags", {}).items()}
-        bridge_results: dict[str, list[str]] = {}
-
-        filled = [result for result in results if result.status == "filled"]
-        for planned in planned_metrics:
-            matches = self._match_metric_question(planned, filled, exact_only=exact_only)
-            if not matches:
-                quality_flags[planned.id] = sorted(
-                    set(quality_flags.get(planned.id, []) + ["missing_quantitative_metric_result"])
-                )
-                bridge_results[planned.id] = []
-                continue
-
-            period_defaulted = False
-            items: list[EvidenceItem] = []
-            sources = []
-            summary_parts = []
-            for result in matches[:5]:
-                period = str(result.metadata.get("reporting_period") or "").strip()
-                if not period:
-                    period = str(company.year)
-                    period_defaulted = True
-                source_path = result.source or quantitative_source_path
-                text = (
-                    f"Quantitative metric ({period}): {result.metric_name} = "
-                    f"{result.value} {result.unit or ''}. Source: {source_path}. "
-                    f"Metric ID: {result.metric_id}."
-                ).strip()
-                item = EvidenceItem(
-                    score=result.confidence,
-                    raw_evidence_ko=text,
-                    source_name=Path(source_path).name if source_path else "quantitative_input",
-                    source_path=source_path,
-                    semantic_label="useful",
-                    semantic_reason="quantitative_metric_bridge",
-                    semantic_score=result.confidence,
-                    canonical_source_id=f"quant_{result.metric_id.lower()}",
-                    source_tier="tier_2_operational",
-                    source_type="quantitative_metric",
-                    document_status="operational",
-                    classification_reason="quantitative_bridge",
-                )
-                items.append(item)
-                summary_parts.append(text)
-                source = {
-                    "source_name": item.source_name,
-                    "source_path": item.source_path,
-                    "canonical_source_id": item.canonical_source_id,
-                    "source_tier": item.source_tier,
-                    "source_type": item.source_type,
-                    "document_status": item.document_status,
-                    "classification_reason": item.classification_reason,
-                }
-                if source not in sources:
-                    sources.append(source)
-
-            existing = normalized_evidence.get(planned.id, {"items": [], "evidence_summary": "", "sources": []})
-            existing["items"] = [*items, *existing.get("items", [])]
-            existing["evidence_summary"] = "\n".join(
-                part
-                for part in [*summary_parts, existing.get("evidence_summary", "")]
-                if part
-            )
-            existing_sources = list(existing.get("sources", []))
-            for source in sources:
-                identity = source.get("canonical_source_id") or f"{source.get('source_name')}|{source.get('source_path')}"
-                if not any(
-                    identity == (
-                        existing_source.get("canonical_source_id")
-                        or f"{existing_source.get('source_name')}|{existing_source.get('source_path')}"
-                    )
-                    for existing_source in existing_sources
-                ):
-                    existing_sources.append(source)
-            existing["sources"] = existing_sources
-            normalized_evidence[planned.id] = existing
-
-            normalized_answer = _metric_bridge_answer(company, planned, matches[:5], period_defaulted)
-            original_rag = rag_results.get(planned.id)
-            rag_results[planned.id] = (
-                original_rag.model_copy(update={"normalized_answer_ko": normalized_answer})
-                if original_rag
-                else RagQuestionResult(
-                    question_id=planned.id,
-                    question_ko=getattr(planned, "item_ko", ""),
-                    normalized_answer_ko=normalized_answer,
-                    answer_status="high_confidence",
-                    items=items,
-                )
-            )
-            evidence_gate[planned.id] = {"accepted": True, "reason": "accepted_quantitative_bridge"}
-            flags = ["quantitative_metric_bridge"]
-            if period_defaulted:
-                flags.append("reporting_period_defaulted")
-            quality_flags[planned.id] = sorted(set(quality_flags.get(planned.id, []) + flags))
-            bridge_results[planned.id] = [result.metric_id for result in matches[:5]]
-
-        return {
-            "rag_results": rag_results,
-            "evidence_gate": evidence_gate,
-            "normalized_evidence": normalized_evidence,
-            "quality_flags": quality_flags,
-            "metric_qid_bridge_results": bridge_results,
-        }
+        return {}
 
     def _match_metric_question(
         self,

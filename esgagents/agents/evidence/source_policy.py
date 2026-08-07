@@ -160,6 +160,8 @@ def classify_source(item: Any) -> SourceClassification:
 
 def relevance_band(label: str) -> int:
     normalized = (label or "").strip().casefold()
+    if normalized == "metric_row":
+        return 4
     if normalized in {"strong", "high", "high_confidence", "useful", "keep"}:
         return 3
     if normalized in {"medium", "medium_confidence", "partial", "keep_supportive"}:

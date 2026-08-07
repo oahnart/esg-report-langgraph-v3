@@ -223,6 +223,7 @@ def test_quantitative_file_loader_allows_missing_file_and_reads_json(tmp_path):
     config = {
         "quantitative_input_mode": "file",
         "quantitative_input_dir": str(tmp_path),
+        "quantitative_output_enabled": True,
     }
     loader = QuantitativeInputLoader(config)
     company = _company()
@@ -326,6 +327,7 @@ def test_quantitative_agent_returns_all_catalog_rows_when_input_is_missing(tmp_p
     config = {
         "quantitative_input_mode": "file",
         "quantitative_input_dir": str(tmp_path),
+        "quantitative_output_enabled": True,
     }
     agent = QuantitativeAgent(config, TemplateRepository("template_v1"))
 
@@ -345,7 +347,7 @@ def test_quantitative_agent_uses_quant_210_native_results_without_legacy_catalog
         def load(self, company):
             return (_quant_210_fixture(), "api_snapshot_quantitative.json")
 
-    result = QuantitativeAgent({}, Templates(), Loader()).run({"company": _company()})
+    result = QuantitativeAgent({"quantitative_output_enabled": True}, Templates(), Loader()).run({"company": _company()})
 
     assert result["quantitative_stats"] == {
         "total": 3,
@@ -360,7 +362,7 @@ def test_quantitative_agent_uses_quant_210_native_results_without_legacy_catalog
     assert result["quantitative_results"][2]["value"] is None
 
 
-def test_quant_210_api_mapping_bridges_to_metrics_qid():
+def test_quant_210_api_mapping_does_not_bridge_to_metrics_qid():
     class Loader:
         def load(self, company):
             raw = _quant_210_fixture()
@@ -376,7 +378,11 @@ def test_quant_210_api_mapping_bridges_to_metrics_qid():
         pillar="Metrics",
         item_ko="êµ¬́„±́› ë‹¤́–‘́„± í˜„í™©",
     )
-    result = QuantitativeAgent({"metric_qid_bridge_enabled": True}, object(), Loader()).run(
+    result = QuantitativeAgent(
+        {"metric_qid_bridge_enabled": True, "quantitative_output_enabled": True},
+        object(),
+        Loader(),
+    ).run(
         {
             "company": _company(),
             "planned_questions": [planned],
@@ -387,11 +393,12 @@ def test_quant_210_api_mapping_bridges_to_metrics_qid():
         }
     )
 
-    assert result["metric_qid_bridge_results"]["Q063"] == ["596"]
-    assert result["evidence_gate"]["Q063"] == {"accepted": True, "reason": "accepted_quantitative_bridge"}
-    assert "596" in result["normalized_evidence"]["Q063"]["evidence_summary"]
-    assert "quantitative_metric_bridge" in result["quality_flags"]["Q063"]
-    assert "missing_quantitative_metric_result" not in result["quality_flags"]["Q063"]
+    assert result["metric_qid_bridge_results"] == {}
+    assert "rag_results" not in result
+    assert "evidence_gate" not in result
+    assert "normalized_evidence" not in result
+    assert "quality_flags" not in result
+    assert result["quantitative_results"][0]["metric_id"] == "596"
 
 
 def test_quant_210_api_mapping_does_not_bridge_needs_confirmation_only():
@@ -406,7 +413,11 @@ def test_quant_210_api_mapping_does_not_bridge_needs_confirmation_only():
             return (raw, "api_snapshot_quantitative.json")
 
     planned = PlannedQuestion(id="Q063", source_id="EBX-Q-063", pillar="Metrics")
-    result = QuantitativeAgent({"metric_qid_bridge_enabled": True}, object(), Loader()).run(
+    result = QuantitativeAgent(
+        {"metric_qid_bridge_enabled": True, "quantitative_output_enabled": True},
+        object(),
+        Loader(),
+    ).run(
         {
             "company": _company(),
             "planned_questions": [planned],
@@ -417,13 +428,13 @@ def test_quant_210_api_mapping_does_not_bridge_needs_confirmation_only():
         }
     )
 
-    assert result["metric_qid_bridge_results"]["Q063"] == []
-    assert result["quality_flags"]["Q063"] == ["missing_quantitative_metric_result"]
+    assert result["metric_qid_bridge_results"] == {}
+    assert "quality_flags" not in result
     assert result["quantitative_results"][0]["metric_id"] == "693"
     assert result["quantitative_results"][0]["value"] is None
 
 
-def test_quantitative_bridge_injects_metric_evidence_for_qualitative_qid():
+def test_quantitative_output_does_not_inject_metric_evidence_for_qualitative_qid():
     class Templates:
         def load_quantitative_items(self):
             return [
@@ -470,6 +481,7 @@ def test_quantitative_bridge_injects_metric_evidence_for_qualitative_qid():
     agent = QuantitativeAgent(
         {
             "metric_qid_bridge_enabled": True,
+            "quantitative_output_enabled": True,
         },
         Templates(),
         Loader(),
@@ -487,19 +499,13 @@ def test_quantitative_bridge_injects_metric_evidence_for_qualitative_qid():
     )
 
     assert result["quantitative_stats"] == {"total": 1, "filled": 1, "missing": 0}
-    assert result["evidence_gate"]["Q031"] == {
-        "accepted": True,
-        "reason": "accepted_quantitative_bridge",
-    }
-    assert result["rag_results"]["Q031"].answer_status == "high_confidence"
-    assert "100 tCO2e" in result["rag_results"]["Q031"].normalized_answer_ko
-    assert "보고기간 FY2025" in result["rag_results"]["Q031"].normalized_answer_ko
-    assert "출처는 metrics.xlsx" in result["rag_results"]["Q031"].normalized_answer_ko
-    assert result["normalized_evidence"]["Q031"]["items"][0].source_type == "quantitative_metric"
-    assert result["metric_qid_bridge_results"]["Q031"] == ["QUANT-0001"]
+    assert "evidence_gate" not in result
+    assert "rag_results" not in result
+    assert "normalized_evidence" not in result
+    assert result["metric_qid_bridge_results"] == {}
 
 
-def test_quantitative_bridge_flags_metric_qid_without_match():
+def test_quantitative_output_does_not_flag_metric_qid_without_match():
     class Templates:
         def load_quantitative_items(self):
             return [
@@ -516,7 +522,11 @@ def test_quantitative_bridge_flags_metric_qid_without_match():
             return ({"items": []}, "quantitative_raw.json")
 
     planned = PlannedQuestion(id="Q031", pillar="Metrics", item_ko="온실가스 배출량")
-    result = QuantitativeAgent({"metric_qid_bridge_enabled": True}, Templates(), Loader()).run(
+    result = QuantitativeAgent(
+        {"metric_qid_bridge_enabled": True, "quantitative_output_enabled": True},
+        Templates(),
+        Loader(),
+    ).run(
         {
             "company": _company(),
             "planned_questions": [planned],
@@ -527,5 +537,20 @@ def test_quantitative_bridge_flags_metric_qid_without_match():
         }
     )
 
-    assert result["metric_qid_bridge_results"]["Q031"] == []
-    assert result["quality_flags"]["Q031"] == ["missing_quantitative_metric_result"]
+    assert result["metric_qid_bridge_results"] == {}
+    assert "quality_flags" not in result
+
+
+def test_quantitative_agent_is_disabled_by_default_and_does_not_call_loader():
+    class Loader:
+        def load(self, company):
+            raise AssertionError("quantitative loader should not be called unless output is enabled")
+
+    result = QuantitativeAgent({}, object(), Loader()).run({"company": _company()})
+
+    assert result == {
+        "quantitative_results": [],
+        "quantitative_stats": {},
+        "quantitative_source_path": "",
+        "metric_qid_bridge_results": {},
+    }

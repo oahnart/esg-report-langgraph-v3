@@ -88,7 +88,7 @@ _V3_ANSWER_STATUSES = {
     "no_evidence",
 }
 _V3_PILLARS = {"strategy", "governance", "risk_management", "metrics"}
-_V3_SEMANTIC_LABELS = {"useful", "partial", "weak", "irrelevant", "no_match"}
+_V3_SEMANTIC_LABELS = {"useful", "partial", "metric_row", "weak", "irrelevant", "no_match"}
 _V3_SOURCE_TYPES = {
     "policy",
     "policy_procedure",
@@ -417,11 +417,17 @@ class TeamRagClient:
             violations.append("answer_status=high_confidence requires complete and answerable=true")
         expected_answer_statuses = {
             "complete": {"high_confidence", "medium_confidence"},
-            "partial": {"thin_but_usable"},
+            "partial": {"thin_but_usable", "medium_confidence"},
             "insufficient": {"insufficient"},
             "no_evidence": {"no_evidence"},
         }
-        if status in expected_answer_statuses and answer_status not in expected_answer_statuses[status]:
+        if (
+            status == "partial"
+            and answer_status == "medium_confidence"
+            and failure_code != "SCOPE_LIMITED"
+        ):
+            violations.append("partial medium_confidence requires failure_code=SCOPE_LIMITED")
+        elif status in expected_answer_statuses and answer_status not in expected_answer_statuses[status]:
             violations.append(
                 f"answer_status={answer_status or 'empty'} conflicts with coverage_status={status}"
             )

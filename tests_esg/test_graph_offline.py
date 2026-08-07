@@ -64,8 +64,8 @@ def test_graph_runs_subset_with_mock_rag_without_writing_outputs(tmp_path):
     assert artifacts.answers[0].skill_name
     assert artifacts.answers[2].qa.status == "failed"
     assert "missing required facet: metric_result" in artifacts.answers[2].qa.notes
-    assert artifacts.quantitative_stats == {"total": 251, "filled": 0, "missing": 251}
-    assert len(artifacts.quantitative_results) == 251
+    assert artifacts.quantitative_stats == {}
+    assert artifacts.quantitative_results == []
 
 
 def test_graph_runs_with_checkpoint_enabled(tmp_path):
@@ -124,6 +124,102 @@ def test_graph_runs_with_checkpoint_enabled(tmp_path):
     assert (tmp_path / "checkpoints" / "CHECKPOINT_COMPANY.db").exists()
 
 
+def test_graph_uses_v3_metric_items_without_quantitative_loader(tmp_path):
+    def transport(endpoint, payload, timeout):
+        return _v3_metric_response(payload)
+
+    class Loader:
+        def load(self, company):
+            raise AssertionError("quantitative loader should not be called")
+
+    graph = ESGQualitativeGraph(
+        config={
+            "output_dir": str(tmp_path),
+            "agent_mode": "offline",
+            "semantic_qa_enabled": False,
+            "quantitative_input_mode": "api",
+            "quantitative_api_base_url": "https://quant.example",
+        },
+        rag_client=TeamRagClient("mock://rag", transport=transport),
+    )
+    graph.agents.quantitative_agent.input_loader = Loader()
+
+    artifacts = graph.generate(
+        {
+            "company_id": "daewoong",
+            "company_name": "Daewoong",
+            "year": 2025,
+            "scale": "large",
+            "industry": "HC",
+            "item_ids": ["Q031"],
+            "run_id": "run_v3_metric",
+        },
+    )
+
+    answer = artifacts.answers[0]
+    assert artifacts.quantitative_results == []
+    assert artifacts.quantitative_stats == {}
+    assert answer.final_answer == "Scope 1 emissions | tCO2e | 2025=100.0"
+    assert answer.sources[0]["semantic_label"] == "metric_row"
+    assert answer.sources[0]["locator"]["spans_units"] == ["tCO2e"]
+    workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)
+    assert workbook.sheetnames == ["Qualitative"]
+
+
+def test_quantitative_output_does_not_overwrite_v3_qualitative_metric_evidence(tmp_path):
+    def transport(endpoint, payload, timeout):
+        return _v3_metric_response(payload)
+
+    class Loader:
+        def load(self, company):
+            return (
+                {
+                    "items": [
+                        {
+                            "metric_id": "QUANT-0001",
+                            "mapped_qualitative_qid": "Q031",
+                            "metric_name": "Scope 1 emissions",
+                            "value": 999,
+                            "unit": "tCO2e",
+                            "source": "quantitative.xlsx",
+                        }
+                    ]
+                },
+                "quantitative_raw.json",
+            )
+
+    graph = ESGQualitativeGraph(
+        config={
+            "output_dir": str(tmp_path / "outputs"),
+            "agent_mode": "offline",
+            "semantic_qa_enabled": False,
+            "quantitative_output_enabled": True,
+        },
+        rag_client=TeamRagClient("mock://rag", transport=transport),
+    )
+    graph.agents.quantitative_agent.input_loader = Loader()
+
+    artifacts = graph.generate(
+        {
+            "company_id": "daewoong",
+            "company_name": "Daewoong",
+            "year": 2025,
+            "scale": "large",
+            "industry": "HC",
+            "item_ids": ["Q031"],
+            "run_id": "run_v3_metric_with_quant",
+        }
+    )
+
+    answer = artifacts.answers[0]
+    assert artifacts.quantitative_results[0].value == 999
+    assert answer.final_answer == "Scope 1 emissions | tCO2e | 2025=100.0"
+    assert "quantitative_metric_bridge" not in answer.quality_flags
+    assert "999" not in answer.evidence_summary
+    workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)
+    assert workbook.sheetnames == ["Qualitative", "Quantitative"]
+
+
 def test_graph_writes_combined_workbook_with_quantitative_input(tmp_path):
     def transport(endpoint, payload, timeout):
         return {
@@ -171,6 +267,7 @@ def test_graph_writes_combined_workbook_with_quantitative_input(tmp_path):
             "output_dir": str(tmp_path / "outputs"),
             "quantitative_input_mode": "file",
             "quantitative_input_dir": str(input_root),
+            "quantitative_output_enabled": True,
             "agent_mode": "offline",
             "output_timezone": "Asia/Bangkok",
         },
@@ -289,6 +386,7 @@ def test_graph_writes_quant_210_workbook_and_withholds_confirmation_values(tmp_p
             "output_dir": str(tmp_path / "outputs"),
             "agent_mode": "offline",
             "output_timezone": "Asia/Bangkok",
+            "quantitative_output_enabled": True,
         },
         rag_client=TeamRagClient(
             "mock://rag",
@@ -319,8 +417,8 @@ def test_graph_writes_quant_210_workbook_and_withholds_confirmation_values(tmp_p
     }
     assert len(artifacts.quantitative_results) == 210
     assert artifacts.answers[0].qid == "Q063"
-    assert "quantitative_metric_bridge" in artifacts.answers[0].quality_flags
-    assert "metric 596" in artifacts.answers[0].evidence_summary
+    assert "quantitative_metric_bridge" not in artifacts.answers[0].quality_flags
+    assert artifacts.answers[0].evidence_summary == "evidence"
     combined_path = Path(artifacts.output_paths["combined_excel"])
     workbook = load_workbook(combined_path, read_only=True)
     quantitative = workbook["Quantitative"]
@@ -334,3 +432,69 @@ def test_graph_writes_quant_210_workbook_and_withholds_confirmation_values(tmp_p
     assert rows_by_metric["814"][3] is None
     assert rows_by_metric["693"][6] == "missing"
     assert "needs_confirmation" in rows_by_metric["693"][8]
+
+
+def _v3_metric_response(payload):
+    return {
+        "company_id": payload["company_id"],
+        "request_id": "rag-v3-metric",
+        "api_version": "3.0",
+        "rag_version": "rag-v3",
+        "index_version": "daewoong_20260805",
+        "generated_at": "2026-08-07T09:04:39+07:00",
+        "latency_ms": 10,
+        "warnings": [],
+        "results": [
+            {
+                "question_id": qid,
+                "question_ko": qid,
+                "pillar": "metrics",
+                "normalized_answer_ko": "Scope 1 emissions | tCO2e | 2025=100.0",
+                "answer_status": "medium_confidence",
+                "retrieval_confidence": 0.9,
+                "coverage_status": "complete",
+                "answerable": True,
+                "covered_facets": ["metric_result", "reporting_period"],
+                "missing_facets": [],
+                "failure_code": None,
+                "failure_reason": "",
+                "retrieval_notes": ["metric evidence mirrored in items"],
+                "coverage": {
+                    "direct_answer": True,
+                    "supports_metric_result": True,
+                    "supports_reporting_period": True,
+                },
+                "items": [
+                    {
+                        "score": 1,
+                        "vector_score": None,
+                        "reranker_score": None,
+                        "semantic_score": 1,
+                        "semantic_label": "metric_row",
+                        "semantic_reason": "metric_lane_row",
+                        "raw_evidence_ko": "Scope 1 emissions | tCO2e | 2025=100.0",
+                        "source_name": "metrics.xlsx",
+                        "source_path": "ESG/metrics.xlsx",
+                        "document_id": "metric_lane::metrics.xlsx",
+                        "chunk_id": "scope1::2025",
+                        "canonical_source_id": "metric_lane::metrics.xlsx",
+                        "source_type": "operational_record",
+                        "document_status": "approved",
+                        "source_tier": "tier_2_operational",
+                        "document_version": None,
+                        "effective_date": None,
+                        "topic": "metrics",
+                        "subtopic": "metric_lane",
+                        "locator": {
+                            "sheet_name": "GHG",
+                            "section": "Scope 1 emissions",
+                            "cell_range": "A1:B1",
+                            "spans_units": ["tCO2e"],
+                            "confidence": "exact",
+                        },
+                    }
+                ],
+            }
+            for qid in payload["item_ids"]
+        ],
+    }

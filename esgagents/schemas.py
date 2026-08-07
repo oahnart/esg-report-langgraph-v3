@@ -76,6 +76,8 @@ class EvidenceLocator(BaseModel):
     section: str | None = None
     paragraph: str | None = None
     cell_range: str | None = None
+    spans_units: list[str] | None = None
+    confidence: str | None = None
 
 
 class EvidenceFact(BaseModel):

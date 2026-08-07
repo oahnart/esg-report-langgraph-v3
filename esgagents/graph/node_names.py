@@ -8,7 +8,7 @@ class ESGGraphNodes:
     RAG_EVIDENCE_RETRIEVAL = "04 Retrieve RAG Evidence"
     EVIDENCE_ELIGIBILITY = "05 Evaluate Evidence Eligibility"
     EVIDENCE_NORMALIZATION = "06 Normalize Evidence Sources"
-    QUANTITATIVE_PROCESSING = "06B Process Quantitative Metrics"
+    QUANTITATIVE_PROCESSING = "06B Process Quantitative Metrics (Optional Output)"
     SKILL_SELECTION = "07 Select Specialist Skill"
     SKILL_CONTEXT = "08 Build Specialist Context"
     ANSWER_DRAFTING = "09 Draft Evidence-Grounded Answers"

@@ -293,7 +293,67 @@ def test_v3_normalizer_preserves_locator_metadata_and_deduplicates_canonical_chu
         "section": "Policy",
         "paragraph": None,
         "cell_range": None,
+        "spans_units": None,
+        "confidence": None,
     }
+
+
+def test_v3_normalizer_deduplicates_locators_with_list_values():
+    rag = RagQuestionResult(
+        question_id="Q031",
+        normalized_answer_ko="Scope 1 emissions | tCO2e | 2024=95.0 | 2025=100.0",
+        answer_status="medium_confidence",
+        coverage_status="complete",
+        answerable=True,
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="Scope 1 emissions | tCO2e | 2024=95.0",
+                source_name="metrics.xlsx",
+                source_path="ESG/metrics.xlsx",
+                semantic_label="metric_row",
+                semantic_score=1.0,
+                chunk_id="scope1::2024",
+                canonical_source_id="metric_lane::metrics.xlsx",
+                source_tier="tier_2_operational",
+                document_status="approved",
+                locator={
+                    "sheet_name": "GHG",
+                    "cell_range": "A1:B1",
+                    "spans_units": ["tCO2e"],
+                    "confidence": "exact",
+                },
+            ),
+            EvidenceItem(
+                raw_evidence_ko="Scope 1 emissions | tCO2e | 2025=100.0",
+                source_name="metrics.xlsx",
+                source_path="ESG/metrics.xlsx",
+                semantic_label="metric_row",
+                semantic_score=1.0,
+                chunk_id="scope1::2025",
+                canonical_source_id="metric_lane::metrics.xlsx",
+                source_tier="tier_2_operational",
+                document_status="approved",
+                locator={
+                    "sheet_name": "GHG",
+                    "cell_range": "C1:D1",
+                    "spans_units": ["tCO2e"],
+                    "confidence": "exact",
+                },
+            ),
+        ],
+    )
+    config = load_config({"agent_mode": "offline"})
+
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {"Q031": rag}}
+    )["normalized_evidence"]["Q031"]
+
+    assert len(normalized["sources"]) == 1
+    assert normalized["sources"][0]["chunk_ids"] == ["scope1::2024", "scope1::2025"]
+    assert [locator["cell_range"] for locator in normalized["sources"][0]["locators"]] == [
+        "A1:B1",
+        "C1:D1",
+    ]
 
 
 def _gate_result(*, answer_status, semantic_label, source_path="ESG/source.docx"):
@@ -416,6 +476,56 @@ def test_v3_complete_and_partial_are_accepted_with_coverage_reason():
         )["evidence_gate"]["Q016"]
 
         assert gate == {"accepted": True, "reason": expected_reason}
+
+
+def test_v3_metric_row_passes_gate_and_normalizer_extracts_facts():
+    config = load_config({"agent_mode": "offline"})
+    planned = SimpleNamespace(id="Q039", item_ko="Water metrics", description_ko="", example_ko="")
+    rag = RagQuestionResult(
+        question_id="Q039",
+        normalized_answer_ko="Water > Withdrawal total | ton | 2022=310596.0 | 2023=343083.0",
+        answer_status="medium_confidence",
+        coverage_status="partial",
+        answerable=True,
+        failure_code="SCOPE_LIMITED",
+        covered_facets=["metric_result", "reporting_period"],
+        missing_facets=["wastewater_discharge"],
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="Narrative support.",
+                source_name="narrative.docx",
+                source_path="ESG/narrative.docx",
+                semantic_label="useful",
+                semantic_score=1.0,
+                source_tier="tier_2_operational",
+                document_status="approved",
+            ),
+            EvidenceItem(
+                raw_evidence_ko="Water > Withdrawal total | ton | 2022=310596.0 | 2023=343083.0",
+                source_name="metrics.xlsx",
+                source_path="ESG/metrics.xlsx",
+                semantic_label="metric_row",
+                semantic_score=0.8,
+                source_tier="tier_2_operational",
+                document_status="approved",
+            ),
+        ],
+    )
+
+    gate = EvidenceGateAgent(config).run(
+        {"planned_questions": [planned], "rag_results": {planned.id: rag}}
+    )["evidence_gate"][planned.id]
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {planned.id: rag}}
+    )["normalized_evidence"][planned.id]
+
+    assert gate == {"accepted": True, "reason": "accepted_v3_partial"}
+    assert normalized["items"][0].semantic_label == "metric_row"
+    facts = normalized["items"][0].facts
+    assert [(fact.metric, fact.period, fact.value, fact.unit) for fact in facts] == [
+        ("Withdrawal total", "2022", "310596.0", "ton"),
+        ("Withdrawal total", "2023", "343083.0", "ton"),
+    ]
 
 
 def test_v3_unanswerable_and_contract_violations_never_reach_writer():
