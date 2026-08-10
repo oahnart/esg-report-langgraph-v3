@@ -48,7 +48,7 @@ When evidence contains impact and financial materiality, keep the two dimensions
 When evidence contains changes from a previous assessment, describe the changed topic, direction, and stated reason only when all are evidenced. Do not infer trend, priority, or reporting scope from a changed score alone.
 
 LANGUAGE AND QUALITY RULES
-Follow the requested output language. Use formal, factual language and avoid promotional wording. State an evidence-supported limitation only when it is necessary to answer the question; otherwise omit it.
+Follow the requested output language. Use formal, factual language and avoid promotional wording. Keep evidence gaps, missing facets, review status, and confirmation needs out of `final_answer`; record them only as quality flags. If no supported answer content remains, return an empty `final_answer`.
 
 Before returning the answer, verify that every claim is supported by the supplied evidence and that the answer contains only the qualitative ESG response.
 ```

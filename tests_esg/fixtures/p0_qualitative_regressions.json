@@ -9,8 +9,24 @@
       "case": "legitimate Korean topic phrase is not question leakage",
       "expected": {"final_answer": "non_empty", "qa_status": "passed"}
     },
+    "Q019": {
+      "case": "raw privacy metric table is never emitted as narrative",
+      "input": {"answer": "raw data 취합 | 개인정보 침해 | 2024=1 | 2025=0 | source path"},
+      "expected": {"final_answer": "empty", "qa_status": "failed"}
+    },
+    "Q031": {
+      "case": "rounded source metric supports the displayed answer",
+      "input": {"candidate": "12,771.822", "source": "12771.822287491"},
+      "expected": {"rounding_supported": true}
+    },
+    "Q055": {
+      "case": "raw product recovery table is never emitted as narrative",
+      "input": {"answer": "raw data 취합 | 제품군 리스트 | 용기 무게 | 2024=10 | 2025=12"},
+      "expected": {"final_answer": "empty", "qa_status": "failed"}
+    },
     "Q075": {
       "case": "grounded metric overrides stale RAG missing facet",
+      "input": {"metric": "Committee meetings", "period": "2025", "value": "4", "unit": "times"},
       "expected": {"final_answer": "non_empty", "facet_metric_result": "covered"}
     },
     "Q080": {
@@ -27,10 +43,12 @@
     },
     "Q087": {
       "case": "stale LLM missing note is removed",
+      "input": {"metric": "Compliance training", "period": "2025", "value": "14", "unit": "sessions"},
       "expected": {"final_answer": "non_empty", "contradictory_missing_notes": false}
     },
     "Q091": {
       "case": "related-party transaction is not shareholder structure",
+      "input": {"answer": "Related-party transactions were reviewed in 2025.", "hard_failure": "rag_wrong_topic"},
       "expected": {"final_answer": "empty", "qa_status": "failed"}
     },
     "Q094": {

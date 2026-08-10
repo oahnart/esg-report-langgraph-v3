@@ -1,0 +1,6766 @@
+{
+  "run_id": "run_quant_210",
+  "company": {
+    "company_id": "daewoong",
+    "company_name": "대웅제약",
+    "year": 2025,
+    "scale": "large_enterprise",
+    "industry": "HC",
+    "top_k": 5,
+    "item_ids": [
+      "Q063"
+    ],
+    "output_language": "Korean",
+    "run_id": "run_quant_210"
+  },
+  "template_selection": {
+    "template_version": "template_v1",
+    "scale": "large_enterprise",
+    "industry": "HC",
+    "question_count": 1
+  },
+  "answers": [
+    {
+      "qid": "Q063",
+      "source_id": "EBX-Q-063",
+      "category": "다양성 및 포용성",
+      "question": "구성원 다양성 현황",
+      "answer_status": "high_confidence",
+      "rag_pillar": "지표 (Metrics)",
+      "rag_retrieval_confidence": null,
+      "rag_coverage_status": "",
+      "rag_answerable": null,
+      "rag_covered_facets": [],
+      "rag_missing_facets": [],
+      "rag_coverage": {},
+      "rag_failure_code": "",
+      "rag_failure_reason": "",
+      "rag_retrieval_notes": [],
+      "rag_contract_violations": [],
+      "rag_contract_warnings": [],
+      "rag_metric_expected": null,
+      "rag_metric_status": "",
+      "rag_metric_confidence": "",
+      "rag_metric_summary": {},
+      "rag_metric_absence": {},
+      "rag_metric_evidence": [],
+      "rag_narrative_evidence": [],
+      "consumer_decision": "blocked_qa",
+      "upstream_hints": {
+        "answerable": null,
+        "coverage_status": null,
+        "missing_facets": []
+      },
+      "upstream_coverage_mismatch": false,
+      "metric_audit": {
+        "metric_row_count": 0,
+        "parsed_metric_row_count": 0,
+        "malformed_metric_row_count": 0,
+        "valid_fact_count": 0,
+        "accepted_fact_count": 0,
+        "accepted_facts": [],
+        "conflict_count": 0,
+        "conflicts": [],
+        "all_numeric_facts_conflicted": false,
+        "metric_contract": "legacy",
+        "metric_expected": null,
+        "metric_status": null,
+        "metric_confidence": null,
+        "metric_summary": {},
+        "metric_absence": {},
+        "metric_contract_warnings": [],
+        "metric_evidence_row_count": 0,
+        "primary_row_count": 0,
+        "scope_variant_row_count": 0,
+        "denominator_row_count": 0,
+        "local_dimensions": [
+          "workforce_gender_mix",
+          "workforce_age_mix",
+          "female_manager_ratio"
+        ]
+      },
+      "result_bucket": "failed",
+      "draft_answer": "answer",
+      "final_answer": "",
+      "last_rejected_answer": "answer",
+      "qa_failure_stage": "semantic_critic",
+      "sanitizer_actions": [],
+      "evidence_summary": "evidence",
+      "sources": [
+        {
+          "source_name": "report.pdf",
+          "source_path": "ESG/report.pdf",
+          "document_id": "",
+          "chunk_id": "",
+          "canonical_source_id": "src_facf1ccf80d8b608",
+          "source_tier": "tier_unknown",
+          "source_type": "unknown",
+          "document_status": "unknown",
+          "document_version": null,
+          "effective_date": null,
+          "topic": "",
+          "subtopic": "",
+          "locator": {
+            "page": null,
+            "sheet_name": null,
+            "slide_number": null,
+            "section": null,
+            "paragraph": null,
+            "cell_range": null,
+            "spans_units": null,
+            "confidence": null
+          },
+          "semantic_label": "strong",
+          "semantic_score": 0.9,
+          "reranker_score": null,
+          "vector_score": null,
+          "score": null,
+          "classification_reason": "insufficient_metadata",
+          "provenance_key": "ESG/report.pdf",
+          "provenance_method": "source_path",
+          "provenance_fallback": false,
+          "chunk_ids": [],
+          "locators": [
+            {
+              "page": null,
+              "sheet_name": null,
+              "slide_number": null,
+              "section": null,
+              "paragraph": null,
+              "cell_range": null,
+              "spans_units": null,
+              "confidence": null
+            }
+          ]
+        }
+      ],
+      "claim_support": [
+        {
+          "claim_id": "c1",
+          "claim_text": "answer",
+          "source_ids": [],
+          "support_tier": "tier_unknown",
+          "support_status": "unsupported",
+          "facets": [],
+          "reporting_period": "",
+          "attribution_required": false
+        }
+      ],
+      "qa": {
+        "status": "failed",
+        "notes": [
+          "missing expected metric dimension: female_manager_ratio",
+          "missing expected metric dimension: workforce_age_mix",
+          "missing expected metric dimension: workforce_gender_mix",
+          "missing facet: metric_result",
+          "missing facet: reporting_period",
+          "missing required facet: metric_result",
+          "missing required facet: reporting_period",
+          "semantic answer insufficient"
+        ]
+      },
+      "agent_profile": "general_section",
+      "skill_key": "general_section",
+      "skill_name": "ESG Report Section Writer",
+      "skill_version": "1.2",
+      "skill_source_path": "F:\\MY_PROJECT\\esg-report-langgraph\\skills\\esg-report-section-writer.md",
+      "skill_selection_reason": "default=general_section",
+      "skill_checks": [
+        "claims_grounded: passed",
+        "facet_metric_female_manager_ratio: missing",
+        "facet_metric_result: missing",
+        "facet_metric_workforce_age_mix: missing",
+        "facet_metric_workforce_gender_mix: missing",
+        "facet_reporting_period: missing",
+        "legal_review_flagged: not_applicable",
+        "question_alignment: insufficient",
+        "source_usage: appropriate"
+      ],
+      "disclosure_flags": [],
+      "hard_failures": [],
+      "quality_flags": [
+        "missing_facet:metric_female_manager_ratio",
+        "missing_facet:metric_workforce_age_mix",
+        "missing_facet:metric_workforce_gender_mix",
+        "partial_answer",
+        "revision_error",
+        "writer_empty"
+      ],
+      "revision_count": 2,
+      "retrieval_attempts": [
+        {
+          "top_k": 5,
+          "retry_top_k": 5,
+          "retry_reason": "initial",
+          "answer_status": "high_confidence",
+          "coverage_status": null,
+          "answerable": null,
+          "retrieval_confidence": null,
+          "covered_facets": [],
+          "missing_facets": [],
+          "failure_code": null,
+          "request_id": "",
+          "item_count": 1,
+          "eligible_item_count": 1,
+          "metric_status": null,
+          "metric_evidence_row_count": 0,
+          "metric_primary_block_count": 0
+        }
+      ],
+      "raw_rag_result": {
+        "question_id": "Q063",
+        "question_ko": "Q063",
+        "pillar": null,
+        "normalized_answer_ko": "answer",
+        "answer_status": "high_confidence",
+        "retrieval_confidence": null,
+        "coverage_status": null,
+        "answerable": null,
+        "covered_facets": [],
+        "missing_facets": [],
+        "failure_code": null,
+        "failure_reason": "",
+        "retrieval_notes": [],
+        "coverage": {
+          "direct_answer": false,
+          "supports_policy_or_direction": false,
+          "supports_target": false,
+          "supports_accountable_body": false,
+          "supports_role": false,
+          "supports_oversight_cadence": false,
+          "supports_risk_identification": false,
+          "supports_control_or_response": false,
+          "supports_monitoring_follow_up": false,
+          "supports_metric_result": false,
+          "supports_reporting_period": false
+        },
+        "client_contract_violations": [],
+        "client_contract_warnings": [],
+        "items": [
+          {
+            "score": null,
+            "vector_score": null,
+            "reranker_score": null,
+            "raw_evidence_ko": "evidence",
+            "source_name": "report.pdf",
+            "source_path": "ESG/report.pdf",
+            "semantic_label": "strong",
+            "semantic_reason": "",
+            "semantic_score": 0.9,
+            "document_id": "",
+            "chunk_id": "",
+            "canonical_source_id": "",
+            "source_tier": "",
+            "source_type": "",
+            "document_status": "",
+            "document_version": null,
+            "effective_date": null,
+            "topic": "",
+            "subtopic": "",
+            "locator": {
+              "page": null,
+              "sheet_name": null,
+              "slide_number": null,
+              "section": null,
+              "paragraph": null,
+              "cell_range": null,
+              "spans_units": null,
+              "confidence": null
+            },
+            "facts": [],
+            "classification_reason": ""
+          }
+        ],
+        "metric_expected": null,
+        "metric_status": null,
+        "metric_summary": null,
+        "metric_confidence": null,
+        "metric_absence": null,
+        "metric_evidence": [],
+        "narrative_evidence": []
+      },
+      "qa_grade": "failed",
+      "coverage_reason": "writer_empty",
+      "coverage_issues": [
+        "missing_expected_facets",
+        "missing_metric_or_period",
+        "missing_required_facets",
+        "partial_answer",
+        "qa_failed",
+        "writer_empty"
+      ],
+      "publication_status": "blocked",
+      "publication_reason": "unsupported_claim",
+      "publication_issues": [
+        "empty_final_answer",
+        "qa_status:failed",
+        "unsupported_claim:c1"
+      ]
+    }
+  ],
+  "stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 0,
+    "failed": 1
+  },
+  "quantitative_results": [
+    {
+      "metric_id": "596",
+      "index": 1,
+      "metric_name": "metric 596",
+      "value": 1,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "Q063",
+        "source_id": "EBX-Q-063",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 596",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "597",
+      "index": 2,
+      "metric_name": "metric 597",
+      "value": 2,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 597",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "598",
+      "index": 3,
+      "metric_name": "metric 598",
+      "value": 3,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 598",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "599",
+      "index": 4,
+      "metric_name": "metric 599",
+      "value": 4,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 599",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "600",
+      "index": 5,
+      "metric_name": "metric 600",
+      "value": 5,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 600",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "601",
+      "index": 6,
+      "metric_name": "metric 601",
+      "value": 6,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 601",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "602",
+      "index": 7,
+      "metric_name": "metric 602",
+      "value": 7,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 602",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "603",
+      "index": 8,
+      "metric_name": "metric 603",
+      "value": 8,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 603",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "604",
+      "index": 9,
+      "metric_name": "metric 604",
+      "value": 9,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 604",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "605",
+      "index": 10,
+      "metric_name": "metric 605",
+      "value": 10,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 605",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "606",
+      "index": 11,
+      "metric_name": "metric 606",
+      "value": 11,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 606",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "607",
+      "index": 12,
+      "metric_name": "metric 607",
+      "value": 12,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 607",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "608",
+      "index": 13,
+      "metric_name": "metric 608",
+      "value": 13,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 608",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "609",
+      "index": 14,
+      "metric_name": "metric 609",
+      "value": 14,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 609",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "610",
+      "index": 15,
+      "metric_name": "metric 610",
+      "value": 15,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 610",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "611",
+      "index": 16,
+      "metric_name": "metric 611",
+      "value": 16,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 611",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "612",
+      "index": 17,
+      "metric_name": "metric 612",
+      "value": 17,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 612",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "613",
+      "index": 18,
+      "metric_name": "metric 613",
+      "value": 18,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 613",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "614",
+      "index": 19,
+      "metric_name": "metric 614",
+      "value": 19,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 614",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "615",
+      "index": 20,
+      "metric_name": "metric 615",
+      "value": 20,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 615",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "616",
+      "index": 21,
+      "metric_name": "metric 616",
+      "value": 21,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 616",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "617",
+      "index": 22,
+      "metric_name": "metric 617",
+      "value": 22,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 617",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "618",
+      "index": 23,
+      "metric_name": "metric 618",
+      "value": 23,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 618",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "619",
+      "index": 24,
+      "metric_name": "metric 619",
+      "value": 24,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 619",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "620",
+      "index": 25,
+      "metric_name": "metric 620",
+      "value": 25,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 620",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "621",
+      "index": 26,
+      "metric_name": "metric 621",
+      "value": 26,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 621",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "622",
+      "index": 27,
+      "metric_name": "metric 622",
+      "value": 27,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 622",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "623",
+      "index": 28,
+      "metric_name": "metric 623",
+      "value": 28,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 623",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "624",
+      "index": 29,
+      "metric_name": "metric 624",
+      "value": 29,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 624",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "625",
+      "index": 30,
+      "metric_name": "metric 625",
+      "value": 30,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 625",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "626",
+      "index": 31,
+      "metric_name": "metric 626",
+      "value": 31,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 626",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "627",
+      "index": 32,
+      "metric_name": "metric 627",
+      "value": 32,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 627",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "628",
+      "index": 33,
+      "metric_name": "metric 628",
+      "value": 33,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 628",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "629",
+      "index": 34,
+      "metric_name": "metric 629",
+      "value": 34,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 629",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "630",
+      "index": 35,
+      "metric_name": "metric 630",
+      "value": 35,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 630",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "631",
+      "index": 36,
+      "metric_name": "metric 631",
+      "value": 36,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 631",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "632",
+      "index": 37,
+      "metric_name": "metric 632",
+      "value": 37,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 632",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "633",
+      "index": 38,
+      "metric_name": "metric 633",
+      "value": 38,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 633",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "634",
+      "index": 39,
+      "metric_name": "metric 634",
+      "value": 39,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 634",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "635",
+      "index": 40,
+      "metric_name": "metric 635",
+      "value": 40,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 635",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "636",
+      "index": 41,
+      "metric_name": "metric 636",
+      "value": 41,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 636",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "637",
+      "index": 42,
+      "metric_name": "metric 637",
+      "value": 42,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 637",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "638",
+      "index": 43,
+      "metric_name": "metric 638",
+      "value": 43,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 638",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "639",
+      "index": 44,
+      "metric_name": "metric 639",
+      "value": 44,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 639",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "640",
+      "index": 45,
+      "metric_name": "metric 640",
+      "value": 45,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 640",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "641",
+      "index": 46,
+      "metric_name": "metric 641",
+      "value": 46,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 641",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "642",
+      "index": 47,
+      "metric_name": "metric 642",
+      "value": 47,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 642",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "643",
+      "index": 48,
+      "metric_name": "metric 643",
+      "value": 48,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 643",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "644",
+      "index": 49,
+      "metric_name": "metric 644",
+      "value": 49,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 644",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "645",
+      "index": 50,
+      "metric_name": "metric 645",
+      "value": 50,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 645",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "646",
+      "index": 51,
+      "metric_name": "metric 646",
+      "value": 51,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 646",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "647",
+      "index": 52,
+      "metric_name": "metric 647",
+      "value": 52,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 647",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "648",
+      "index": 53,
+      "metric_name": "metric 648",
+      "value": 53,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 648",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "649",
+      "index": 54,
+      "metric_name": "metric 649",
+      "value": 54,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 649",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "650",
+      "index": 55,
+      "metric_name": "metric 650",
+      "value": 55,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 650",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "651",
+      "index": 56,
+      "metric_name": "metric 651",
+      "value": 56,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 651",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "652",
+      "index": 57,
+      "metric_name": "metric 652",
+      "value": 57,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 652",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "653",
+      "index": 58,
+      "metric_name": "metric 653",
+      "value": 58,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 653",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "654",
+      "index": 59,
+      "metric_name": "metric 654",
+      "value": 59,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 654",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "655",
+      "index": 60,
+      "metric_name": "metric 655",
+      "value": 60,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 655",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "656",
+      "index": 61,
+      "metric_name": "metric 656",
+      "value": 61,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 656",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "657",
+      "index": 62,
+      "metric_name": "metric 657",
+      "value": 62,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 657",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "658",
+      "index": 63,
+      "metric_name": "metric 658",
+      "value": 63,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 658",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "659",
+      "index": 64,
+      "metric_name": "metric 659",
+      "value": 64,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 659",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "660",
+      "index": 65,
+      "metric_name": "metric 660",
+      "value": 65,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 660",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "661",
+      "index": 66,
+      "metric_name": "metric 661",
+      "value": 66,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 661",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "662",
+      "index": 67,
+      "metric_name": "metric 662",
+      "value": 67,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 662",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "663",
+      "index": 68,
+      "metric_name": "metric 663",
+      "value": 68,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 663",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "664",
+      "index": 69,
+      "metric_name": "metric 664",
+      "value": 69,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 664",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "665",
+      "index": 70,
+      "metric_name": "metric 665",
+      "value": 70,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 665",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "666",
+      "index": 71,
+      "metric_name": "metric 666",
+      "value": 71,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 666",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "667",
+      "index": 72,
+      "metric_name": "metric 667",
+      "value": 72,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 667",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "668",
+      "index": 73,
+      "metric_name": "metric 668",
+      "value": 73,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 668",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "669",
+      "index": 74,
+      "metric_name": "metric 669",
+      "value": 74,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 669",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "670",
+      "index": 75,
+      "metric_name": "metric 670",
+      "value": 75,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 670",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "671",
+      "index": 76,
+      "metric_name": "metric 671",
+      "value": 76,
+      "unit": "명",
+      "source": "정량데이터.xlsx",
+      "status": "filled",
+      "confidence": 1.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 671",
+        "answer_status": "answered",
+        "answer_reason": "guided_cell",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [
+          {
+            "source": "정량데이터.xlsx",
+            "cell": "J1"
+          }
+        ],
+        "evidence_locator": {
+          "cell": "J1"
+        },
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "672",
+      "index": 77,
+      "metric_name": "metric 672",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 672",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "673",
+      "index": 78,
+      "metric_name": "metric 673",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 673",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "674",
+      "index": 79,
+      "metric_name": "metric 674",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 674",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "675",
+      "index": 80,
+      "metric_name": "metric 675",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 675",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "676",
+      "index": 81,
+      "metric_name": "metric 676",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 676",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "677",
+      "index": 82,
+      "metric_name": "metric 677",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 677",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "678",
+      "index": 83,
+      "metric_name": "metric 678",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 678",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "679",
+      "index": 84,
+      "metric_name": "metric 679",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 679",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "680",
+      "index": 85,
+      "metric_name": "metric 680",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 680",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "681",
+      "index": 86,
+      "metric_name": "metric 681",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 681",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "682",
+      "index": 87,
+      "metric_name": "metric 682",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 682",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "683",
+      "index": 88,
+      "metric_name": "metric 683",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 683",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "684",
+      "index": 89,
+      "metric_name": "metric 684",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 684",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "685",
+      "index": 90,
+      "metric_name": "metric 685",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 685",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "686",
+      "index": 91,
+      "metric_name": "metric 686",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 686",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "687",
+      "index": 92,
+      "metric_name": "metric 687",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 687",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "688",
+      "index": 93,
+      "metric_name": "metric 688",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 688",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "689",
+      "index": 94,
+      "metric_name": "metric 689",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 689",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "690",
+      "index": 95,
+      "metric_name": "metric 690",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 690",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "691",
+      "index": 96,
+      "metric_name": "metric 691",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 691",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "692",
+      "index": 97,
+      "metric_name": "metric 692",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 692",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "693",
+      "index": 98,
+      "metric_name": "metric 693",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 693",
+        "answer_status": "needs_confirmation",
+        "answer_reason": "needs_confirmation: value withheld pending unit/customer confirmation",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {},
+        "needs_confirmation": true,
+        "withheld_value_reason": "needs_confirmation: value withheld pending unit/customer confirmation"
+      }
+    },
+    {
+      "metric_id": "694",
+      "index": 99,
+      "metric_name": "metric 694",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 694",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "695",
+      "index": 100,
+      "metric_name": "metric 695",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 695",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "696",
+      "index": 101,
+      "metric_name": "metric 696",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 696",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "697",
+      "index": 102,
+      "metric_name": "metric 697",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 697",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "698",
+      "index": 103,
+      "metric_name": "metric 698",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 698",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "699",
+      "index": 104,
+      "metric_name": "metric 699",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 699",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "700",
+      "index": 105,
+      "metric_name": "metric 700",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 700",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "701",
+      "index": 106,
+      "metric_name": "metric 701",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 701",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "702",
+      "index": 107,
+      "metric_name": "metric 702",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 702",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "703",
+      "index": 108,
+      "metric_name": "metric 703",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 703",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "704",
+      "index": 109,
+      "metric_name": "metric 704",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 704",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "705",
+      "index": 110,
+      "metric_name": "metric 705",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 705",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "706",
+      "index": 111,
+      "metric_name": "metric 706",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 706",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "707",
+      "index": 112,
+      "metric_name": "metric 707",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 707",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "708",
+      "index": 113,
+      "metric_name": "metric 708",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 708",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "709",
+      "index": 114,
+      "metric_name": "metric 709",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 709",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "710",
+      "index": 115,
+      "metric_name": "metric 710",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 710",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "711",
+      "index": 116,
+      "metric_name": "metric 711",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 711",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "712",
+      "index": 117,
+      "metric_name": "metric 712",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 712",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "713",
+      "index": 118,
+      "metric_name": "metric 713",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 713",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "714",
+      "index": 119,
+      "metric_name": "metric 714",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 714",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "715",
+      "index": 120,
+      "metric_name": "metric 715",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 715",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "716",
+      "index": 121,
+      "metric_name": "metric 716",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 716",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "717",
+      "index": 122,
+      "metric_name": "metric 717",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 717",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "718",
+      "index": 123,
+      "metric_name": "metric 718",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 718",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "719",
+      "index": 124,
+      "metric_name": "metric 719",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 719",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "720",
+      "index": 125,
+      "metric_name": "metric 720",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 720",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "721",
+      "index": 126,
+      "metric_name": "metric 721",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 721",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "722",
+      "index": 127,
+      "metric_name": "metric 722",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 722",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "723",
+      "index": 128,
+      "metric_name": "metric 723",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 723",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "724",
+      "index": 129,
+      "metric_name": "metric 724",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 724",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "725",
+      "index": 130,
+      "metric_name": "metric 725",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 725",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "726",
+      "index": 131,
+      "metric_name": "metric 726",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 726",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "727",
+      "index": 132,
+      "metric_name": "metric 727",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 727",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "728",
+      "index": 133,
+      "metric_name": "metric 728",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 728",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "729",
+      "index": 134,
+      "metric_name": "metric 729",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 729",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "730",
+      "index": 135,
+      "metric_name": "metric 730",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 730",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "731",
+      "index": 136,
+      "metric_name": "metric 731",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 731",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "732",
+      "index": 137,
+      "metric_name": "metric 732",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 732",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "733",
+      "index": 138,
+      "metric_name": "metric 733",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 733",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "734",
+      "index": 139,
+      "metric_name": "metric 734",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 734",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "735",
+      "index": 140,
+      "metric_name": "metric 735",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 735",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "736",
+      "index": 141,
+      "metric_name": "metric 736",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 736",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "737",
+      "index": 142,
+      "metric_name": "metric 737",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 737",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "738",
+      "index": 143,
+      "metric_name": "metric 738",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 738",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "739",
+      "index": 144,
+      "metric_name": "metric 739",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 739",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "740",
+      "index": 145,
+      "metric_name": "metric 740",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 740",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "741",
+      "index": 146,
+      "metric_name": "metric 741",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 741",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "742",
+      "index": 147,
+      "metric_name": "metric 742",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 742",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "743",
+      "index": 148,
+      "metric_name": "metric 743",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 743",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "744",
+      "index": 149,
+      "metric_name": "metric 744",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 744",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "745",
+      "index": 150,
+      "metric_name": "metric 745",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 745",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "746",
+      "index": 151,
+      "metric_name": "metric 746",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 746",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "747",
+      "index": 152,
+      "metric_name": "metric 747",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 747",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "748",
+      "index": 153,
+      "metric_name": "metric 748",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 748",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "749",
+      "index": 154,
+      "metric_name": "metric 749",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 749",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "750",
+      "index": 155,
+      "metric_name": "metric 750",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 750",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "751",
+      "index": 156,
+      "metric_name": "metric 751",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 751",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "752",
+      "index": 157,
+      "metric_name": "metric 752",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 752",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "753",
+      "index": 158,
+      "metric_name": "metric 753",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 753",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "754",
+      "index": 159,
+      "metric_name": "metric 754",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 754",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "755",
+      "index": 160,
+      "metric_name": "metric 755",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 755",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "756",
+      "index": 161,
+      "metric_name": "metric 756",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 756",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "757",
+      "index": 162,
+      "metric_name": "metric 757",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 757",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "758",
+      "index": 163,
+      "metric_name": "metric 758",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 758",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "759",
+      "index": 164,
+      "metric_name": "metric 759",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 759",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "760",
+      "index": 165,
+      "metric_name": "metric 760",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 760",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "761",
+      "index": 166,
+      "metric_name": "metric 761",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 761",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "762",
+      "index": 167,
+      "metric_name": "metric 762",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 762",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "763",
+      "index": 168,
+      "metric_name": "metric 763",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 763",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "764",
+      "index": 169,
+      "metric_name": "metric 764",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 764",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "765",
+      "index": 170,
+      "metric_name": "metric 765",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 765",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "766",
+      "index": 171,
+      "metric_name": "metric 766",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 766",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "767",
+      "index": 172,
+      "metric_name": "metric 767",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 767",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "768",
+      "index": 173,
+      "metric_name": "metric 768",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 768",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "769",
+      "index": 174,
+      "metric_name": "metric 769",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 769",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "770",
+      "index": 175,
+      "metric_name": "metric 770",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 770",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "771",
+      "index": 176,
+      "metric_name": "metric 771",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 771",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "772",
+      "index": 177,
+      "metric_name": "metric 772",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 772",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "773",
+      "index": 178,
+      "metric_name": "metric 773",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 773",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "774",
+      "index": 179,
+      "metric_name": "metric 774",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 774",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "775",
+      "index": 180,
+      "metric_name": "metric 775",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 775",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "776",
+      "index": 181,
+      "metric_name": "metric 776",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 776",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "777",
+      "index": 182,
+      "metric_name": "metric 777",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 777",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "778",
+      "index": 183,
+      "metric_name": "metric 778",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 778",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "779",
+      "index": 184,
+      "metric_name": "metric 779",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 779",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "780",
+      "index": 185,
+      "metric_name": "metric 780",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 780",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "781",
+      "index": 186,
+      "metric_name": "metric 781",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 781",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "782",
+      "index": 187,
+      "metric_name": "metric 782",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 782",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "783",
+      "index": 188,
+      "metric_name": "metric 783",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 783",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "784",
+      "index": 189,
+      "metric_name": "metric 784",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 784",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "785",
+      "index": 190,
+      "metric_name": "metric 785",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 785",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "786",
+      "index": 191,
+      "metric_name": "metric 786",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 786",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "787",
+      "index": 192,
+      "metric_name": "metric 787",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 787",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "788",
+      "index": 193,
+      "metric_name": "metric 788",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 788",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "789",
+      "index": 194,
+      "metric_name": "metric 789",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 789",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "790",
+      "index": 195,
+      "metric_name": "metric 790",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 790",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "791",
+      "index": 196,
+      "metric_name": "metric 791",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 791",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "792",
+      "index": 197,
+      "metric_name": "metric 792",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 792",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "793",
+      "index": 198,
+      "metric_name": "metric 793",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 793",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "794",
+      "index": 199,
+      "metric_name": "metric 794",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 794",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "795",
+      "index": 200,
+      "metric_name": "metric 795",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 795",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "796",
+      "index": 201,
+      "metric_name": "metric 796",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 796",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "797",
+      "index": 202,
+      "metric_name": "metric 797",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 797",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "798",
+      "index": 203,
+      "metric_name": "metric 798",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 798",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "799",
+      "index": 204,
+      "metric_name": "metric 799",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 799",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "800",
+      "index": 205,
+      "metric_name": "metric 800",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 800",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "801",
+      "index": 206,
+      "metric_name": "metric 801",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 801",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "802",
+      "index": 207,
+      "metric_name": "metric 802",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 802",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "803",
+      "index": 208,
+      "metric_name": "metric 803",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 803",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "804",
+      "index": 209,
+      "metric_name": "metric 804",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 804",
+        "answer_status": "missing",
+        "answer_reason": "missing",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {}
+      }
+    },
+    {
+      "metric_id": "814",
+      "index": 210,
+      "metric_name": "metric 814",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "catalog_pack": "quant_210",
+        "api_kind": "quantitative",
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "domain": "사회",
+        "category": "구성원 및 다양성",
+        "subcategory": "성별",
+        "question": "question 814",
+        "answer_status": "needs_confirmation",
+        "answer_reason": "needs_confirmation: value withheld pending unit/customer confirmation",
+        "answer_text": null,
+        "normalized_value": null,
+        "year": 2025,
+        "evidence": [],
+        "evidence_locator": {},
+        "standards": {},
+        "needs_confirmation": true,
+        "withheld_value_reason": "needs_confirmation: value withheld pending unit/customer confirmation"
+      }
+    }
+  ],
+  "quantitative_stats": {
+    "total": 210,
+    "filled": 76,
+    "missing": 132,
+    "needs_confirmation": 2,
+    "published": 76
+  },
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\.codex_tmp\\plan_pytest_20260810\\test_graph_writes_quant_210_wo0\\outputs\\daewoong\\2025\\run_quant_210\\qualitative_run.json",
+    "coverage_summary": "F:\\MY_PROJECT\\esg-report-langgraph\\.codex_tmp\\plan_pytest_20260810\\test_graph_writes_quant_210_wo0\\outputs\\daewoong\\2025\\run_quant_210\\coverage_summary.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.codex_tmp\\plan_pytest_20260810\\test_graph_writes_quant_210_wo0\\outputs\\daewoong\\2025\\run_quant_210\\qualitative_audit.xlsx",
+    "combined_excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.codex_tmp\\plan_pytest_20260810\\test_graph_writes_quant_210_wo0\\outputs\\daewoong\\2025\\run_quant_210\\[langgraph][대웅제약]report-2026.08.10_1.xlsx"
+  },
+  "provenance": {
+    "schema_version": 1,
+    "mode": "off",
+    "verified": false,
+    "source_digest": "",
+    "runtime_source_digest": "",
+    "expected_source_digest": "",
+    "built_at_utc": "",
+    "git_sha": "unknown"
+  },
+  "rag_request_traces": [
+    {
+      "request_id": "",
+      "api_version": "",
+      "rag_version": "",
+      "index_version": "",
+      "generated_at": null,
+      "latency_ms": null,
+      "warnings": [],
+      "requested_item_ids": [
+        "Q063"
+      ],
+      "top_k": 5,
+      "phase": "initial",
+      "contract_violations": [],
+      "error": ""
+    }
+  ]
+}

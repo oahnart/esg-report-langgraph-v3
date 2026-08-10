@@ -128,3 +128,34 @@ def test_hallmdr_structured_output_repairs_missing_field_comma():
     structured = bind_structured(llm, StructuredResult, "test")
 
     assert structured.invoke("return an answer") == StructuredResult(answer="ok")
+
+
+def test_hallmdr_structured_output_repairs_same_line_missing_field_comma():
+    llm = FakeHallMDRLLM()
+    llm.invoke = lambda messages: SimpleNamespace(content='{"answer": "ok" "extra": "ignored"}')
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    assert structured.invoke("return an answer") == StructuredResult(answer="ok")
+
+
+def test_hallmdr_structured_output_retries_unescaped_quote_response():
+    llm = FakeHallMDRLLM()
+    responses = iter(
+        [
+            '{"answer": "Use "recycled" water."}',
+            '{"answer": "Use \\"recycled\\" water."}',
+        ]
+    )
+    calls = []
+
+    def invoke(messages):
+        calls.append(messages)
+        return SimpleNamespace(content=next(responses))
+
+    llm.invoke = invoke
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    assert structured.invoke("return an answer") == StructuredResult(answer='Use "recycled" water.')
+    assert len(calls) == 2
+    assert "JSON syntax repairer" in calls[1][0].content
+    assert calls[1][1].content == '{"answer": "Use "recycled" water."}'

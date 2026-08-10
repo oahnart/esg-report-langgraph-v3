@@ -5,6 +5,12 @@ from typing import Any
 
 from .policy import has_accepted_label, has_evidence_text, has_stable_provenance
 from .source_policy import classify_source
+from .metric_routing import (
+    has_metric_contract,
+    is_metric_row,
+    metric_contract_warnings,
+    routed_gate_items,
+)
 
 
 CONDITIONAL_SEMANTIC_LABELS = {"useful", "partial", "metric_row", "keep", "keep_supportive"}
@@ -42,6 +48,11 @@ class EvidenceGateAgent:
                 upstream_hints[planned.id] = {}
                 upstream_coverage_mismatches[planned.id] = False
                 continue
+            contract_warnings = metric_contract_warnings(rag)
+            if contract_warnings:
+                rag.client_contract_warnings = list(
+                    dict.fromkeys([*rag.client_contract_warnings, *contract_warnings])
+                )
             answer_status = rag.answer_status.strip().casefold()
             eligible_by_status = answer_status in accepted_statuses or answer_status in conditional_statuses
             hints = {
@@ -63,11 +74,17 @@ class EvidenceGateAgent:
                 )
             )
             upstream_coverage_mismatches[planned.id] = mismatch
-            if not rag.items:
+            routed_items = routed_gate_items(rag)
+            if rag.metric_status == "found_table" and not routed_items:
+                gate[planned.id] = {
+                    "accepted": False,
+                    "reason": "metric_found_table_without_usable_evidence",
+                }
+            elif not routed_items:
                 gate[planned.id] = {"accepted": False, "reason": "empty evidence"}
             else:
-                evidence_with_text = [item for item in rag.items if has_evidence_text(item)]
-                if rag.is_v3:
+                evidence_with_text = [item for item in routed_items if has_evidence_text(item)]
+                if rag.is_v3 or has_metric_contract(rag):
                     if rag.client_contract_violations:
                         gate[planned.id] = {
                             "accepted": False,
@@ -85,6 +102,7 @@ class EvidenceGateAgent:
                         item
                         for item in evidence_with_text
                         if item.semantic_label.strip().lower() in CONDITIONAL_SEMANTIC_LABELS
+                        or is_metric_row(item)
                     ]
                     accepted_reason = (
                         "accepted_v3_partial"
@@ -96,6 +114,7 @@ class EvidenceGateAgent:
                         item
                         for item in evidence_with_text
                         if item.semantic_label.strip().lower() in CONDITIONAL_SEMANTIC_LABELS
+                        or is_metric_row(item)
                     ]
                     accepted_reason = "accepted_thin_evidence"
                 elif answer_status in accepted_statuses:
@@ -109,6 +128,12 @@ class EvidenceGateAgent:
                         "reason": f"answer_status={rag.answer_status or 'empty'}",
                     }
                     continue
+                if (
+                    rag.metric_status == "not_found"
+                    and accepted_label_items
+                    and eligible_by_status
+                ):
+                    accepted_reason = "accepted_metric_not_found"
                 policy_exception = ""
                 failure_code = str(rag.failure_code or "").strip().upper()
                 if rag.is_v3 and failure_code == "DRAFT_ONLY" and self._draft_only_evidence(accepted_label_items):

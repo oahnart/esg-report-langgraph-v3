@@ -23,6 +23,7 @@ def _coerce(value: str, reference: Any) -> Any:
 DEFAULT_CONFIG: dict[str, Any] = {
     "team_rag_base_url": "",
     "team_rag_qualitative_path": "/qualitative/evidence/v3",
+    "team_rag_request_contract": "new",
     "team_rag_timeout_seconds": 30,
     "team_rag_top_k": 5,
     "team_rag_retry_top_k": 0,
@@ -83,6 +84,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 _ENV_OVERRIDES = {
     "TEAM_RAG_BASE_URL": "team_rag_base_url",
     "TEAM_RAG_QUALITATIVE_PATH": "team_rag_qualitative_path",
+    "TEAM_RAG_REQUEST_CONTRACT": "team_rag_request_contract",
     "TEAM_RAG_TIMEOUT_SECONDS": "team_rag_timeout_seconds",
     "TEAM_RAG_TOP_K": "team_rag_top_k",
     "ESG_TEAM_RAG_RETRY_TOP_K": "team_rag_retry_top_k",

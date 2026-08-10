@@ -20,7 +20,7 @@ def test_graph_runs_subset_with_mock_rag_without_writing_outputs(tmp_path):
                     "items": [
                         {
                             "score": 1,
-                            "raw_evidence_ko": f"{qid} raw evidence",
+                            "raw_evidence_ko": f"{qid} normalized answer",
                             "source_name": "source.docx",
                             "source_path": "ESG/source.docx",
                             "semantic_label": "strong",
@@ -28,7 +28,7 @@ def test_graph_runs_subset_with_mock_rag_without_writing_outputs(tmp_path):
                         }
                     ],
                 }
-                for qid in payload["item_ids"]
+                for qid in payload.get("question_ids", payload.get("item_ids", []))
             ],
         }
 
@@ -37,6 +37,7 @@ def test_graph_runs_subset_with_mock_rag_without_writing_outputs(tmp_path):
             "output_dir": str(tmp_path),
             "team_rag_batch_size": 2,
             "agent_mode": "offline",
+            "quantitative_output_enabled": False,
             "quantitative_input_mode": "file",
             "quantitative_input_dir": str(tmp_path / "inputs"),
         },
@@ -80,7 +81,7 @@ def test_graph_runs_with_checkpoint_enabled(tmp_path):
                     "answer_status": "high_confidence",
                     "items": [
                         {
-                            "raw_evidence_ko": "evidence",
+                            "raw_evidence_ko": "answer",
                             "source_name": "doc",
                             "source_path": "ESG/doc.docx",
                             "semantic_label": "strong",
@@ -88,7 +89,7 @@ def test_graph_runs_with_checkpoint_enabled(tmp_path):
                         }
                     ],
                 }
-                for qid in payload["item_ids"]
+                for qid in payload.get("question_ids", payload.get("item_ids", []))
             ],
         }
 
@@ -137,6 +138,7 @@ def test_graph_uses_v3_metric_items_without_quantitative_loader(tmp_path):
             "output_dir": str(tmp_path),
             "agent_mode": "offline",
             "semantic_qa_enabled": False,
+            "quantitative_output_enabled": False,
             "quantitative_input_mode": "api",
             "quantitative_api_base_url": "https://quant.example",
         },
@@ -244,7 +246,7 @@ def test_graph_writes_combined_workbook_with_quantitative_input(tmp_path):
                         }
                     ],
                 }
-                for qid in payload["item_ids"]
+                for qid in payload.get("question_ids", payload.get("item_ids", []))
             ],
         }
 
@@ -323,7 +325,7 @@ def test_graph_writes_quant_210_workbook_and_withholds_confirmation_values(tmp_p
                         }
                     ],
                 }
-                for qid in payload["item_ids"]
+                for qid in payload.get("question_ids", payload.get("item_ids", []))
             ],
         }
 
@@ -499,6 +501,6 @@ def _v3_metric_response(payload):
                     }
                 ],
             }
-            for qid in payload["item_ids"]
+            for qid in payload.get("question_ids", payload.get("item_ids", []))
         ],
     }

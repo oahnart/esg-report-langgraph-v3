@@ -4,6 +4,13 @@ import re
 from typing import Any
 
 from esgagents.quality_flags import canonicalize_quality_flags
+from esgagents.schemas import QAResult
+from esgagents.customer_text import strip_customer_meta_limitations
+
+from .text_quality import (
+    non_narrative_reason,
+    normalize_answer_coherence,
+)
 
 
 IDENTITY_REQUEST_TERMS = ("성명", "이름", "실명", "담당자명", "name of", "who is")
@@ -36,7 +43,6 @@ ADJACENT_DUPLICATE_ROLE_RE = re.compile(
     rf"\b({ROLE_PATTERN})(?:\s*,\s*\1)+\b"
 )
 
-
 class OutputHygieneAgent:
     def __init__(self, config: dict[str, Any] | None = None):
         self.enabled = bool((config or {}).get("output_hygiene_enabled", True))
@@ -50,6 +56,9 @@ class OutputHygieneAgent:
             qid: list(actions) for qid, actions in state.get("sanitizer_actions", {}).items()
         }
         qa_results = dict(state.get("qa_results", {}))
+        hard_failures = {
+            qid: list(failures) for qid, failures in state.get("hard_failures", {}).items()
+        }
         planned_by_id = {planned.id: planned for planned in state.get("planned_questions", [])}
 
         for qid, original in list(final_answers.items()):
@@ -58,6 +67,16 @@ class OutputHygieneAgent:
             actions = sanitizer_actions.setdefault(qid, [])
             if original and normalized != original:
                 flags.append("markdown_normalized")
+
+            normalized, coherence_actions = normalize_answer_coherence(normalized)
+            if coherence_actions:
+                flags.append("coherence_normalized")
+                actions.extend(coherence_actions)
+
+            normalized, limitation_actions = strip_customer_meta_limitations(normalized)
+            if limitation_actions:
+                flags.append("customer_meta_limitation_removed")
+                actions.extend(limitation_actions)
 
             planned = planned_by_id.get(qid)
             question_text = " ".join(
@@ -79,6 +98,20 @@ class OutputHygieneAgent:
 
             if normalized and redacted != normalized:
                 flags.append("pii_redacted")
+            structural_reason = non_narrative_reason(redacted)
+            if structural_reason:
+                redacted = ""
+                flags.append("non_narrative_output")
+                failures = hard_failures.setdefault(qid, [])
+                failures.extend(["non_narrative_output", structural_reason])
+                qa = qa_results.get(qid)
+                notes = list(getattr(qa, "notes", []) or [])
+                notes.extend(["non_narrative_output", structural_reason])
+                qa_results[qid] = (
+                    qa.model_copy(update={"status": "failed", "notes": list(dict.fromkeys(notes))})
+                    if qa is not None
+                    else QAResult(status="failed", notes=list(dict.fromkeys(notes)))
+                )
             gate_reason = str(state.get("evidence_gate", {}).get(qid, {}).get("reason", "") or "")
             if not redacted and gate_reason.startswith("accepted"):
                 flags.append("writer_empty")
@@ -97,6 +130,7 @@ class OutputHygieneAgent:
             "quality_flags": quality_flags,
             "sanitizer_actions": sanitizer_actions,
             "qa_results": qa_results,
+            "hard_failures": hard_failures,
         }
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Literal
 
 
@@ -11,6 +12,7 @@ FAILED_REASON_PRECEDENCE = (
     "rag_missing_required_facets",
     "rag_no_evidence",
     "rag_wrong_topic",
+    "non_narrative_output",
     "writer_empty",
     "empty_evidence",
     "missing_source_path",
@@ -22,6 +24,7 @@ FAILED_REASON_PRECEDENCE = (
     "qa_failed",
 )
 PARTIAL_REASON_PRECEDENCE = (
+    "qa_invariant_violation",
     "missing_metric_or_period",
     "missing_required_facets",
     "missing_expected_facets",
@@ -43,6 +46,61 @@ class AnswerQuality:
     issues: tuple[str, ...]
 
 
+def answer_invariant_issues(answer: Any) -> tuple[str, ...]:
+    notes = [str(note or "").strip().casefold() for note in getattr(getattr(answer, "qa", None), "notes", []) or []]
+    checks = [str(check or "").strip().casefold() for check in getattr(answer, "skill_checks", []) or []]
+    flags = {str(flag or "").strip().casefold() for flag in getattr(answer, "quality_flags", []) or []}
+    combined_notes = " | ".join(notes)
+    covered_facets = {
+        check.split(":", 1)[0].removeprefix("facet_")
+        for check in checks
+        if check.startswith("facet_") and check.endswith(": covered")
+    }
+    missing_facets = {
+        match.group(1).strip()
+        for note in notes
+        for match in [
+            re.search(
+                r"missing (?:expected metric dimension|required facet|facet):\s*([a-z0-9_]+)",
+                note,
+            )
+        ]
+        if match
+    }
+    issues: set[str] = set()
+    if any(facet in covered_facets for facet in missing_facets):
+        issues.add("qa_invariant_violation:facet_both_missing_and_covered")
+    metric_missing = any(
+        marker in combined_notes
+        for marker in (
+            "metric_not_found",
+            "no quantitative metric",
+            "no quantitative figure",
+            "metric absence",
+        )
+    ) or "metric_not_found" in flags
+    if metric_missing and any(
+        facet == "metric_result" or facet.startswith("metric_")
+        for facet in covered_facets
+    ):
+        issues.add("qa_invariant_violation:missing_metric_marked_covered")
+    explicit_grade = str(getattr(answer, "qa_grade", "") or "").casefold()
+    review_signals = {
+        "partial_answer",
+        "metric_not_found",
+        "metric_low_confidence",
+        "human_review_required",
+        "legal_review_required",
+        "provenance_fallback",
+    }
+    if explicit_grade == "full" and (
+        flags.intersection(review_signals)
+        or any(flag.startswith("missing_facet:") for flag in flags)
+    ):
+        issues.add("qa_invariant_violation:full_with_review_signal")
+    return tuple(sorted(issues))
+
+
 def classify_answer_quality(answer: Any) -> AnswerQuality:
     final_answer = str(getattr(answer, "final_answer", "") or "").strip()
     qa = getattr(answer, "qa", None)
@@ -54,6 +112,9 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
     combined = " | ".join([*notes, *flags, *checks, *hard_failures]).casefold()
 
     issues: set[str] = set()
+    invariant_issues = answer_invariant_issues(answer)
+    if invariant_issues:
+        issues.add("qa_invariant_violation")
     if "empty evidence" in combined:
         issues.add("empty_evidence")
     if "rag_missing_required_facets" in combined or "rag_v3:missing_required_facets" in combined:
@@ -64,10 +125,26 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
         issues.add("rag_wrong_topic")
     if "writer_empty" in combined:
         issues.add("writer_empty")
+    if "metric_not_found" in combined:
+        issues.add("missing_metric_or_period")
+    if "provenance_fallback" in combined:
+        issues.add("thin_evidence")
+    if "non_narrative_output" in combined or any(
+        term in combined
+        for term in (
+            "raw_table_output",
+            "table_delimited_output",
+            "header_dump_output",
+            "fragment_output",
+            "unstructured_long_output",
+        )
+    ):
+        issues.add("non_narrative_output")
     if (
         "missing source_path" in combined
         or "missing source path" in combined
         or "missing stable provenance" in combined
+        or "source_path_invalid" in combined
     ):
         issues.add("missing_source_path")
     if "all evidence semantic labels are weak" in combined:
@@ -159,7 +236,13 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
         issues.add("unknown_source_tier")
 
     hard_failure = bool(hard_failures) or bool(
-        issues & {"thematic_mismatch", "unsupported_claim", "source_usage_overstated"}
+        issues
+        & {
+            "thematic_mismatch",
+            "unsupported_claim",
+            "source_usage_overstated",
+            "non_narrative_output",
+        }
     )
     if not final_answer or qa_status in {"empty", "failed"} or hard_failure:
         if qa_status == "failed" or hard_failure:
@@ -205,6 +288,17 @@ def resolved_answer_quality(answer: Any) -> AnswerQuality:
     explicit_reason = str(getattr(answer, "coverage_reason", "") or "")
     explicit_issues = tuple(sorted(set(getattr(answer, "coverage_issues", []) or [])))
     if explicit_grade in QA_GRADES and explicit_reason:
+        legacy_without_evidence_metadata = (
+            not (getattr(answer, "sources", []) or [])
+            and not (getattr(answer, "claim_support", []) or [])
+            and set(classified.issues) == {"unknown_source_tier"}
+        )
+        if classified.grade == "failed" or (
+            explicit_grade == "full"
+            and classified.grade != "full"
+            and not legacy_without_evidence_metadata
+        ):
+            return classified
         return AnswerQuality(explicit_grade, explicit_reason, explicit_issues)  # type: ignore[arg-type]
     return classified
 

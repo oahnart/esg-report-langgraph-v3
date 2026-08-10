@@ -1,0 +1,29 @@
+{
+  "run_id": "run_existing",
+  "company": {
+    "company_id": "c",
+    "company_name": "C",
+    "year": 2025
+  },
+  "template_selection": {
+    "template_version": "template_v1",
+    "question_count": 0
+  },
+  "answers": [],
+  "stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "quantitative_results": [],
+  "quantitative_stats": {},
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_targeted\\test_output_writer_rejects_exi0\\c\\2025\\run_existing\\qualitative_run.json",
+    "coverage_summary": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_targeted\\test_output_writer_rejects_exi0\\c\\2025\\run_existing\\coverage_summary.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_targeted\\test_output_writer_rejects_exi0\\c\\2025\\run_existing\\qualitative_audit.xlsx",
+    "combined_excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_targeted\\test_output_writer_rejects_exi0\\c\\2025\\run_existing\\[langgraph][C]report-2026.08.10_1.xlsx"
+  },
+  "provenance": {},
+  "rag_request_traces": []
+}

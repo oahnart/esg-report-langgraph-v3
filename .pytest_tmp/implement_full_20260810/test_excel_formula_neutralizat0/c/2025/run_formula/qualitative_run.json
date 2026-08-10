@@ -1,0 +1,94 @@
+{
+  "run_id": "run_formula",
+  "company": {
+    "company_id": "c",
+    "company_name": "C",
+    "year": 2025
+  },
+  "template_selection": {
+    "template_version": "template_v1",
+    "question_count": 1
+  },
+  "answers": [
+    {
+      "qid": "Q001",
+      "source_id": "",
+      "category": "",
+      "question": "",
+      "answer_status": "",
+      "rag_pillar": "",
+      "rag_retrieval_confidence": null,
+      "rag_coverage_status": "",
+      "rag_answerable": null,
+      "rag_covered_facets": [],
+      "rag_missing_facets": [],
+      "rag_coverage": {},
+      "rag_failure_code": "",
+      "rag_failure_reason": "",
+      "rag_retrieval_notes": [],
+      "rag_contract_violations": [],
+      "rag_contract_warnings": [],
+      "rag_metric_expected": null,
+      "rag_metric_status": "",
+      "rag_metric_confidence": "",
+      "rag_metric_summary": {},
+      "rag_metric_absence": {},
+      "rag_metric_evidence": [],
+      "rag_narrative_evidence": [],
+      "consumer_decision": "blocked_evidence",
+      "upstream_hints": {},
+      "upstream_coverage_mismatch": false,
+      "metric_audit": {},
+      "result_bucket": null,
+      "draft_answer": "",
+      "final_answer": "=1+1",
+      "last_rejected_answer": "",
+      "qa_failure_stage": "",
+      "sanitizer_actions": [],
+      "evidence_summary": "@SUM(A1:A2)",
+      "sources": [],
+      "claim_support": [],
+      "qa": {
+        "status": "passed",
+        "notes": [
+          "grounded"
+        ]
+      },
+      "agent_profile": "general_section",
+      "skill_key": "general_section",
+      "skill_name": "",
+      "skill_version": "",
+      "skill_source_path": "",
+      "skill_selection_reason": "",
+      "skill_checks": [],
+      "disclosure_flags": [],
+      "hard_failures": [],
+      "quality_flags": [],
+      "revision_count": 0,
+      "retrieval_attempts": [],
+      "raw_rag_result": {},
+      "qa_grade": null,
+      "coverage_reason": "",
+      "coverage_issues": [],
+      "publication_status": null,
+      "publication_reason": "",
+      "publication_issues": []
+    }
+  ],
+  "stats": {
+    "answered": 1,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "quantitative_results": [],
+  "quantitative_stats": {},
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_full_20260810\\test_excel_formula_neutralizat0\\c\\2025\\run_formula\\qualitative_run.json",
+    "coverage_summary": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_full_20260810\\test_excel_formula_neutralizat0\\c\\2025\\run_formula\\coverage_summary.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_full_20260810\\test_excel_formula_neutralizat0\\c\\2025\\run_formula\\qualitative_audit.xlsx",
+    "combined_excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_full_20260810\\test_excel_formula_neutralizat0\\c\\2025\\run_formula\\[langgraph][C]report-2026.08.10_1.xlsx"
+  },
+  "provenance": {},
+  "rag_request_traces": []
+}

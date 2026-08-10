@@ -71,7 +71,7 @@ def salvage_supported_claims(
             support.claim_text,
             metric_audit or {},
         )
-        if support.support_status in {"grounded", "partial"} or metric_support:
+        if support.support_status in {"grounded", "partial", "data_gap"} or metric_support:
             kept.append(support.claim_text)
         else:
             actions.append(

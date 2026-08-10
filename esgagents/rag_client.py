@@ -144,12 +144,17 @@ class TeamRagClient:
         max_retries: int = 2,
         transport: Transport | None = None,
         qualitative_path: str = "/qualitative/evidence/v3",
+        request_contract: str = "new",
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.transport = transport
         self.qualitative_path = f"/{qualitative_path.strip('/')}"
+        normalized_contract = str(request_contract or "new").strip().casefold()
+        if normalized_contract not in {"new", "legacy"}:
+            raise ValueError("request_contract must be 'new' or 'legacy'")
+        self.request_contract = normalized_contract
         self.session = requests.Session()
 
     @property
@@ -167,14 +172,21 @@ class TeamRagClient:
         top_k: int,
         year: int,
     ) -> RagResponse:
-        if not item_ids:
+        if not item_ids and self.request_contract == "legacy":
             return RagResponse(company_id=company_id, results=[])
-        payload = {
-            "company_id": company_id,
-            "item_ids": item_ids,
-            "top_k": top_k,
-            "year": year,
-        }
+        if self.request_contract == "new":
+            payload = {
+                "company_id": company_id,
+                "question_ids": item_ids,
+                "top_k": top_k,
+            }
+        else:
+            payload = {
+                "company_id": company_id,
+                "item_ids": item_ids,
+                "top_k": top_k,
+                "year": year,
+            }
         data = self._post(payload)
         if self.is_v3:
             return self._parse_v3_response(data, company_id=company_id, item_ids=item_ids)
@@ -277,7 +289,9 @@ class TeamRagClient:
                 f"Team RAG v3 contract violation: duplicate question IDs: {duplicates}",
                 error_code="CLIENT_CONTRACT_DUPLICATE_RESULT",
             )
-        unrequested = sorted({str(qid) for qid in result_ids if qid not in requested_ids})
+        unrequested = sorted(
+            {str(qid) for qid in result_ids if requested_ids and qid not in requested_ids}
+        )
         if unrequested:
             raise TeamRagError(
                 f"Team RAG v3 contract violation: unrequested question IDs: {unrequested}",
@@ -295,21 +309,28 @@ class TeamRagClient:
                 continue
             parsed_results[qid] = self._parse_v3_result(raw_result)
 
+        if not requested_ids:
+            normalized = dict(data)
+            normalized["company_id"] = company_id
+            normalized["results"] = list(parsed_results.values())
+            normalized["client_contract_violations"] = response_violations
+            return RagResponse.model_validate(normalized)
+
         ordered_results: list[RagQuestionResult] = []
         for qid in requested_ids:
             result = parsed_results.get(qid)
             if result is None:
-                violation = f"missing result for requested question_id {qid}"
-                response_violations.append(violation)
+                warning = f"requested question_id {qid} was omitted by Team RAG"
                 result = RagQuestionResult(
                     question_id=qid,
                     answer_status="insufficient",
                     coverage_status="no_evidence",
                     answerable=False,
-                    failure_code="CLIENT_CONTRACT_MISSING_RESULT",
-                    failure_reason=violation,
-                    retrieval_notes=["Created locally because the v3 response omitted this question."],
-                    client_contract_violations=[violation],
+                    failure_code="CLIENT_WARNING_SKIPPED_QID",
+                    failure_reason=warning,
+                    retrieval_notes=["Created locally because Team RAG omitted this question."],
+                    client_contract_warnings=[warning],
+                    is_v3_payload=True,
                 )
             ordered_results.append(result)
 
@@ -517,13 +538,14 @@ class TeamRagClient:
             if len(body) > 1000:
                 body = f"{body[:1000]}..."
 
-        item_ids = payload.get("item_ids") or []
+        item_ids = payload.get("question_ids") or payload.get("item_ids") or []
         payload_summary = {
             "company_id": payload.get("company_id"),
             "item_id_count": len(item_ids) if isinstance(item_ids, list) else "unknown",
             "item_ids_sample": item_ids[:5] if isinstance(item_ids, list) else item_ids,
             "top_k": payload.get("top_k"),
             "year": payload.get("year"),
+            "request_contract": self.request_contract,
         }
         status_label = status if status is not None else "unknown"
         message = f"HTTP {status_label} {reason}".strip()

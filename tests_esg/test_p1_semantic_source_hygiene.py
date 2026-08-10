@@ -188,6 +188,147 @@ def test_q023_keeps_supported_metric_and_discloses_missing_dimensions():
     assert "metric_environmental_violation_count" in result["claim_support"][planned.id][0].facets
 
 
+def _with_metric_not_found(state, qid, reason="no_candidate"):
+    state["rag_results"] = {
+        qid: RagQuestionResult(
+            question_id=qid,
+            answer_status="medium_confidence",
+            coverage_status="partial",
+            answerable=True,
+            metric_expected=True,
+            metric_status="not_found",
+            metric_absence={"reason": reason, "n_candidates_seen": 0},
+        )
+    }
+    state["normalized_evidence"][qid]["metric_audit"] = {
+        "metric_status": "not_found",
+        "accepted_facts": [],
+    }
+    return state
+
+
+def test_q011_metric_not_found_removes_unsupported_number_and_blocks_gap_only_answer():
+    planned = _planned(qid="Q011", item="Human-rights grievances", description="Count and resolution")
+    answer = (
+        "In 2025, human-rights grievances totaled 63 cases. "
+        "No quantitative figure was found in the supplied evidence."
+    )
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+
+
+def test_q023_metric_not_found_keeps_qualitative_claim_but_marks_all_dimensions_missing():
+    planned = _planned(
+        qid="Q023",
+        item="Environmental performance and incidents",
+        description="Water reuse, recycling, violations and accidents",
+    )
+    answer = (
+        "The company operates an ISO 14001 environmental management system. "
+        "In 2025, the water reuse rate was 9.34%. "
+        "No quantitative figure was found in the supplied evidence."
+    )
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "9.34%" not in result["final_answers"][planned.id]
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "facet_metric_environmental_accident_count: missing" in result["skill_checks"][planned.id]
+    assert "facet_metric_environmental_violation_count: missing" in result["skill_checks"][planned.id]
+
+
+def test_q051_metric_not_found_cannot_be_full_from_packaging_roadmap():
+    planned = _planned(
+        qid="Q051",
+        item="Eco-friendly product and certification counts",
+        description="Disclose product and environmental certification counts",
+    )
+    answer = (
+        "The company operates an eco-friendly packaging roadmap from 2022 to 2025. "
+        "No quantitative figure was found in the supplied evidence."
+    )
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "facet_metric_eco_friendly_product_count: missing" in result["skill_checks"][planned.id]
+    assert "facet_metric_environmental_certification_count: missing" in result["skill_checks"][planned.id]
+
+
+def test_q021_board_only_answer_is_partial_without_operating_and_site_facets():
+    planned = _planned(
+        qid="Q021",
+        pillar="Governance",
+        item="Environmental organization and responsibility",
+        description="Include operating organization and site management",
+    )
+    answer = "The Board reviews and approves the EHS policy and budget annually."
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "facet_operating_organization: missing" in result["skill_checks"][planned.id]
+    assert "facet_site_management_system: missing" in result["skill_checks"][planned.id]
+
+
+def test_q074_internal_transaction_proxy_is_wrong_topic():
+    planned = _planned(
+        qid="Q074",
+        pillar="Risk Management",
+        item="Committee independence and expertise risks",
+        description="Explain independence and professionalism risks",
+    )
+    answer = (
+        "The Internal Transaction Committee reviews related-party transactions and the "
+        "internal accounting committee monitors the RCM."
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+
+
+def test_q004_achieved_status_is_not_downgraded_to_target_set():
+    planned = _planned(
+        qid="Q004",
+        pillar="Strategy",
+        item="Safety policy and target",
+        description="Safety policy and target achievement",
+    )
+    answer = "2025년에는 무재해 달성을 목표로 설정하였으며, 안전보건 활동을 운영하고 있습니다."
+    evidence = "2025년 무재해 목표를 달성하였으며 안전보건 활동을 운영하였습니다."
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, evidence_text=evidence)
+    )
+
+    assert "무재해를 달성하였으며" in result["final_answers"][planned.id]
+    assert "normalized_status:target_to_achieved" in result["sanitizer_actions"][planned.id]
+
+
 @pytest.mark.parametrize(
     ("qid", "item", "answer"),
     [
@@ -273,13 +414,9 @@ def test_metrics_grounded_result_and_period_override_stale_v3_missing_facets():
 
     review = result["semantic_reviews"][planned.id]
     assert review.missing_facets == []
-    assert set(review.covered_facets) == {
-        "metric_result",
-        "reporting_period",
-        "metric_committee_meeting_count",
-        "metric_committee_activity_count",
-    }
+    assert set(review.covered_facets) == {"metric_result", "reporting_period"}
     assert result["qa_results"][planned.id].status == "passed"
+    assert "partial_answer" in result["quality_flags"][planned.id]
 
 
 def test_metric_merge_removes_stale_missing_note_when_facet_is_covered():
@@ -300,6 +437,18 @@ def test_metric_merge_removes_stale_missing_note_when_facet_is_covered():
     assert "reporting_period" in review.covered_facets
     assert "reporting_period" not in review.missing_facets
     assert "missing facet: reporting_period" not in review.notes
+
+
+def test_missing_expected_metric_dimension_is_passed_but_partial():
+    planned = _planned(qid="Q075")
+    answer = "In 2025, committee meetings were held 4 times. Committee activity count was not disclosed."
+    state = _semantic_state(planned, answer, evidence_text=answer)
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "missing_facet:metric_committee_activity_count" in result["quality_flags"][planned.id]
 
 
 class _StructuredLLM:
@@ -702,6 +851,56 @@ def test_pii_redaction_preserves_q087_new_hire_compound_word():
 
     assert result["final_answers"][planned.id] == answer
     assert "pii_redacted" not in result["quality_flags"][planned.id]
+
+
+@pytest.mark.parametrize("qid", ["Q019", "Q055"])
+def test_output_hygiene_blocks_raw_table_and_path_dump(qid):
+    planned = _planned(qid=qid, pillar="Metrics", item="정량 지표", description="결과를 설명합니다")
+    raw_dump = "raw data 취합 | 제품명 | 용기 무게 | 2024=10 | 2025=12 | source path"
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: raw_dump},
+            "quality_flags": {qid: []},
+            "qa_results": {qid: QAResult(status="passed")},
+        }
+    )
+
+    assert result["final_answers"][qid] == ""
+    assert result["qa_results"][qid].status == "failed"
+    assert "non_narrative_output" in result["quality_flags"][qid]
+    assert "raw_table_output" in result["hard_failures"][qid]
+
+
+@pytest.mark.parametrize("qid", ["Q052", "Q063", "Q083"])
+def test_output_hygiene_removes_redundant_leading_connector(qid):
+    planned = _planned(qid=qid, pillar="Strategy", item="정책", description="방향")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: "또한, 회사는 ESG 정책을 운영합니다."},
+            "quality_flags": {qid: []},
+        }
+    )
+
+    assert result["final_answers"][qid] == "회사는 ESG 정책을 운영합니다."
+    assert "removed_leading_connector" in result["sanitizer_actions"][qid]
+
+
+def test_output_hygiene_deduplicates_same_source_attribution():
+    qid = "Q075"
+    planned = _planned(qid=qid, pillar="Metrics", item="위원회 활동", description="활동 현황")
+    phrase = "평가 자료에 따르면,"
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: f"{phrase} 위원회가 운영되며, {phrase} 연 4회 개최됩니다."},
+            "quality_flags": {qid: []},
+        }
+    )
+
+    assert result["final_answers"][qid].count(phrase) == 1
+    assert "deduplicated_source_attribution" in result["sanitizer_actions"][qid]
 
 
 def test_markdown_normalization_does_not_add_claims():

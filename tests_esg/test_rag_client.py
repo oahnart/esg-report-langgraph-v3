@@ -7,7 +7,13 @@ from requests import ConnectionError as RequestsConnectionError
 from requests import Response
 
 from esgagents.rag_client import TeamRagClient, TeamRagError
-from esgagents.schemas import EvidenceItem, NormalizedCompany, RagQuestionResult, RagResponse
+from esgagents.schemas import (
+    EvidenceItem,
+    MetricEvidenceItem,
+    NormalizedCompany,
+    RagQuestionResult,
+    RagResponse,
+)
 
 
 def _v3_item(*, chunk_id="chunk-1", status="approved", tier="tier_1_governing"):
@@ -86,12 +92,51 @@ def test_rag_client_posts_expected_batch_payload():
     assert seen["endpoint"] == "https://rag.example/qualitative/evidence/v3"
     assert seen["payload"] == {
         "company_id": "iljinhysolus",
-        "item_ids": ["Q016", "Q003"],
+        "question_ids": ["Q016", "Q003"],
         "top_k": 5,
-        "year": 2025,
     }
     assert seen["timeout"] == 12
     assert response.results[0].question_id == "Q016"
+
+
+def test_rag_client_legacy_request_contract_keeps_item_ids_and_year():
+    seen = {}
+
+    def transport(endpoint, payload, timeout):
+        seen["payload"] = payload
+        return _v3_response([_v3_result("Q016")])
+
+    client = TeamRagClient(
+        "https://rag.example",
+        transport=transport,
+        request_contract="legacy",
+    )
+    client.fetch_evidence("iljinhysolus", ["Q016"], 5, 2025)
+
+    assert seen["payload"] == {
+        "company_id": "iljinhysolus",
+        "item_ids": ["Q016"],
+        "top_k": 5,
+        "year": 2025,
+    }
+
+
+def test_new_request_contract_sends_empty_question_ids_and_accepts_all_results():
+    seen = {}
+
+    def transport(endpoint, payload, timeout):
+        seen["payload"] = payload
+        return _v3_response([_v3_result("Q016"), _v3_result("Q003")])
+
+    client = TeamRagClient("https://rag.example", transport=transport)
+    response = client.fetch_evidence("iljinhysolus", [], 5, 2025)
+
+    assert seen["payload"] == {
+        "company_id": "iljinhysolus",
+        "question_ids": [],
+        "top_k": 5,
+    }
+    assert [result.question_id for result in response.results] == ["Q016", "Q003"]
 
 
 def test_qualitative_path_defaults_to_v3_and_supports_manual_v2_rollback(monkeypatch):
@@ -272,6 +317,51 @@ def test_v3_accepts_metric_row_items_from_qualitative_response():
     assert result.items[0].locator.confidence == "exact"
 
 
+def test_v3_preserves_new_metric_contract_fields_and_extra_row_metadata():
+    row = _v3_result("Q039", coverage_status="partial", answerable=True, failure_code="SCOPE_LIMITED")
+    metric_item = _v3_item()
+    metric_item.update(
+        {
+            "semantic_label": "metric_row",
+            "raw_evidence_ko": "Water use | ton | 2025=10",
+            "table_block": "Water > Pharm",
+            "block_rank": 1,
+            "block_role": "primary",
+            "entity": "Daewoong Pharm",
+            "entity_class": "daewoong_pharm",
+            "metric_form": "table_row",
+            "future_metric_tag": "preserved",
+        }
+    )
+    row.update(
+        {
+            "pillar": "metrics",
+            "metric_expected": True,
+            "metric_status": "found_table",
+            "metric_summary": {
+                "n_rows": 1,
+                "n_blocks": 1,
+                "n_primary": 1,
+                "n_scope_variant": 0,
+                "n_denominator": 0,
+            },
+            "metric_confidence": None,
+            "metric_evidence": [metric_item],
+            "narrative_evidence": [_v3_item()],
+        }
+    )
+    client = TeamRagClient("https://rag.example", transport=lambda *_: _v3_response([row]))
+
+    result = client.fetch_evidence("iljinhysolus", ["Q039"], 5, 2025).results[0]
+    dumped = result.model_dump(mode="json")
+
+    assert result.metric_expected is True
+    assert result.metric_status == "found_table"
+    assert result.metric_summary.n_rows == 1
+    assert dumped["metric_evidence"][0]["future_metric_tag"] == "preserved"
+    assert dumped["narrative_evidence"][0]["raw_evidence_ko"] == "raw"
+
+
 def test_facet_retry_prefers_operational_metric_table_over_draft_at_equal_coverage():
     agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
     draft = RagQuestionResult(
@@ -323,6 +413,95 @@ def test_facet_retry_prefers_operational_metric_table_over_draft_at_equal_covera
     assert preferred is operational
 
 
+@pytest.mark.parametrize("reason", ["no_candidate", "below_threshold", "blocked_by_gate"])
+def test_metric_not_found_is_eligible_for_one_top_k_retry(reason):
+    agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
+    result = RagQuestionResult(
+        question_id="Q023",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=True,
+        metric_status="not_found",
+        metric_absence={"reason": reason, "n_candidates_seen": 2},
+    )
+
+    assert agent._should_retry(result) is True
+
+
+def test_metric_retry_with_primary_table_replaces_not_found_result():
+    agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
+    original = RagQuestionResult(
+        question_id="Q023",
+        answer_status="medium_confidence",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=True,
+        metric_status="not_found",
+        metric_absence={"reason": "below_threshold", "n_candidates_seen": 2},
+    )
+    retry = RagQuestionResult(
+        question_id="Q023",
+        answer_status="medium_confidence",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=True,
+        metric_status="found_table",
+        metric_evidence=[
+            MetricEvidenceItem(
+                raw_evidence_ko="Water reuse | 2025=9.34%",
+                source_path="ESG/water.xlsx",
+                source_tier="tier_2_operational",
+                semantic_label="metric_row",
+                table_block="Water",
+                block_role="primary",
+                entity="Daewoong",
+            )
+        ],
+    )
+
+    merged = agent._merge_retry_result(original, retry)
+
+    assert merged.metric_status == "found_table"
+    assert merged.metric_evidence[0].block_role == "primary"
+
+
+def test_weaker_metric_retry_does_not_merge_into_stronger_initial_result():
+    agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
+    original = RagQuestionResult(
+        question_id="Q023",
+        answer_status="high_confidence",
+        coverage_status="complete",
+        answerable=True,
+        metric_expected=True,
+        metric_status="found_table",
+        metric_evidence=[
+            MetricEvidenceItem(
+                raw_evidence_ko="Water reuse | 2025=9.34%",
+                source_path="ESG/water.xlsx",
+                source_tier="tier_2_operational",
+                semantic_label="metric_row",
+                table_block="Water",
+                block_role="primary",
+                entity="Daewoong",
+            )
+        ],
+    )
+    retry = RagQuestionResult(
+        question_id="Q023",
+        answer_status="medium_confidence",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=True,
+        metric_status="not_found",
+        metric_absence={"reason": "no_candidate", "n_candidates_seen": 0},
+    )
+
+    merged = agent._merge_retry_result(original, retry)
+
+    assert merged is original
+    assert merged.metric_status == "found_table"
+
+
 def test_v3_synthesizes_missing_result_and_records_contract_violation():
     client = TeamRagClient(
         "https://rag.example",
@@ -334,8 +513,9 @@ def test_v3_synthesizes_missing_result_and_records_contract_violation():
     missing = response.results[1]
     assert missing.question_id == "Q047"
     assert missing.answerable is False
-    assert missing.failure_code == "CLIENT_CONTRACT_MISSING_RESULT"
-    assert response.client_contract_violations
+    assert missing.failure_code == "CLIENT_WARNING_SKIPPED_QID"
+    assert missing.client_contract_warnings
+    assert response.client_contract_violations == []
 
 
 @pytest.mark.parametrize(

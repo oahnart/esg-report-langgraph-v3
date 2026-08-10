@@ -4,9 +4,16 @@ from collections import OrderedDict
 import re
 from typing import Any
 
-from esgagents.schemas import EvidenceFact, EvidenceItem, model_to_dict
+from esgagents.schemas import EvidenceFact, EvidenceItem, MetricEvidenceItem, model_to_dict
 
 from .metric_facts import resolve_metric_facts
+from .metric_routing import (
+    has_metric_contract,
+    is_low_metric_confidence,
+    is_metric_row,
+    metric_contract_warnings,
+    routed_writer_items,
+)
 from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
 from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
 
@@ -36,7 +43,7 @@ class EvidenceNormalizerAgent:
         normalized: dict[str, dict[str, Any]] = {}
         for qid, rag in state["rag_results"].items():
             deduped: OrderedDict[str, EvidenceItem] = OrderedDict()
-            for item in rag.items:
+            for item in routed_writer_items(rag):
                 if not is_usable_evidence(item, self.rejected_labels):
                     continue
                 upstream_canonical_id = item.canonical_source_id.strip()
@@ -54,7 +61,17 @@ class EvidenceNormalizerAgent:
                         normalized_item = normalized_item.model_copy(
                             update={"canonical_source_id": upstream_canonical_id}
                         )
-                if upstream_canonical_id and normalized_item.chunk_id:
+                if isinstance(normalized_item, MetricEvidenceItem):
+                    key = "|".join(
+                        (
+                            "metric",
+                            normalized_item.table_block.strip(),
+                            normalized_item.block_role or "",
+                            normalized_item.entity_class.strip() or normalized_item.entity.strip(),
+                            evidence_fingerprint(normalized_item.raw_evidence_ko),
+                        )
+                    )
+                elif upstream_canonical_id and normalized_item.chunk_id:
                     key = f"{upstream_canonical_id}|{normalized_item.chunk_id}"
                 elif rag.is_v3:
                     provenance = resolve_provenance(normalized_item)
@@ -69,17 +86,50 @@ class EvidenceNormalizerAgent:
                 key=self._rank_key,
                 reverse=True,
             )
+            if rag.metric_status == "found_table":
+                ranked = sorted(ranked, key=self._metric_order_key)
             normalized_answer = (
                 " ".join((rag.normalized_answer_ko or "").split())
-                if rag.is_v3
+                if rag.is_v3 and rag.metric_status not in {"found_table", "not_found"}
                 else ""
             )
             summary_parts = [normalized_answer] if normalized_answer else []
-            metric_audit = resolve_metric_facts(ranked)
+            if rag.metric_status == "found_table":
+                primary_rows = [item for item in ranked if isinstance(item, MetricEvidenceItem)]
+                metric_audit = resolve_metric_facts(primary_rows)
+                if is_low_metric_confidence(rag):
+                    metric_audit["withheld_facts"] = list(metric_audit.get("accepted_facts", []))
+                    metric_audit["accepted_facts"] = []
+                    metric_audit["accepted_fact_count"] = 0
+                    metric_audit["all_numeric_facts_conflicted"] = False
+                    metric_audit["numeric_withheld"] = True
+            elif has_metric_contract(rag):
+                metric_audit = resolve_metric_facts([])
+            else:
+                metric_audit = resolve_metric_facts(ranked)
+            metric_audit.update(
+                {
+                    "metric_contract": "new" if has_metric_contract(rag) else "legacy",
+                    "metric_expected": rag.metric_expected,
+                    "metric_status": rag.metric_status,
+                    "metric_confidence": rag.metric_confidence,
+                    "metric_summary": model_to_dict(rag.metric_summary) if rag.metric_summary else {},
+                    "metric_absence": model_to_dict(rag.metric_absence) if rag.metric_absence else {},
+                    "metric_contract_warnings": metric_contract_warnings(rag),
+                    "metric_evidence_row_count": len(rag.metric_evidence),
+                    "primary_row_count": sum(item.block_role == "primary" for item in rag.metric_evidence),
+                    "scope_variant_row_count": sum(
+                        item.block_role == "scope_variant" for item in rag.metric_evidence
+                    ),
+                    "denominator_row_count": sum(
+                        item.block_role == "denominator" for item in rag.metric_evidence
+                    ),
+                }
+            )
             sources = []
             for item in ranked[:5]:
                 text = " ".join(item.raw_evidence_ko.split())
-                if text and not normalized_answer:
+                if text and not normalized_answer and not is_metric_row(item):
                     summary_parts.append(text[:350])
                 source = {
                     "source_name": item.source_name,
@@ -128,11 +178,25 @@ class EvidenceNormalizerAgent:
                             for locator in [*existing.get("locators", []), *source["locators"]]
                         }.values()
                     )
+            all_metric_evidence = []
+            for item in rag.metric_evidence:
+                normalized_metric_item = item
+                if not normalized_metric_item.facts:
+                    inferred_facts = self._infer_structured_facts(normalized_metric_item)
+                    if inferred_facts:
+                        normalized_metric_item = normalized_metric_item.model_copy(
+                            update={"facts": inferred_facts}
+                        )
+                all_metric_evidence.append(normalized_metric_item)
             normalized[qid] = {
                 "items": ranked,
+                "metric_items": [item for item in ranked if is_metric_row(item)],
+                "narrative_items": [item for item in ranked if not is_metric_row(item)],
                 "evidence_summary": "\n".join(summary_parts),
                 "sources": sources,
                 "metric_audit": metric_audit,
+                "metric_evidence": all_metric_evidence,
+                "narrative_evidence": list(rag.narrative_evidence),
             }
         return {"normalized_evidence": normalized}
 
@@ -147,6 +211,18 @@ class EvidenceNormalizerAgent:
             item.vector_score if item.vector_score is not None else -1.0,
             float(item.score or 0),
             len(item.source_path or ""),
+        )
+
+    @staticmethod
+    def _metric_order_key(item: EvidenceItem) -> tuple[int, int, int, str]:
+        if not isinstance(item, MetricEvidenceItem):
+            return (1, 10**9, 1, item.raw_evidence_ko)
+        aggregate_first = 0 if re.search(r"(?:합계|총|소계)", item.raw_evidence_ko) else 1
+        return (
+            0,
+            item.block_rank if item.block_rank is not None else 10**9,
+            aggregate_first,
+            item.raw_evidence_ko,
         )
 
     @staticmethod

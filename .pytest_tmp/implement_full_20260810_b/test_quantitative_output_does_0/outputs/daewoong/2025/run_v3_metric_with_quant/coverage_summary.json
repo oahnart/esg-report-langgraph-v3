@@ -1,0 +1,293 @@
+{
+  "run_id": "run_v3_metric_with_quant",
+  "company": {
+    "company_id": "daewoong",
+    "company_name": "Daewoong",
+    "year": 2025,
+    "scale": "large_enterprise",
+    "industry": "HC",
+    "top_k": 5,
+    "item_ids": [
+      "Q031"
+    ],
+    "output_language": "Korean",
+    "run_id": "run_v3_metric_with_quant"
+  },
+  "total_qids": 1,
+  "stats": {
+    "answered": 1,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "bucket_stats": {
+    "answered": 1,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "final_answer_stats": {
+    "non_empty": 1,
+    "empty": 0
+  },
+  "qa_stats": {
+    "passed": 1,
+    "failed": 0,
+    "empty": 0
+  },
+  "quality_grade_stats": {
+    "full": 0,
+    "partial": 1,
+    "cautious": 0,
+    "failed": 0
+  },
+  "quality_grade_qids": {
+    "full": [],
+    "partial": [
+      "Q031"
+    ],
+    "cautious": [],
+    "failed": []
+  },
+  "publication_status_stats": {
+    "published": 0,
+    "review_required": 1,
+    "blocked": 0
+  },
+  "publication_status_qids": {
+    "published": [],
+    "review_required": [
+      "Q031"
+    ],
+    "blocked": []
+  },
+  "publication_reason_stats": {
+    "qa_invariant_violation": 1
+  },
+  "publication_reason_qids": {
+    "qa_invariant_violation": [
+      "Q031"
+    ]
+  },
+  "publication_issue_stats": {
+    "legal_review_required": 1,
+    "qa_grade:partial": 1,
+    "qa_invariant_violation": 1,
+    "qa_invariant_violation:full_with_review_signal": 1
+  },
+  "publication_issue_qids": {
+    "legal_review_required": [
+      "Q031"
+    ],
+    "qa_grade:partial": [
+      "Q031"
+    ],
+    "qa_invariant_violation": [
+      "Q031"
+    ],
+    "qa_invariant_violation:full_with_review_signal": [
+      "Q031"
+    ]
+  },
+  "coverage_reason_stats": {
+    "qa_invariant_violation": 1
+  },
+  "coverage_reason_qids": {
+    "qa_invariant_violation": [
+      "Q031"
+    ]
+  },
+  "coverage_issue_stats": {
+    "qa_invariant_violation": 1
+  },
+  "coverage_issue_qids": {
+    "qa_invariant_violation": [
+      "Q031"
+    ]
+  },
+  "coverage_matrix": {
+    "full": {},
+    "partial": {
+      "qa_invariant_violation": 1
+    },
+    "cautious": {},
+    "failed": {}
+  },
+  "provenance": {
+    "schema_version": 1,
+    "mode": "off",
+    "verified": false,
+    "source_digest": "",
+    "runtime_source_digest": "",
+    "expected_source_digest": "",
+    "built_at_utc": "",
+    "git_sha": "unknown"
+  },
+  "rag": {
+    "coverage_status_stats": {
+      "complete": 1
+    },
+    "coverage_status_qids": {
+      "complete": [
+        "Q031"
+      ]
+    },
+    "answerable_stats": {
+      "true": 1,
+      "false": 0,
+      "unknown": 0
+    },
+    "answerable_qids": {
+      "true": [
+        "Q031"
+      ],
+      "false": [],
+      "unknown": []
+    },
+    "failure_code_stats": {},
+    "failure_code_qids": {},
+    "upstream_insufficient": {
+      "count": 0,
+      "qids": [],
+      "failure_code_qids": {}
+    },
+    "contract_violation_count": 0,
+    "contract_violation_qids": {},
+    "contract_warning_count": 1,
+    "contract_warning_qids": {
+      "legacy_metric_contract": [
+        "Q031"
+      ]
+    },
+    "request_ids": [
+      "rag-v3-metric"
+    ],
+    "api_versions": [
+      "3.0"
+    ],
+    "rag_versions": [
+      "rag-v3"
+    ],
+    "index_versions": [
+      "daewoong_20260805"
+    ],
+    "request_traces": [
+      {
+        "request_id": "rag-v3-metric",
+        "api_version": "3.0",
+        "rag_version": "rag-v3",
+        "index_version": "daewoong_20260805",
+        "generated_at": "2026-08-07T09:04:39+07:00",
+        "latency_ms": 10,
+        "warnings": [],
+        "requested_item_ids": [
+          "Q031"
+        ],
+        "top_k": 5,
+        "phase": "initial",
+        "contract_violations": [],
+        "error": ""
+      }
+    ]
+  },
+  "consumer_funnel": {
+    "total": 1,
+    "api_status_eligible": 1,
+    "draft_non_empty": 1,
+    "qa_passed": 1,
+    "final_non_empty": 1
+  },
+  "consumer_decision_stats": {
+    "answered": 1
+  },
+  "consumer_decision_qids": {
+    "answered": [
+      "Q031"
+    ]
+  },
+  "metric_facts": {
+    "qids_with_metric_rows": [
+      "Q031"
+    ],
+    "metric_row_count": 1,
+    "parsed_metric_row_count": 1,
+    "malformed_metric_row_count": 0,
+    "accepted_fact_count": 1,
+    "conflict_count": 0,
+    "conflict_qids": [],
+    "all_numeric_facts_conflicted_qids": [],
+    "status_qids": {
+      "legacy": [
+        "Q031"
+      ]
+    },
+    "absence_reason_qids": {},
+    "low_confidence_qids": [],
+    "contract_qids": {
+      "legacy": [
+        "Q031"
+      ]
+    }
+  },
+  "provenance_fallback": {
+    "count": 0,
+    "qids": []
+  },
+  "upstream_mismatch": {
+    "count": 0,
+    "qids": []
+  },
+  "claim_salvage": {
+    "claim_count": 0,
+    "qid_count": 0,
+    "qids": []
+  },
+  "empty_final_answer_qids": [],
+  "top_failure_notes": [
+    {
+      "note": "grounded",
+      "count": 1
+    }
+  ],
+  "groups": {
+    "empty_evidence": [],
+    "metrics_missing": [],
+    "draft_evidence": [],
+    "draft_based_answers": [],
+    "partial_answers": [],
+    "missing_required_facets": [],
+    "missing_expected_facets": [],
+    "source_overstated": [],
+    "unsupported_claim": []
+  },
+  "retrieval": {
+    "retried_qids": [],
+    "retry_helped_qids": [],
+    "retry_unresolved_qids": [],
+    "attempts_by_qid": {
+      "Q031": [
+        {
+          "top_k": 5,
+          "retry_top_k": 5,
+          "retry_reason": "initial",
+          "answer_status": "medium_confidence",
+          "coverage_status": "complete",
+          "answerable": true,
+          "retrieval_confidence": 0.9,
+          "covered_facets": [
+            "metric_result",
+            "reporting_period"
+          ],
+          "missing_facets": [],
+          "failure_code": null,
+          "request_id": "rag-v3-metric",
+          "item_count": 1,
+          "eligible_item_count": 1,
+          "metric_status": null,
+          "metric_evidence_row_count": 0,
+          "metric_primary_block_count": 0
+        }
+      ]
+    }
+  }
+}

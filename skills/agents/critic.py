@@ -8,6 +8,7 @@ from typing import Any
 from skills.agents.context_builder import compact
 from esgagents.schemas import QAResult
 from esgagents.agents.evidence.policy import has_stable_source
+from esgagents.agents.evidence.metric_facts import metric_numbers_equivalent
 
 
 PROMOTIONAL_TERMS = (
@@ -293,6 +294,16 @@ def _structured_fact_numbers(normalized: dict[str, Any]) -> set[str]:
                 continue
             canonical = _canonical_number(value)
             supported.add(f"{canonical}%" if unit in {"%", "percent"} and not canonical.endswith("%") else canonical)
+    for fact in (normalized.get("metric_audit") or {}).get("accepted_facts", []):
+        value = str(fact.get("value") or fact.get("normalized_value") or "").strip()
+        unit = str(fact.get("unit") or "").strip().casefold()
+        if value:
+            canonical = _canonical_number(value)
+            supported.add(
+                f"{canonical}%"
+                if unit in {"%", "percent"} and not canonical.endswith("%")
+                else canonical
+            )
     return supported
 
 
@@ -500,7 +511,8 @@ class SkillPolicyCriticAgent:
         return [
             f"unsupported numeric claim: {display}"
             for canonical, display in sorted(set(answer_numbers), key=lambda item: item[1])
-            if canonical not in evidence_numbers and canonical not in period_numbers
+            if not any(metric_numbers_equivalent(canonical, supported) for supported in evidence_numbers)
+            and canonical not in period_numbers
         ]
 
     def _unsupported_certification_notes(self, answer: str, evidence_text: str) -> list[str]:

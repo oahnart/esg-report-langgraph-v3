@@ -1,0 +1,3598 @@
+{
+  "run_id": "run_combined",
+  "company": {
+    "company_id": "combined_company",
+    "company_name": "Combined Company",
+    "year": 2025,
+    "scale": "large_enterprise",
+    "industry": "TC",
+    "top_k": 5,
+    "item_ids": [
+      "Q001"
+    ],
+    "output_language": "Korean",
+    "run_id": "run_combined"
+  },
+  "template_selection": {
+    "template_version": "template_v1",
+    "scale": "large_enterprise",
+    "industry": "TC",
+    "question_count": 1
+  },
+  "answers": [
+    {
+      "qid": "Q001",
+      "source_id": "EBX-Q-001",
+      "category": "ESG 경영",
+      "question": "ESG 비전 및 중장기 전략",
+      "answer_status": "high_confidence",
+      "rag_pillar": "전략 (Strategy)",
+      "rag_retrieval_confidence": null,
+      "rag_coverage_status": "",
+      "rag_answerable": null,
+      "rag_covered_facets": [],
+      "rag_missing_facets": [],
+      "rag_coverage": {},
+      "rag_failure_code": "",
+      "rag_failure_reason": "",
+      "rag_retrieval_notes": [],
+      "rag_contract_violations": [],
+      "rag_contract_warnings": [],
+      "rag_metric_expected": null,
+      "rag_metric_status": "",
+      "rag_metric_confidence": "",
+      "rag_metric_summary": {},
+      "rag_metric_absence": {},
+      "rag_metric_evidence": [],
+      "rag_narrative_evidence": [],
+      "consumer_decision": "blocked_evidence",
+      "upstream_hints": {
+        "answerable": null,
+        "coverage_status": null,
+        "missing_facets": []
+      },
+      "upstream_coverage_mismatch": false,
+      "metric_audit": {
+        "metric_row_count": 0,
+        "parsed_metric_row_count": 0,
+        "malformed_metric_row_count": 0,
+        "valid_fact_count": 0,
+        "accepted_fact_count": 0,
+        "accepted_facts": [],
+        "conflict_count": 0,
+        "conflicts": [],
+        "all_numeric_facts_conflicted": false,
+        "metric_contract": "legacy",
+        "metric_expected": null,
+        "metric_status": null,
+        "metric_confidence": null,
+        "metric_summary": {},
+        "metric_absence": {},
+        "metric_contract_warnings": [],
+        "metric_evidence_row_count": 0,
+        "primary_row_count": 0,
+        "scope_variant_row_count": 0,
+        "denominator_row_count": 0
+      },
+      "result_bucket": "empty",
+      "draft_answer": "answer",
+      "final_answer": "",
+      "last_rejected_answer": "answer",
+      "qa_failure_stage": "",
+      "sanitizer_actions": [],
+      "evidence_summary": "evidence",
+      "sources": [
+        {
+          "source_name": "report.pdf",
+          "source_path": "ESG/report.pdf",
+          "document_id": "",
+          "chunk_id": "",
+          "canonical_source_id": "src_facf1ccf80d8b608",
+          "source_tier": "tier_unknown",
+          "source_type": "unknown",
+          "document_status": "unknown",
+          "document_version": null,
+          "effective_date": null,
+          "topic": "",
+          "subtopic": "",
+          "locator": {
+            "page": null,
+            "sheet_name": null,
+            "slide_number": null,
+            "section": null,
+            "paragraph": null,
+            "cell_range": null,
+            "spans_units": null,
+            "confidence": null
+          },
+          "semantic_label": "strong",
+          "semantic_score": 0.9,
+          "reranker_score": null,
+          "vector_score": null,
+          "score": null,
+          "classification_reason": "insufficient_metadata",
+          "provenance_key": "ESG/report.pdf",
+          "provenance_method": "source_path",
+          "provenance_fallback": false,
+          "chunk_ids": [],
+          "locators": [
+            {
+              "page": null,
+              "sheet_name": null,
+              "slide_number": null,
+              "section": null,
+              "paragraph": null,
+              "cell_range": null,
+              "spans_units": null,
+              "confidence": null
+            }
+          ]
+        }
+      ],
+      "claim_support": [
+        {
+          "claim_id": "c1",
+          "claim_text": "answer",
+          "source_ids": [],
+          "support_tier": "tier_unknown",
+          "support_status": "unsupported",
+          "facets": [],
+          "reporting_period": "",
+          "attribution_required": false
+        }
+      ],
+      "qa": {
+        "status": "passed",
+        "notes": [
+          "missing facet: policy_or_direction",
+          "missing facet: target"
+        ]
+      },
+      "agent_profile": "materiality",
+      "skill_key": "materiality",
+      "skill_name": "Materiality Assessment Writer",
+      "skill_version": "1.2",
+      "skill_source_path": "F:\\MY_PROJECT\\esg-report-langgraph\\skills\\materiality-assessment-writer.md",
+      "skill_selection_reason": "keyword=이해관계자",
+      "skill_checks": [
+        "claims_grounded: passed",
+        "double_materiality_supported: passed",
+        "facet_policy_or_direction: missing",
+        "facet_target: missing",
+        "legal_review_flagged: not_applicable",
+        "question_alignment: partial",
+        "source_usage: appropriate"
+      ],
+      "disclosure_flags": [],
+      "hard_failures": [],
+      "quality_flags": [
+        "missing_facet:policy_or_direction",
+        "missing_facet:target",
+        "partial_answer"
+      ],
+      "revision_count": 0,
+      "retrieval_attempts": [
+        {
+          "top_k": 5,
+          "retry_top_k": 5,
+          "retry_reason": "initial",
+          "answer_status": "high_confidence",
+          "coverage_status": null,
+          "answerable": null,
+          "retrieval_confidence": null,
+          "covered_facets": [],
+          "missing_facets": [],
+          "failure_code": null,
+          "request_id": "",
+          "item_count": 1,
+          "eligible_item_count": 1,
+          "metric_status": null,
+          "metric_evidence_row_count": 0,
+          "metric_primary_block_count": 0
+        }
+      ],
+      "raw_rag_result": {
+        "question_id": "Q001",
+        "question_ko": "Q001",
+        "pillar": null,
+        "normalized_answer_ko": "answer",
+        "answer_status": "high_confidence",
+        "retrieval_confidence": null,
+        "coverage_status": null,
+        "answerable": null,
+        "covered_facets": [],
+        "missing_facets": [],
+        "failure_code": null,
+        "failure_reason": "",
+        "retrieval_notes": [],
+        "coverage": {
+          "direct_answer": false,
+          "supports_policy_or_direction": false,
+          "supports_target": false,
+          "supports_accountable_body": false,
+          "supports_role": false,
+          "supports_oversight_cadence": false,
+          "supports_risk_identification": false,
+          "supports_control_or_response": false,
+          "supports_monitoring_follow_up": false,
+          "supports_metric_result": false,
+          "supports_reporting_period": false
+        },
+        "client_contract_violations": [],
+        "client_contract_warnings": [],
+        "items": [
+          {
+            "score": null,
+            "vector_score": null,
+            "reranker_score": null,
+            "raw_evidence_ko": "evidence",
+            "source_name": "report.pdf",
+            "source_path": "ESG/report.pdf",
+            "semantic_label": "strong",
+            "semantic_reason": "",
+            "semantic_score": 0.9,
+            "document_id": "",
+            "chunk_id": "",
+            "canonical_source_id": "",
+            "source_tier": "",
+            "source_type": "",
+            "document_status": "",
+            "document_version": null,
+            "effective_date": null,
+            "topic": "",
+            "subtopic": "",
+            "locator": {
+              "page": null,
+              "sheet_name": null,
+              "slide_number": null,
+              "section": null,
+              "paragraph": null,
+              "cell_range": null,
+              "spans_units": null,
+              "confidence": null
+            },
+            "facts": [],
+            "classification_reason": ""
+          }
+        ],
+        "metric_expected": null,
+        "metric_status": null,
+        "metric_summary": null,
+        "metric_confidence": null,
+        "metric_absence": null,
+        "metric_evidence": [],
+        "narrative_evidence": []
+      },
+      "qa_grade": "partial",
+      "coverage_reason": "missing_expected_facets",
+      "coverage_issues": [
+        "missing_expected_facets",
+        "partial_answer",
+        "unknown_source_tier"
+      ],
+      "publication_status": "blocked",
+      "publication_reason": "unsupported_claim",
+      "publication_issues": [
+        "unsupported_claim:c1"
+      ]
+    }
+  ],
+  "stats": {
+    "answered": 0,
+    "empty": 1,
+    "weak": 0,
+    "failed": 0
+  },
+  "quantitative_results": [
+    {
+      "metric_id": "QUANT-0001",
+      "index": 1,
+      "metric_name": "총 구성원 수",
+      "value": 100,
+      "unit": "people",
+      "source": "report.pdf",
+      "status": "filled",
+      "confidence": 0.99,
+      "metadata": {
+        "evidence_id": "207e08f33173f172",
+        "match_reason": "exact_metric_mapping",
+        "evidence_topic": "",
+        "source_page": null,
+        "raw_metric_id": "QUANT-0001",
+        "mapped_item_id": null,
+        "mapped_qualitative_qid": "",
+        "source_id": "",
+        "reporting_period": ""
+      }
+    },
+    {
+      "metric_id": "QUANT-0002",
+      "index": 2,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0003",
+      "index": 3,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0004",
+      "index": 4,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0005",
+      "index": 5,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0006",
+      "index": 6,
+      "metric_name": "정규직 직원 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0007",
+      "index": 7,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0008",
+      "index": 8,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0009",
+      "index": 9,
+      "metric_name": "소속 외 근로자",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0010",
+      "index": 10,
+      "metric_name": "30세 미만",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0011",
+      "index": 11,
+      "metric_name": "30-50세",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0012",
+      "index": 12,
+      "metric_name": "50세 초과",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0013",
+      "index": 13,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0014",
+      "index": 14,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0015",
+      "index": 15,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0016",
+      "index": 16,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0017",
+      "index": 17,
+      "metric_name": "장애인",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0018",
+      "index": 18,
+      "metric_name": "외국인",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0019",
+      "index": 19,
+      "metric_name": "총 신규 채용 인원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0020",
+      "index": 20,
+      "metric_name": "30세 미만",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0021",
+      "index": 21,
+      "metric_name": "30-50세",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0022",
+      "index": 22,
+      "metric_name": "50세 초과",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0023",
+      "index": 23,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0024",
+      "index": 24,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0025",
+      "index": 25,
+      "metric_name": "정규직",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0026",
+      "index": 26,
+      "metric_name": "비정규직",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0027",
+      "index": 27,
+      "metric_name": "장애인",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0028",
+      "index": 28,
+      "metric_name": "총 자발적 이직률",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0029",
+      "index": 29,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0030",
+      "index": 30,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0031",
+      "index": 31,
+      "metric_name": "정규직",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0032",
+      "index": 32,
+      "metric_name": "계약직",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0033",
+      "index": 33,
+      "metric_name": "총 비자발적 이직률",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0034",
+      "index": 34,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0035",
+      "index": 35,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0036",
+      "index": 36,
+      "metric_name": "정규직",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0037",
+      "index": 37,
+      "metric_name": "계약직",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0038",
+      "index": 38,
+      "metric_name": "여성 구성원 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0039",
+      "index": 39,
+      "metric_name": "사원(팀원) 여성 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0040",
+      "index": 40,
+      "metric_name": "간부(팀장) 여성 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0041",
+      "index": 41,
+      "metric_name": "임원 여성 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0042",
+      "index": 42,
+      "metric_name": "매출발생 부서 내 여성 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0043",
+      "index": 43,
+      "metric_name": "장애인 고용률",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0044",
+      "index": 44,
+      "metric_name": "복리후생비",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0045",
+      "index": 45,
+      "metric_name": "구성원 건강검진 참여율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0046",
+      "index": 46,
+      "metric_name": "육아휴직 대상자 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0047",
+      "index": 47,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0048",
+      "index": 48,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0049",
+      "index": 49,
+      "metric_name": "육아휴직 사용자 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0050",
+      "index": 50,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0051",
+      "index": 51,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0052",
+      "index": 52,
+      "metric_name": "육아휴직 복귀 구성원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0053",
+      "index": 53,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0054",
+      "index": 54,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0055",
+      "index": 55,
+      "metric_name": "육아휴직제도 사용 후 복귀율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0056",
+      "index": 56,
+      "metric_name": "육아휴직 복귀 후 12개월 이상 근속 구성원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0057",
+      "index": 57,
+      "metric_name": "구성원 참여도",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0058",
+      "index": 58,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0059",
+      "index": 59,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0060",
+      "index": 60,
+      "metric_name": "임원",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0061",
+      "index": 61,
+      "metric_name": "팀장",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0062",
+      "index": 62,
+      "metric_name": "팀원",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0063",
+      "index": 63,
+      "metric_name": "30세 미만",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0064",
+      "index": 64,
+      "metric_name": "30세 이상 50세 미만",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0065",
+      "index": 65,
+      "metric_name": "50세 이상",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0066",
+      "index": 66,
+      "metric_name": "안전보건교육 대상 구성원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0067",
+      "index": 67,
+      "metric_name": "안전보건교육 참여 구성원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0068",
+      "index": 68,
+      "metric_name": "1인당 안전보건교육 시간",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0069",
+      "index": 69,
+      "metric_name": "안전보건경영인증 사업장 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0070",
+      "index": 70,
+      "metric_name": "위험요소 발굴 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0071",
+      "index": 71,
+      "metric_name": "위험요소 개선 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0072",
+      "index": 72,
+      "metric_name": "사망사고 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0073",
+      "index": 73,
+      "metric_name": "사망률",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0074",
+      "index": 74,
+      "metric_name": "산업 재해건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0075",
+      "index": 75,
+      "metric_name": "산업재해율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0076",
+      "index": 76,
+      "metric_name": "연간 총 근로시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0077",
+      "index": 77,
+      "metric_name": "근로손실재해율",
+      "value": null,
+      "unit": "LTIFR",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0078",
+      "index": 78,
+      "metric_name": "아차사고 빈도율(Near Miss Frequency Rate NMFR)",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0079",
+      "index": 79,
+      "metric_name": "업무 관련 질병으로 인한 사망 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0080",
+      "index": 80,
+      "metric_name": "기록된 업무 관련 질병 발병 사례 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0081",
+      "index": 81,
+      "metric_name": "안전보건 법규 위반 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0082",
+      "index": 82,
+      "metric_name": "안전보건 법규 위반으로 인한 벌금 및 과태료",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0083",
+      "index": 83,
+      "metric_name": "연간 인당 근로시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0084",
+      "index": 84,
+      "metric_name": "주당 평균 근로시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0085",
+      "index": 85,
+      "metric_name": "탄력적 유연근무제도 사용자 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0086",
+      "index": 86,
+      "metric_name": "노사협의회 운영 횟수",
+      "value": null,
+      "unit": "회",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0087",
+      "index": 87,
+      "metric_name": "노사협의회 논의 안건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0088",
+      "index": 88,
+      "metric_name": "노사협의회 처리 안건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0089",
+      "index": 89,
+      "metric_name": "노동/인권 고충 접수 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0090",
+      "index": 90,
+      "metric_name": "노동/인권 고충 처리 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0091",
+      "index": 91,
+      "metric_name": "구성원 총 교육 시간",
+      "value": null,
+      "unit": "시간/명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0092",
+      "index": 92,
+      "metric_name": "1인당 교육 시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0093",
+      "index": 93,
+      "metric_name": "구성원 총 교육 비용",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0094",
+      "index": 94,
+      "metric_name": "1인당 교육 비용",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0095",
+      "index": 95,
+      "metric_name": "정기적 성과평가를 받은 구성원 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0096",
+      "index": 96,
+      "metric_name": "전체 평균 임금",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0097",
+      "index": 97,
+      "metric_name": "남성 대비 여성 급여 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0098",
+      "index": 98,
+      "metric_name": "보고기간 중 차별 사례 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0099",
+      "index": 99,
+      "metric_name": "평가 결과 개선 필요한 중요 제품·서비스 비중",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0100",
+      "index": 100,
+      "metric_name": "고객 제품 상담 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0101",
+      "index": 101,
+      "metric_name": "고객 서비스 상담 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0102",
+      "index": 102,
+      "metric_name": "고객 만족도 점수",
+      "value": null,
+      "unit": "점",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0103",
+      "index": 103,
+      "metric_name": "고객 만족도 향상 활동 프로그램 수",
+      "value": null,
+      "unit": "개",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0104",
+      "index": 104,
+      "metric_name": "제품·서비스 품질 및 안전 관련 법규 위반 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0105",
+      "index": 105,
+      "metric_name": "관련 법규 위반으로 인한 금전적 손실",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0106",
+      "index": 106,
+      "metric_name": "비자발적 리콜(권고 또는 명령) 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0107",
+      "index": 107,
+      "metric_name": "자발적 리콜 건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0108",
+      "index": 108,
+      "metric_name": "리콜로 인한 비용",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0109",
+      "index": 109,
+      "metric_name": "관련 규정 및 자발적 규범 위반 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0110",
+      "index": 110,
+      "metric_name": "규정 위반으로 벌금 또는 페널티 부과",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0111",
+      "index": 111,
+      "metric_name": "규정 또는 자발적 규범 위반 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0112",
+      "index": 112,
+      "metric_name": "규정 위반으로 벌금 또는 페널티 부과",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0113",
+      "index": 113,
+      "metric_name": "정보보호 교육 이수 인원",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0114",
+      "index": 114,
+      "metric_name": "정보보호 교육 이수율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0115",
+      "index": 115,
+      "metric_name": "총 정보보호 교육 시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0116",
+      "index": 116,
+      "metric_name": "개인정보보호 관련 법/규제 위반 건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0117",
+      "index": 117,
+      "metric_name": "외부로부터 접수된 개인정보보호 침해 및 불만 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0118",
+      "index": 118,
+      "metric_name": "규제기관에 의해 제기된 개인정보보호 침해 및 불만 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0119",
+      "index": 119,
+      "metric_name": "개인정보 유출 도난 분실 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0120",
+      "index": 120,
+      "metric_name": "데이터 관리 위반 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0121",
+      "index": 121,
+      "metric_name": "고객/직원 데이터 침해 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0122",
+      "index": 122,
+      "metric_name": "정보보안 위반으로 인한 과징금/벌금 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0123",
+      "index": 123,
+      "metric_name": "정보보안 개선사항 발견 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0124",
+      "index": 124,
+      "metric_name": "완화 조치 이행 완료 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0125",
+      "index": 125,
+      "metric_name": "완화 조치 미이행 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0126",
+      "index": 126,
+      "metric_name": "사회공헌 지출액",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0127",
+      "index": 127,
+      "metric_name": "봉사활동 참여 인원",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0128",
+      "index": 128,
+      "metric_name": "봉사활동 참여 시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0129",
+      "index": 129,
+      "metric_name": "환경교육 대상자",
+      "value": null,
+      "unit": "인",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0130",
+      "index": 130,
+      "metric_name": "환경교육 대상 인원의 교육 참여율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0131",
+      "index": 131,
+      "metric_name": "1인당 교육 시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0132",
+      "index": 132,
+      "metric_name": "친환경 매출액",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0133",
+      "index": 133,
+      "metric_name": "환경투자액",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0134",
+      "index": 134,
+      "metric_name": "매출액 대비 환경투자액",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0135",
+      "index": 135,
+      "metric_name": "법적 의무 및 규정 위반 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0136",
+      "index": 136,
+      "metric_name": "벌금 총액",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0137",
+      "index": 137,
+      "metric_name": "환경 관련 미지급 부채 금액",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0138",
+      "index": 138,
+      "metric_name": "총 원부자재 사용량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0139",
+      "index": 139,
+      "metric_name": "원부자재 사용량 집약도",
+      "value": null,
+      "unit": "톤/백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0140",
+      "index": 140,
+      "metric_name": "재생 불가 원재료 사용량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0141",
+      "index": 141,
+      "metric_name": "재생 가능 원재료 사용량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0142",
+      "index": 142,
+      "metric_name": "재생원료 사용 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0143",
+      "index": 143,
+      "metric_name": "재제조된 제품 및 재제조 서비스 매출액",
+      "value": null,
+      "unit": "KRW",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0144",
+      "index": 144,
+      "metric_name": "QUANT-0144",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0145",
+      "index": 145,
+      "metric_name": "QUANT-0145",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0146",
+      "index": 146,
+      "metric_name": "총 온실가스 배출량",
+      "value": null,
+      "unit": "tCO2-eq",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0147",
+      "index": 147,
+      "metric_name": "직접 온실가스 배출량 (Scope 1)",
+      "value": null,
+      "unit": "tCO2-eq",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0148",
+      "index": 148,
+      "metric_name": "간접 온실가스 배출량 (Scope 2)",
+      "value": null,
+      "unit": "tCO2-eq",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0149",
+      "index": 149,
+      "metric_name": "온실가스 배출량 집약도",
+      "value": null,
+      "unit": "tCO2-eq/ 백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0150",
+      "index": 150,
+      "metric_name": "에너지 사용량 집약도",
+      "value": null,
+      "unit": "TJ/백만원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0151",
+      "index": 151,
+      "metric_name": "총 에너지 소비량",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0152",
+      "index": 152,
+      "metric_name": "비재생 에너지 소비량",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0153",
+      "index": 153,
+      "metric_name": "재생 에너지 사용량",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0154",
+      "index": 154,
+      "metric_name": "재생 에너지 사용 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0155",
+      "index": 155,
+      "metric_name": "자가 발전",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0156",
+      "index": 156,
+      "metric_name": "녹색 프리미엄",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0157",
+      "index": 157,
+      "metric_name": "REC 구매",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0158",
+      "index": 158,
+      "metric_name": "전기 (간접 에너지원)",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0159",
+      "index": 159,
+      "metric_name": "스팀 (간접 에너지원)",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0160",
+      "index": 160,
+      "metric_name": "화석연료(직접 에너지원)",
+      "value": null,
+      "unit": "TJ",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0161",
+      "index": 161,
+      "metric_name": "총 폐기물 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0162",
+      "index": 162,
+      "metric_name": "폐기물 배출량 집약도",
+      "value": null,
+      "unit": "톤/백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0163",
+      "index": 163,
+      "metric_name": "일반 폐기물",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0164",
+      "index": 164,
+      "metric_name": "지정 페기물",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0165",
+      "index": 165,
+      "metric_name": "폐기물 재활용량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0166",
+      "index": 166,
+      "metric_name": "폐기물 재활용률",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0167",
+      "index": 167,
+      "metric_name": "처분된 폐기물의 총 중량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0168",
+      "index": 168,
+      "metric_name": "일반 폐기물 처리량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0169",
+      "index": 169,
+      "metric_name": "일반 폐기물 처리량 합계",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0170",
+      "index": 170,
+      "metric_name": "소각",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0171",
+      "index": 171,
+      "metric_name": "매립",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0172",
+      "index": 172,
+      "metric_name": "기타",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0173",
+      "index": 173,
+      "metric_name": "지정 폐기물 처리량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0174",
+      "index": 174,
+      "metric_name": "소각",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0175",
+      "index": 175,
+      "metric_name": "매립",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0176",
+      "index": 176,
+      "metric_name": "기타",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0177",
+      "index": 177,
+      "metric_name": "대기오염물질 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0178",
+      "index": 178,
+      "metric_name": "NOx 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0179",
+      "index": 179,
+      "metric_name": "SOx 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0180",
+      "index": 180,
+      "metric_name": "잔류 유기 오염물 (POP)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0181",
+      "index": 181,
+      "metric_name": "휘발성 유기 화합물 (VOC)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0182",
+      "index": 182,
+      "metric_name": "유해 대기 오염물 (HAP)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0183",
+      "index": 183,
+      "metric_name": "대기오염물질 발생량 집약도",
+      "value": null,
+      "unit": "톤/백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0184",
+      "index": 184,
+      "metric_name": "입자성 물질 (PM) 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0185",
+      "index": 185,
+      "metric_name": "수질오염물질 배출량",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0186",
+      "index": 186,
+      "metric_name": "COD (화학적산소요구량)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0187",
+      "index": 187,
+      "metric_name": "BOD (생화학적산소요구량)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0188",
+      "index": 188,
+      "metric_name": "SS (부유물질)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0189",
+      "index": 189,
+      "metric_name": "TOC (유기탄소량)",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0190",
+      "index": 190,
+      "metric_name": "T-N",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0191",
+      "index": 191,
+      "metric_name": "T-P",
+      "value": null,
+      "unit": "톤",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0192",
+      "index": 192,
+      "metric_name": "용수 취수량",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0193",
+      "index": 193,
+      "metric_name": "상수도",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0194",
+      "index": 194,
+      "metric_name": "지하수",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0195",
+      "index": 195,
+      "metric_name": "공업용수 취수량",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0196",
+      "index": 196,
+      "metric_name": "용수 사용량",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0197",
+      "index": 197,
+      "metric_name": "용수 재사용량",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0198",
+      "index": 198,
+      "metric_name": "용수 재사용 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0199",
+      "index": 199,
+      "metric_name": "용수 사용량 집약도",
+      "value": null,
+      "unit": "M3/백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0200",
+      "index": 200,
+      "metric_name": "폐수 배출량",
+      "value": null,
+      "unit": "M3",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0201",
+      "index": 201,
+      "metric_name": "폐수 배출량 집약도",
+      "value": null,
+      "unit": "M3/백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0202",
+      "index": 202,
+      "metric_name": "복원 및 재건 진행 중인 면적",
+      "value": null,
+      "unit": "ha",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0203",
+      "index": 203,
+      "metric_name": "복원 및 재건 완료된 면적",
+      "value": null,
+      "unit": "ha",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0204",
+      "index": 204,
+      "metric_name": "남성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0205",
+      "index": 205,
+      "metric_name": "여성",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0206",
+      "index": 206,
+      "metric_name": "적용한 최저임금 기준",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0207",
+      "index": 207,
+      "metric_name": "매출액",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0208",
+      "index": 208,
+      "metric_name": "유형자산 취득",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0209",
+      "index": 209,
+      "metric_name": "이자비용",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0210",
+      "index": 210,
+      "metric_name": "급여+복리후생비+퇴직급여",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0211",
+      "index": 211,
+      "metric_name": "구매비용+외주용역비",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0212",
+      "index": 212,
+      "metric_name": "기부금 지역사회 투자비",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0213",
+      "index": 213,
+      "metric_name": "세금 및 공과 + 법인세",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0214",
+      "index": 214,
+      "metric_name": "유보된 경제가치",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0215",
+      "index": 215,
+      "metric_name": "평가 사업장 수",
+      "value": null,
+      "unit": "개",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0216",
+      "index": 216,
+      "metric_name": "평가 사업장 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0217",
+      "index": 217,
+      "metric_name": "윤리 리스크 평가 실시 횟수",
+      "value": null,
+      "unit": "회",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0218",
+      "index": 218,
+      "metric_name": "윤리 리스크가 발견된 사업장 또는 영역 수",
+      "value": null,
+      "unit": "개",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0219",
+      "index": 219,
+      "metric_name": "윤리 위반 제보 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0220",
+      "index": 220,
+      "metric_name": "윤리 위반 처리 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0221",
+      "index": 221,
+      "metric_name": "직원 해고 또는 징계 해당 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0222",
+      "index": 222,
+      "metric_name": "부패로 인한 협력 관계 종료 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0223",
+      "index": 223,
+      "metric_name": "처리율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0224",
+      "index": 224,
+      "metric_name": "반부패/뇌물",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0225",
+      "index": 225,
+      "metric_name": "성희롱 직장 내 괴롬힘",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0226",
+      "index": 226,
+      "metric_name": "자금세탁 내부자 거래",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0227",
+      "index": 227,
+      "metric_name": "이해관계 충돌",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0228",
+      "index": 228,
+      "metric_name": "기타",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0229",
+      "index": 229,
+      "metric_name": "윤리교육 이수 인원",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0230",
+      "index": 230,
+      "metric_name": "윤리교육 대상자",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0231",
+      "index": 231,
+      "metric_name": "윤리교육 이수율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0232",
+      "index": 232,
+      "metric_name": "윤리교육 1인당 교육 시간",
+      "value": null,
+      "unit": "시간",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0233",
+      "index": 233,
+      "metric_name": "윤리경영 정책에 대한 공지를 받은 임직원 수",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0234",
+      "index": 234,
+      "metric_name": "총 사건 수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0235",
+      "index": 235,
+      "metric_name": "직원 해고 또는 징계 해당건",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0236",
+      "index": 236,
+      "metric_name": "부패로 인한 협력 관계 종료건",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0237",
+      "index": 237,
+      "metric_name": "공정거래 관련 계류 중 또는 완료된 소송 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0238",
+      "index": 238,
+      "metric_name": "공정거래 관련 규정 및 자발적 규범 위반 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0239",
+      "index": 239,
+      "metric_name": "사내이사",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0240",
+      "index": 240,
+      "metric_name": "사외이사",
+      "value": null,
+      "unit": "명",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0241",
+      "index": 241,
+      "metric_name": "최고 급여자 급여",
+      "value": null,
+      "unit": "백만 원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0242",
+      "index": 242,
+      "metric_name": "구성원 급여 평균값 대비 최고 급여자 급여 비율",
+      "value": null,
+      "unit": "배",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0243",
+      "index": 243,
+      "metric_name": "구성원 연간 급여 중앙값 대비 최고 급여자 급여 비율",
+      "value": null,
+      "unit": "배",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0244",
+      "index": 244,
+      "metric_name": "단체교섭이 적용되는 직원 비율",
+      "value": null,
+      "unit": "%",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0245",
+      "index": 245,
+      "metric_name": "윤리 및 컴플라이언스 위반 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0246",
+      "index": 246,
+      "metric_name": "금전적 제재 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0247",
+      "index": 247,
+      "metric_name": "비금전적 제재 총 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0248",
+      "index": 248,
+      "metric_name": "금전적 손실 총액",
+      "value": null,
+      "unit": "원",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0249",
+      "index": 249,
+      "metric_name": "지배구조 컴플라이언스 위반 사례 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0250",
+      "index": 250,
+      "metric_name": "관련 법규 위반으로 인한 처벌 또는 과태료 건수",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    },
+    {
+      "metric_id": "QUANT-0251",
+      "index": 251,
+      "metric_name": "관련 법규 위반으로 인한 금전적 손실",
+      "value": null,
+      "unit": "건",
+      "source": "",
+      "status": "missing",
+      "confidence": 0.0,
+      "metadata": {
+        "reason": "No company quantitative data matched this metric."
+      }
+    }
+  ],
+  "quantitative_stats": {
+    "total": 251,
+    "filled": 1,
+    "missing": 250
+  },
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_full\\test_graph_writes_combined_wor0\\outputs\\combined_company\\2025\\run_combined\\qualitative_run.json",
+    "coverage_summary": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_full\\test_graph_writes_combined_wor0\\outputs\\combined_company\\2025\\run_combined\\coverage_summary.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_full\\test_graph_writes_combined_wor0\\outputs\\combined_company\\2025\\run_combined\\qualitative_audit.xlsx",
+    "combined_excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\no_auto_disclosure_full\\test_graph_writes_combined_wor0\\outputs\\combined_company\\2025\\run_combined\\[langgraph][Combined Company]report-2026.08.10_1.xlsx"
+  },
+  "provenance": {
+    "schema_version": 1,
+    "mode": "off",
+    "verified": false,
+    "source_digest": "",
+    "runtime_source_digest": "",
+    "expected_source_digest": "",
+    "built_at_utc": "",
+    "git_sha": "unknown"
+  },
+  "rag_request_traces": [
+    {
+      "request_id": "",
+      "api_version": "",
+      "rag_version": "",
+      "index_version": "",
+      "generated_at": null,
+      "latency_ms": null,
+      "warnings": [],
+      "requested_item_ids": [
+        "Q001"
+      ],
+      "top_k": 5,
+      "phase": "initial",
+      "contract_violations": [],
+      "error": ""
+    }
+  ]
+}

@@ -50,7 +50,7 @@ When evidence contains targets, include the target year, baseline year, scope co
 When evidence contains methodology, boundary, restatement, renewable energy certificate, offset, or assurance information, mention it only when it changes the interpretation of the answer. Keep those details as part of the narrative, not as a methodology note.
 
 LANGUAGE AND QUALITY RULES
-Follow the requested output language. Use formal, factual language and avoid promotional wording. State evidence-supported limitations only when they are necessary to answer the question; otherwise omit them.
+Follow the requested output language. Use formal, factual language and avoid promotional wording. Keep evidence gaps, missing facets, review status, and confirmation needs out of `final_answer`; record them only as quality flags. If no supported answer content remains, return an empty `final_answer`.
 
 Before returning the answer, verify that every claim is supported by the supplied evidence and that the answer contains only the qualitative ESG response.
 ```

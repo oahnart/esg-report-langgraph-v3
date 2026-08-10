@@ -49,7 +49,34 @@ METRIC_DIMENSIONS_BY_QID: dict[str, tuple[str, ...]] = {
 }
 
 
+QUESTION_CONTRACTS_BY_QID: dict[str, QuestionContract] = {
+    "Q021": QuestionContract(
+        "governance",
+        (
+            "accountable_body",
+            "role",
+            "operating_organization",
+            "site_management_system",
+        ),
+        ("oversight_cadence",),
+    ),
+    "Q074": QuestionContract(
+        "risk_management",
+        (
+            "risk_identification",
+            "control_or_response",
+            "committee_independence",
+            "committee_expertise",
+        ),
+        ("monitoring_follow_up",),
+    ),
+}
+
+
 def build_question_contract(planned: Any) -> QuestionContract:
+    qid = str(getattr(planned, "id", ""))
+    if qid in QUESTION_CONTRACTS_BY_QID:
+        return QUESTION_CONTRACTS_BY_QID[qid]
     pillar = _canonical_pillar(getattr(planned, "pillar", ""))
     question_text = " ".join(
         str(value or "")
@@ -62,7 +89,7 @@ def build_question_contract(planned: Any) -> QuestionContract:
         return QuestionContract(
             pillar,
             ("metric_result", "reporting_period"),
-            metric_dimensions=METRIC_DIMENSIONS_BY_QID.get(str(getattr(planned, "id", "")), ()),
+            metric_dimensions=METRIC_DIMENSIONS_BY_QID.get(qid, ()),
         )
     if pillar == "governance":
         return QuestionContract(pillar, ("accountable_body", "role"), ("oversight_cadence",))

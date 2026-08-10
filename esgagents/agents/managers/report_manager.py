@@ -10,6 +10,7 @@ from esgagents.schemas import (
     model_to_dict,
 )
 from esgagents.quality import classify_answer_quality
+from esgagents.publication import apply_customer_answer_contract, evaluate_publication
 from esgagents.provenance import verify_runtime_provenance
 from esgagents.agents.answering.question_contracts import build_question_contract
 
@@ -35,6 +36,8 @@ class ReportManagerAgent:
             }:
                 final_answer = ""
             gate = state["evidence_gate"].get(planned.id, {})
+            if final_answer and not bool(gate.get("accepted")):
+                final_answer = ""
             if final_answer:
                 result_bucket = "answered"
             elif qa.status == "failed":
@@ -43,8 +46,6 @@ class ReportManagerAgent:
                 result_bucket = "weak"
             else:
                 result_bucket = "empty"
-            stats[result_bucket] += 1
-
             normalized = state["normalized_evidence"].get(planned.id, {})
             metric_audit = dict(normalized.get("metric_audit", {}))
             local_dimensions = list(build_question_contract(planned).metric_dimensions)
@@ -77,6 +78,15 @@ class ReportManagerAgent:
                 rag_retrieval_notes=list(rag.retrieval_notes) if rag else [],
                 rag_contract_violations=list(rag.client_contract_violations) if rag else [],
                 rag_contract_warnings=list(rag.client_contract_warnings) if rag else [],
+                rag_metric_expected=rag.metric_expected if rag else None,
+                rag_metric_status=rag.metric_status if rag and rag.metric_status else "",
+                rag_metric_confidence=rag.metric_confidence if rag and rag.metric_confidence else "",
+                rag_metric_summary=model_to_dict(rag.metric_summary) if rag and rag.metric_summary else {},
+                rag_metric_absence=model_to_dict(rag.metric_absence) if rag and rag.metric_absence else {},
+                rag_metric_evidence=[
+                    model_to_dict(item) for item in normalized.get("metric_evidence", [])
+                ],
+                rag_narrative_evidence=[model_to_dict(item) for item in rag.narrative_evidence] if rag else [],
                 consumer_decision=consumer_decision,
                 upstream_hints=dict(state.get("upstream_hints", {}).get(planned.id, {})),
                 upstream_coverage_mismatch=bool(
@@ -111,7 +121,26 @@ class ReportManagerAgent:
             record.qa_grade = quality.grade
             record.coverage_reason = quality.reason
             record.coverage_issues = list(quality.issues)
+            publication = evaluate_publication(
+                record,
+                accepted_statuses={
+                    str(value).lower()
+                    for value in self.config["accepted_answer_statuses"]
+                },
+                conditional_statuses={
+                    str(value).lower()
+                    for value in self.config.get("conditional_answer_statuses", set())
+                },
+            )
+            record.publication_status = publication.status
+            record.publication_reason = publication.reason
+            record.publication_issues = list(publication.issues)
+            apply_customer_answer_contract(record)
             records.append(record)
+        stats = {"answered": 0, "empty": 0, "weak": 0, "failed": 0}
+        for record in records:
+            bucket = str(record.result_bucket or "empty")
+            stats[bucket if bucket in stats else "empty"] += 1
         artifacts = RunArtifacts(
             run_id=company.run_id,
             company=model_to_dict(company),
@@ -142,6 +171,9 @@ class ReportManagerAgent:
                 "rag_partial_coverage",
                 "thin_evidence",
                 "conflicting_metric",
+                "metric_not_found",
+                "metric_low_confidence",
+                "metric_numeric_withheld",
             }
             return (
                 "answered_partial"

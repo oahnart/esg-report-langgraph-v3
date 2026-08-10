@@ -32,6 +32,7 @@ class ESGQualitativeGraph:
             qualitative_path=self.config["team_rag_qualitative_path"],
             timeout_seconds=self.config["team_rag_timeout_seconds"],
             max_retries=self.config["team_rag_max_retries"],
+            request_contract=self.config["team_rag_request_contract"],
         )
         self.output_writer = output_writer or OutputWriter(
             self.config["output_dir"],

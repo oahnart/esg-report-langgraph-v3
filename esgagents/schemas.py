@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def validate_identifier(value: str, field_name: str = "identifier") -> str:
@@ -155,6 +155,41 @@ class EvidenceItem(BaseModel):
         return "" if value is None else str(value)
 
 
+class MetricSummary(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    n_rows: int = Field(default=0, ge=0)
+    n_blocks: int = Field(default=0, ge=0)
+    n_primary: int = Field(default=0, ge=0)
+    n_scope_variant: int = Field(default=0, ge=0)
+    n_denominator: int = Field(default=0, ge=0)
+
+
+class MetricAbsence(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    reason: Literal["no_candidate", "below_threshold", "blocked_by_gate"]
+    best_score: float | None = None
+    threshold: float | None = None
+    n_candidates_seen: int | None = Field(default=None, ge=0)
+
+
+class MetricEvidenceItem(EvidenceItem):
+    model_config = ConfigDict(extra="allow")
+
+    table_block: str = ""
+    block_rank: int | None = Field(default=None, ge=0)
+    block_role: Literal["primary", "scope_variant", "denominator"] | None = None
+    entity: str = ""
+    entity_class: str = ""
+    metric_form: str = "table_row"
+
+    @field_validator("table_block", "entity", "entity_class", "metric_form", mode="before")
+    @classmethod
+    def _metric_text(cls, value: Any) -> str:
+        return "" if value is None else str(value)
+
+
 class RagQuestionResult(BaseModel):
     question_id: str
     question_ko: str = ""
@@ -173,6 +208,13 @@ class RagQuestionResult(BaseModel):
     client_contract_violations: list[str] = Field(default_factory=list)
     client_contract_warnings: list[str] = Field(default_factory=list)
     items: list[EvidenceItem] = Field(default_factory=list)
+    metric_expected: bool | None = None
+    metric_status: Literal["not_expected", "found_table", "not_found"] | None = None
+    metric_summary: MetricSummary | None = None
+    metric_confidence: str | None = None
+    metric_absence: MetricAbsence | None = None
+    metric_evidence: list[MetricEvidenceItem] = Field(default_factory=list)
+    narrative_evidence: list[EvidenceItem] = Field(default_factory=list)
     is_v3_payload: bool = Field(default=False, exclude=True)
 
     @field_validator("question_ko", "normalized_answer_ko", "answer_status", "failure_reason", mode="before")
@@ -324,6 +366,13 @@ class AnswerRecord(BaseModel):
     rag_retrieval_notes: list[str] = Field(default_factory=list)
     rag_contract_violations: list[str] = Field(default_factory=list)
     rag_contract_warnings: list[str] = Field(default_factory=list)
+    rag_metric_expected: bool | None = None
+    rag_metric_status: str = ""
+    rag_metric_confidence: str = ""
+    rag_metric_summary: dict[str, Any] = Field(default_factory=dict)
+    rag_metric_absence: dict[str, Any] = Field(default_factory=dict)
+    rag_metric_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    rag_narrative_evidence: list[dict[str, Any]] = Field(default_factory=list)
     consumer_decision: Literal[
         "answered",
         "answered_partial",
@@ -361,6 +410,9 @@ class AnswerRecord(BaseModel):
     qa_grade: Literal["full", "partial", "cautious", "failed"] | None = None
     coverage_reason: str = ""
     coverage_issues: list[str] = Field(default_factory=list)
+    publication_status: Literal["published", "review_required", "blocked"] | None = None
+    publication_reason: str = ""
+    publication_issues: list[str] = Field(default_factory=list)
 
 
 class SkillDraft(BaseModel):

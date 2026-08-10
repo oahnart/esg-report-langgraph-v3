@@ -52,7 +52,12 @@ class SkillContextBuilderAgent:
             contract = build_question_contract(planned)
             metric_audit = normalized_evidence.get(planned.id, {}).get("metric_audit", {})
             metric_lines = metric_facts_prompt_lines(metric_audit)
-            evidence_items = normalized_evidence.get(planned.id, {}).get("items", [])[:5]
+            normalized = normalized_evidence.get(planned.id, {})
+            metric_items = list(normalized.get("metric_items", []))
+            narrative_items = list(normalized.get("narrative_items", []))
+            if metric_audit.get("numeric_withheld"):
+                metric_items = []
+            evidence_items = [*metric_items[:5], *narrative_items[:5]]
             evidence_lines = [
                 _format_evidence_line(item)
                 for item in evidence_items
@@ -71,6 +76,9 @@ class SkillContextBuilderAgent:
                         f"Question: {planned.item_ko}",
                         f"Description: {planned.description_ko}",
                         f"Question contract pillar: {contract.pillar}",
+                        f"Metric status: {metric_audit.get('metric_status') or 'legacy/not-applicable'}",
+                        f"Metric confidence: {metric_audit.get('metric_confidence') or 'not flagged'}",
+                        f"Metric absence: {metric_audit.get('metric_absence') or {}}",
                         f"Required facets: {', '.join(contract.required_facets) or 'none'}",
                         f"Expected facets: {', '.join(contract.expected_facets) or 'none'}",
                         f"Evidence gate: {gate.get('reason', '')}",
@@ -84,15 +92,19 @@ class SkillContextBuilderAgent:
                         "Evidence:",
                         *(f"- {line}" for line in evidence_lines),
                         "Source-use policy: Draft/proposal/consultant evidence may only support explicitly attributed proposed, draft, or planned statements. External assessments support the assessment result and assessed content, not an unstated detailed policy.",
-                        "Coverage policy: Address required facets using only accepted evidence. Local metric dimensions are advisory, not hard requirements. For Metrics, include reporting period and metric value/unit only from accepted structured facts or directly supported evidence. Omit unsupported dimensions without claiming they were not disclosed.",
+                        "Coverage policy: Address required facets using only accepted evidence. Local metric dimensions are advisory, not hard requirements. For Metrics, include reporting period and metric value/unit only from accepted structured facts. Never infer a metric from narrative evidence. Preserve formulas, boundary changes, accounting-method changes, and comparability caveats found in narrative evidence.",
                         "Conflict policy: Never use a metric-period pair listed as conflicting. Keep other non-conflicting supported facts.",
                         "Length policy: Target 2-4 factual sentences when the evidence supports them; a shorter answer is allowed when only one safe claim remains.",
+                        "Customer-answer policy: State only supported answer content. Do not mention missing evidence, document scope, partial coverage, review status, additional confirmation, or requests for more information in final_answer; record such gaps only in quality_flags. If no supported answer content remains, return an empty final_answer.",
                         "Return only an evidence-grounded final_answer and concise quality_flags.",
                     ]
                 ),
                 "evidence_lines": evidence_lines,
                 "evidence_items": evidence_items,
                 "metric_audit": metric_audit,
+                "metric_status": metric_audit.get("metric_status"),
+                "metric_confidence": metric_audit.get("metric_confidence"),
+                "metric_absence": metric_audit.get("metric_absence", {}),
                 "accepted": bool(gate.get("accepted")) and bool(evidence_lines),
                 "skill": selection,
             }

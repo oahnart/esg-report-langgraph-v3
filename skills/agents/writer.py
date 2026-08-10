@@ -15,6 +15,11 @@ from esgagents.agents.evidence.source_policy import (
     attribute_draft_statement,
 )
 from esgagents.schemas import SkillDraft
+from esgagents.agents.answering.text_quality import safe_narrative_text
+from esgagents.agents.evidence.metric_facts import (
+    format_metric_number,
+    salvage_unsupported_numeric_metric_claims,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +53,25 @@ class SkillWriterAgent:
                 )
                 continue
             answer, draft_flags = self._draft_answer(context, rag)
+            if rag.metric_status == "not_found":
+                answer, unsupported_actions = salvage_unsupported_numeric_metric_claims(
+                    answer,
+                    metric_audit,
+                )
+                if unsupported_actions:
+                    draft_flags.append("claim_salvage_applied")
+                draft_flags.append("metric_not_found")
+                reason = str((context.get("metric_absence") or {}).get("reason") or "")
+                if reason:
+                    draft_flags.append(f"metric_absence_{reason}")
+            if str(rag.metric_confidence or "").strip().casefold() == "low":
+                draft_flags.extend(
+                    [
+                        "metric_low_confidence",
+                        "metric_numeric_withheld",
+                        "human_review_required",
+                    ]
+                )
             if gate.get("reason") == "accepted_thin_evidence":
                 draft_flags.append("thin_evidence")
             if gate.get("reason") == "accepted_draft_evidence":
@@ -77,9 +101,10 @@ class SkillWriterAgent:
         }
 
     def _draft_answer(self, context: dict[str, Any], rag: Any) -> tuple[str, list[str]]:
-        fallback = compact(rag.normalized_answer_ko)
+        metric_found = str(getattr(rag, "metric_status", "") or "") == "found_table"
+        fallback = "" if metric_found else safe_narrative_text(compact(rag.normalized_answer_ko))
         metric_fallback = self._metric_fallback(context)
-        evidence_fallback = self._evidence_fallback(context)
+        evidence_fallback = "" if metric_found else self._evidence_fallback(context)
         if self.llm is None:
             if metric_fallback:
                 return metric_fallback, ["structured_metric_fallback"]
@@ -92,10 +117,12 @@ class SkillWriterAgent:
             if self.structured_llm is not None:
                 result = self.structured_llm.invoke(prompt)
                 if isinstance(result, SkillDraft):
-                    answer = compact(result.final_answer) or metric_fallback or fallback or evidence_fallback
+                    answer = safe_narrative_text(compact(result.final_answer))
+                    answer = answer or metric_fallback or fallback or evidence_fallback
                     return answer, sorted(set(result.quality_flags))
             response = self.llm.invoke(prompt)
-            answer = compact(getattr(response, "content", str(response))) or metric_fallback or fallback or evidence_fallback
+            answer = safe_narrative_text(compact(getattr(response, "content", str(response))))
+            answer = answer or metric_fallback or fallback or evidence_fallback
             return answer, ["llm_free_text_fallback"]
         except Exception as exc:
             logger.warning("Skill Writer failed for %s; using deterministic fallback: %s", context.get("qid"), exc)
@@ -112,7 +139,10 @@ class SkillWriterAgent:
                 claim = compact(part).strip(" •·")
                 if len(claim) < 20 or "|" in claim:
                     continue
-                claims.append(claim[:700])
+                safe_claim = safe_narrative_text(claim[:700])
+                if not safe_claim:
+                    continue
+                claims.append(safe_claim)
                 break
             if len(claims) >= 3:
                 break
@@ -123,16 +153,22 @@ class SkillWriterAgent:
         facts = list((context.get("metric_audit") or {}).get("accepted_facts", []))
         if not facts:
             return ""
-        grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
         for fact in facts:
-            grouped[str(fact.get("metric") or "Metric")].append(fact)
+            grouped[
+                (
+                    str(fact.get("table_block") or ""),
+                    str(fact.get("entity_class") or fact.get("entity") or ""),
+                    str(fact.get("metric") or "Metric"),
+                )
+            ].append(fact)
         korean = "korean" in str(context.get("output_language") or "").casefold()
         sentences: list[str] = []
-        for metric, entries in list(grouped.items())[:4]:
+        for (table_block, entity_scope, metric), entries in list(grouped.items())[:4]:
             entries.sort(key=lambda entry: str(entry.get("period") or ""))
             observations = []
             for entry in entries:
-                value = str(entry.get("value") or "")
+                value = format_metric_number(entry.get("value"))
                 unit = str(entry.get("unit") or "")
                 suffix = "" if not unit or value.endswith(unit) else f" {unit}"
                 role = str(entry.get("value_role") or "unknown").casefold()
@@ -145,9 +181,11 @@ class SkillWriterAgent:
                     f"{entry.get('period', '')}{role_label}: {value}{suffix}"
                 )
             if korean:
-                sentence = f"{metric}은(는) " + ", ".join(observations)
+                scope_prefix = f"{entity_scope} " if entity_scope else ""
+                sentence = f"{scope_prefix}{metric}은(는) " + ", ".join(observations)
             else:
-                sentence = f"{metric} was reported as " + ", ".join(observations)
+                scope_prefix = f"For {entity_scope}, " if entity_scope else ""
+                sentence = f"{scope_prefix}{metric} was reported as " + ", ".join(observations)
             actual_entries = [
                 entry
                 for entry in entries

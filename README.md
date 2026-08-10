@@ -73,8 +73,9 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | --------------------------------- | --------------------------------------------: | -------------------------------------------------------------------------------------------- |
 | `TEAM_RAG_BASE_URL`               |                                          rong | Base URL cua Team RAG. Bat buoc khi goi RAG live.                                            |
 | `TEAM_RAG_QUALITATIVE_PATH`       |                    `/qualitative/evidence/v3` | Endpoint qualitative. Dat `/qualitative/evidence/v2` de rollback; khong co fallback tu dong. |
+| `TEAM_RAG_REQUEST_CONTRACT`       |                                         `new` | `new` gui `question_ids`; dat `legacy` de rollback ve `item_ids + year`.                     |
 | `TEAM_RAG_TIMEOUT_SECONDS`        |                                          `30` | Timeout moi request RAG.                                                                     |
-| `TEAM_RAG_TOP_K`                  |                                           `5` | So evidence lay cho moi cau hoi.                                                             |
+| `TEAM_RAG_TOP_K`                  |                                           `5` | Voi metric la so block `primary`; voi cau khac la ngan sach evidence.                         |
 | `ESG_TEAM_RAG_RETRY_TOP_K`        |                                           `0` | Neu > `TEAM_RAG_TOP_K`, retry QID evidence rong/yeu voi top_k cao hon.                       |
 | `TEAM_RAG_BATCH_SIZE`             |                                          `20` | So QID trong moi batch RAG.                                                                  |
 | `TEAM_RAG_CONCURRENCY`            |                                           `4` | So batch RAG chay song song.                                                                 |
@@ -87,7 +88,7 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | `ESG_QUANTITATIVE_API_BASE_URL`   |                                          rong | Base URL cho API dinh luong khi dung `api`.                                                  |
 | `ESG_QUANTITATIVE_API_PATH`       | `/companies/{company_id}/{year}/quantitative` | GET path dinh luong.                                                                         |
 | `ESG_QUANTITATIVE_API_METHOD`     |                                         `GET` | `GET` legacy hoac `POST` cho RAG `/quantitative/answers`.                                    |
-| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                       `false` | Deprecated. Cau qualitative Metrics dung evidence tu RAG v3 `items[]`, khong bridge tu API dinh luong rieng. |
+| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                       `false` | Deprecated. Cau qualitative Metrics dung contract metric cua RAG, khong bridge tu API dinh luong rieng. |
 | `ESG_OUTPUT_TIMEZONE`             |                                `Asia/Bangkok` | Mui gio dung trong ten workbook tong hop.                                                    |
 | `ESG_AGENT_MODE`                  |                                        `auto` | `auto`, `llm`, hoac `offline`.                                                               |
 | `ESG_LLM_PROVIDER`                |                                      `openai` | Provider LLM: `openai` hoac `hallmdr`.                                                       |
@@ -405,9 +406,8 @@ Request body:
 ```json
 {
   "company_id": "samsung_electronics",
-  "item_ids": ["Q001", "Q016"],
-  "top_k": 5,
-  "year": 2025
+  "question_ids": ["Q001", "Q016"],
+  "top_k": 5
 }
 ```
 
@@ -469,12 +469,19 @@ V3 bat buoc tra metadata request/version/index va dung mot result cho moi QID. V
 
 V3 dung `answerable` va `coverage_status` lam quyet dinh chinh. Chi `answerable=true` voi `complete` hoac `partial` moi co the vao writer; evidence gate va semantic QA van co quyen chan them. Missing facet tu RAG khong duoc writer tu suy dien. Contract violation khong fallback am tham ve v2.
 
-Voi cau `Metrics`, RAG v3 phai mirror hang so lieu can dung vao `results[].items[]`, thuong voi `semantic_label="metric_row"`, `raw_evidence_ko` dang `... | unit | 2022=value | 2023=value`, va locator bang sheet/cell khi co. Runtime dung `items[]` nay lam nguon qualitative chinh; cac truong phu nhu `metric_evidence`, `primary_metric_evidence`, hoac `narrative_evidence` co the nam trong snapshot raw nhung khong can de writer tao cau tra loi.
+Voi contract metric moi, runtime doc `metric_expected` va `metric_status` truoc:
+
+- `not_expected`: tiep tuc dung `items[]`.
+- `found_table`: chi `metric_evidence` co `block_role=primary` va co `entity_class`/`entity` moi duoc dung lam so; `scope_variant` va `denominator` chi duoc giu trong audit. `narrative_evidence` van bat buoc de giu cong thuc, pham vi va thay doi cach ghi nhan.
+- `not_found`: viet phan dinh tinh tu narrative/items, de trong so va dung `metric_absence.reason` de ghi canh bao trung lap. Khong suy so tu doan van hay `normalized_answer_ko`.
+
+Payload legacy khong co cac truong tren van duoc ho tro bang `items[].semantic_label="metric_row"` va duoc danh dau `legacy_metric_contract`.
 
 Rollback thu cong khi can:
 
 ```powershell
 $env:TEAM_RAG_QUALITATIVE_PATH="/qualitative/evidence/v2"
+$env:TEAM_RAG_REQUEST_CONTRACT="legacy"
 ```
 
 V2 tiep tuc dung logic `answer_status`/semantic label cu. Cau hinh quantitative khong bi anh huong.
@@ -533,7 +540,7 @@ data/outputs/{company_id}/{year}/{run_id}/
 giu nguyen sheet `Qualitative Audit` voi cac cot:
 
 - QID, Source ID, Category, Question
-- Answer Status, Final Answer, Evidence Summary, Sources
+- Answer Status, QA Grade, Publication Status/Reason/Issues, Final Answer, Evidence Summary, Sources
 - QA Notes, Agent Profile, Quality Flags, Revision Count
 - Skill metadata, Disclosure Flags, Hard Failures, Result Bucket
 
@@ -543,12 +550,18 @@ JSON van duoc giu nguyen.
 
 Moi source record trong JSON va chuoi `Sources`/`Evidence Source` trong hai workbook co them `canonical_source_id`, `source_tier`, `source_type`, `document_status` va `classification_reason`. `source_name` va `source_path` duoc giu nguyen.
 
-Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co hai sheet:
+Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co cac sheet:
 
 - `Qualitative`: `EBX Indicator`, `Status`, `Field`, `Original Evidence`,
   `Evidence Source`, `Prompt Evidence`, `Writing Style Description`, `Final Answer`.
 - `Quantitative`: `Metric ID`, `Index`, `Metric Name`, `Value`, `Unit`,
-  `Source`, `Status`, `Confidence`, `Metadata`.
+  `Source`, `Status`, `Confidence`, `Metadata` (chi tao khi co du lieu).
+
+Workbook giao khach hang chi co `Qualitative` va, neu co du lieu, `Quantitative`.
+`Final Answer` chi duoc ghi khi `publication_status=published` va `qa_grade=full`;
+cac candidate `partial`/`cautious` van duoc giu trong JSON va audit. Sheet
+`RAG Metric Evidence` chi nam trong `qualitative_audit.xlsx`, gom metric rows theo
+QID, table block, block role, phap nhan, raw evidence, parsed facts va locator.
 
 `N` tang theo cung `company_id`, nam va ngay, ke ca khi nhieu run chay dong thoi.
 
@@ -602,13 +615,13 @@ dung 210 item tu RAG lam output native, khong map sang catalog legacy
 `QUANT-0001..QUANT-0251`. Item `answered` duoc publish thanh `filled`; item
 `missing` giu reason; item `needs_confirmation` duoc ghi audit nhung khong
 publish value vao JSON/workbook. Response nay khong bridge sang cau qualitative
-`Metrics`; qualitative Metrics phai dung evidence trong Team RAG v3 `items[]`.
+`Metrics`; qualitative Metrics phai dung contract `metric_evidence` cua Team RAG.
 
 ## Evidence Policy
 
 Pipeline nay uu tien tinh audit va tinh phong ve trong bao cao ESG:
 
-- V3: neu RAG khong tra mot QID, client tao result local `CLIENT_CONTRACT_MISSING_RESULT`, ghi trace va khong cho writer su dung.
+- Contract moi: neu RAG bo qua QID khong ton tai, client tao placeholder `CLIENT_WARNING_SKIPPED_QID` de giu graph state va ghi warning, khong coi la response contract violation.
 - V3: `answerable=false`, `insufficient`, `no_evidence` hoac contract violation lam final answer rong; `partial` hop le duoc giu kem coverage flags.
 - Neu `ESG_TEAM_RAG_RETRY_TOP_K` duoc bat, QID evidence rong/yeu duoc retry
   voi top_k cao hon. Metadata retry chi thay the ket qua dau khi coverage tot
@@ -620,8 +633,9 @@ Pipeline nay uu tien tinh audit va tinh phong ve trong bao cao ESG:
 - Neu evidence co noi dung hop le nhung thieu `source_path`, QA danh fail va
   final answer de rong.
 - Neu draft co so lieu, chung nhan, net-zero/offset/on-track/double-materiality claim khong nam trong evidence, QA danh fail va final answer rong truoc khi revision.
-- Cac cau `Metrics` dung evidence dinh luong tu Team RAG v3 `items[]`; final
-  answer van bi semantic QA chan neu thieu gia tri metric hoac ky bao cao.
+- `found_table` chi dung `metric_evidence` primary co dinh danh phap nhan;
+  `not_found` duoc phep tra narrative kem ly do thieu so. `metric_confidence=low`
+  giu narrative, chan so va gan co human review.
 - Moi draft QA fail co evidence/source hop le se duoc gui rieng den revision writer trong gioi han `ESG_MAX_REVISION_ROUNDS`, kem QA notes va evidence. Agent phai bo claim khong duoc chung minh hoac tra `final_answer` rong neu khong con noi dung an toan.
 
 ## Template

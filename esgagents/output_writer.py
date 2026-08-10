@@ -14,6 +14,12 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from esgagents.default_config import DEFAULT_CONFIG
+from esgagents.publication import (
+    PUBLICATION_STATUSES,
+    apply_customer_answer_contract,
+    customer_export_answer,
+    resolved_publication_decision,
+)
 from esgagents.schemas import RunArtifacts, model_to_dict, validate_identifier
 from esgagents.quality import QA_GRADES, resolved_answer_quality
 
@@ -41,6 +47,9 @@ AUDIT_COLUMNS = [
     "Upstream Coverage Mismatch",
     "Metric Audit",
     "QA Grade",
+    "Publication Status",
+    "Publication Reason",
+    "Publication Issues",
     "Final Answer",
     "Evidence Summary",
     "Sources",
@@ -87,6 +96,23 @@ QUANTITATIVE_COLUMNS = [
     "Status",
     "Confidence",
     "Metadata",
+]
+
+RAG_METRIC_EVIDENCE_COLUMNS = [
+    "QID",
+    "Metric Status",
+    "Metric Confidence",
+    "Table Block",
+    "Block Rank",
+    "Block Role",
+    "Entity",
+    "Entity Class",
+    "Metric Form",
+    "Raw Evidence",
+    "Parsed Facts",
+    "Source Name",
+    "Source Path",
+    "Locator",
 ]
 
 EXCEL_FALLBACK_TEXT = "The content contains characters that cannot be entered into Excel."
@@ -182,6 +208,12 @@ class OutputWriter:
             )
             if existing is not None:
                 return existing
+        for answer in artifacts.answers:
+            apply_customer_answer_contract(answer)
+        artifacts.stats = {bucket: 0 for bucket in ("answered", "empty", "weak", "failed")}
+        for answer in artifacts.answers:
+            bucket = _answer_result_bucket(answer)
+            artifacts.stats[bucket if bucket in artifacts.stats else "empty"] += 1
         json_path = run_dir / "qualitative_run.json"
         coverage_path = run_dir / "coverage_summary.json"
         xlsx_path = run_dir / "qualitative_audit.xlsx"
@@ -251,7 +283,10 @@ class OutputWriter:
         safe_run_id = validate_identifier(str(run_id), "run_id")
         run_dir = (output_root / safe_company_id / str(int(year)) / safe_run_id).resolve()
         try:
-            run_dir.relative_to(output_root)
+            comparable_root = os.path.normcase(os.path.normpath(str(output_root))).removeprefix("\\\\?\\")
+            comparable_run = os.path.normcase(os.path.normpath(str(run_dir))).removeprefix("\\\\?\\")
+            if os.path.commonpath([comparable_root, comparable_run]) != comparable_root:
+                raise ValueError("path escaped output root")
         except ValueError as exc:
             raise OutputPathError("output run path must remain inside output_dir") from exc
         return output_root, run_dir
@@ -290,7 +325,10 @@ class OutputWriter:
                 answer.upstream_coverage_mismatch,
                 json.dumps(answer.metric_audit, ensure_ascii=False, sort_keys=True),
                 quality.grade,
-                answer.final_answer,
+                resolved_publication_decision(answer).status,
+                resolved_publication_decision(answer).reason,
+                "; ".join(resolved_publication_decision(answer).issues),
+                _audit_display_answer(answer),
                 answer.evidence_summary,
                 "; ".join(
                     _format_source(src)
@@ -318,11 +356,12 @@ class OutputWriter:
                 "; ".join(answer.sanitizer_actions),
             ])
 
-        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 72, 14, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
+        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
         for idx, width in enumerate(widths, start=1):
             ws.column_dimensions[get_column_letter(idx)].width = width
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = ws.dimensions
+        self._write_rag_metric_evidence_sheet(wb, artifacts)
         wb.save(path)
 
     def _write_combined_excel(self, artifacts: RunArtifacts, path: Path) -> None:
@@ -342,7 +381,7 @@ class OutputWriter:
                     _evidence_sources(answer.sources),
                     answer.evidence_summary,
                     _writing_style_description(answer),
-                    answer.final_answer,
+                    customer_export_answer(answer),
                 ],
             )
 
@@ -380,6 +419,47 @@ class OutputWriter:
                 wrap_columns={3, 6, 9},
             )
         workbook.save(path)
+
+    def _write_rag_metric_evidence_sheet(
+        self,
+        workbook: Workbook,
+        artifacts: RunArtifacts,
+    ) -> None:
+        rows = [
+            (answer, item)
+            for answer in artifacts.answers
+            for item in answer.rag_metric_evidence
+            if isinstance(item, dict)
+        ]
+        if not rows:
+            return
+        worksheet = workbook.create_sheet("RAG Metric Evidence")
+        self._append_excel_row(worksheet, RAG_METRIC_EVIDENCE_COLUMNS)
+        for answer, item in rows:
+            self._append_excel_row(
+                worksheet,
+                [
+                    answer.qid,
+                    answer.rag_metric_status,
+                    answer.rag_metric_confidence,
+                    item.get("table_block", ""),
+                    item.get("block_rank"),
+                    item.get("block_role", ""),
+                    item.get("entity", ""),
+                    item.get("entity_class", ""),
+                    item.get("metric_form", ""),
+                    item.get("raw_evidence_ko", ""),
+                    json.dumps(item.get("facts", []), ensure_ascii=False, sort_keys=True),
+                    item.get("source_name", ""),
+                    item.get("source_path", ""),
+                    json.dumps(item.get("locator", {}), ensure_ascii=False, sort_keys=True),
+                ],
+            )
+        self._style_report_sheet(
+            worksheet,
+            widths=[12, 18, 18, 38, 12, 18, 22, 22, 16, 72, 60, 28, 42, 48],
+            wrap_columns=set(range(1, 15)),
+        )
 
     def _style_report_sheet(
         self,
@@ -475,6 +555,14 @@ class OutputWriter:
                 cell.value = EXCEL_FALLBACK_TEXT
 
 
+def _audit_display_answer(answer: Any) -> str:
+    if str(getattr(answer, "final_answer", "") or "").strip():
+        return str(answer.final_answer)
+    if resolved_publication_decision(answer).status == "blocked":
+        return str(getattr(answer, "last_rejected_answer", "") or "")
+    return ""
+
+
 def _answer_result_bucket(answer: Any) -> str:
     if getattr(answer, "result_bucket", None):
         return str(answer.result_bucket)
@@ -514,6 +602,12 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
     qa_stats = {"passed": 0, "failed": 0, "empty": 0}
     quality_grade_stats = {grade: 0 for grade in QA_GRADES}
     quality_grade_qids = {grade: [] for grade in QA_GRADES}
+    publication_status_stats = {status: 0 for status in PUBLICATION_STATUSES}
+    publication_status_qids = {status: [] for status in PUBLICATION_STATUSES}
+    publication_reason_stats: dict[str, int] = {}
+    publication_reason_qids: dict[str, list[str]] = {}
+    publication_issue_stats: dict[str, int] = {}
+    publication_issue_qids: dict[str, list[str]] = {}
     coverage_reason_stats: dict[str, int] = {}
     coverage_reason_qids: dict[str, list[str]] = {}
     coverage_issue_stats: dict[str, int] = {}
@@ -525,6 +619,8 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
     rag_answerable_qids = {"true": [], "false": [], "unknown": []}
     rag_failure_code_stats: dict[str, int] = {}
     rag_failure_code_qids: dict[str, list[str]] = {}
+    upstream_insufficient_qids: list[str] = []
+    upstream_insufficient_failure_qids: dict[str, list[str]] = {}
     rag_contract_violation_qids: dict[str, list[str]] = {}
     rag_contract_warning_qids: dict[str, list[str]] = {}
     consumer_decision_stats: dict[str, int] = {}
@@ -545,12 +641,20 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         "conflict_count": 0,
         "conflict_qids": [],
         "all_numeric_facts_conflicted_qids": [],
+        "status_qids": {},
+        "absence_reason_qids": {},
+        "low_confidence_qids": [],
+        "contract_qids": {},
     }
     provenance_fallback_qids: list[str] = []
     upstream_mismatch_qids: list[str] = []
     salvaged_claim_qids: list[str] = []
     salvaged_claim_count = 0
     empty_final_answer_qids = []
+    customer_answer_qids: list[str] = []
+    review_exported_qids: list[str] = []
+    rejected_candidate_qids: list[str] = []
+    parity_mismatch_qids: list[str] = []
     for answer in artifacts.answers:
         qid = answer.qid
         decision = str(getattr(answer, "consumer_decision", "") or "blocked_evidence")
@@ -578,6 +682,25 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         quality = resolved_answer_quality(answer)
         quality_grade_stats[quality.grade] += 1
         quality_grade_qids[quality.grade].append(qid)
+        publication = resolved_publication_decision(answer)
+        publication_status_stats[publication.status] += 1
+        publication_status_qids[publication.status].append(qid)
+        exported_answer = customer_export_answer(answer)
+        if exported_answer:
+            customer_answer_qids.append(qid)
+            if publication.status == "review_required":
+                review_exported_qids.append(qid)
+        if str(getattr(answer, "last_rejected_answer", "") or "").strip():
+            rejected_candidate_qids.append(qid)
+        if exported_answer != str(answer.final_answer or ""):
+            parity_mismatch_qids.append(qid)
+        publication_reason_stats[publication.reason] = (
+            publication_reason_stats.get(publication.reason, 0) + 1
+        )
+        publication_reason_qids.setdefault(publication.reason, []).append(qid)
+        for issue in publication.issues:
+            publication_issue_stats[issue] = publication_issue_stats.get(issue, 0) + 1
+            publication_issue_qids.setdefault(issue, []).append(qid)
         coverage_reason_stats[quality.reason] = coverage_reason_stats.get(quality.reason, 0) + 1
         coverage_reason_qids.setdefault(quality.reason, []).append(qid)
         grade_matrix = coverage_matrix[quality.grade]
@@ -598,11 +721,26 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         if answer.rag_failure_code:
             rag_failure_code_stats[answer.rag_failure_code] = rag_failure_code_stats.get(answer.rag_failure_code, 0) + 1
             rag_failure_code_qids.setdefault(answer.rag_failure_code, []).append(qid)
+        if str(answer.answer_status or "").casefold() in {"insufficient", "no_evidence"}:
+            upstream_insufficient_qids.append(qid)
+            failure_code = str(answer.rag_failure_code or "UNKNOWN")
+            upstream_insufficient_failure_qids.setdefault(failure_code, []).append(qid)
         for violation in answer.rag_contract_violations:
             rag_contract_violation_qids.setdefault(violation, []).append(qid)
         for warning in getattr(answer, "rag_contract_warnings", []) or []:
             rag_contract_warning_qids.setdefault(warning, []).append(qid)
         metric_audit = getattr(answer, "metric_audit", {}) or {}
+        metric_status = str(getattr(answer, "rag_metric_status", "") or "legacy")
+        metric_summary["status_qids"].setdefault(metric_status, []).append(qid)
+        absence_reason = str(
+            (getattr(answer, "rag_metric_absence", {}) or {}).get("reason") or ""
+        )
+        if absence_reason:
+            metric_summary["absence_reason_qids"].setdefault(absence_reason, []).append(qid)
+        if str(getattr(answer, "rag_metric_confidence", "") or "").casefold() == "low":
+            metric_summary["low_confidence_qids"].append(qid)
+        metric_contract = str(metric_audit.get("metric_contract") or "legacy")
+        metric_summary["contract_qids"].setdefault(metric_contract, []).append(qid)
         metric_rows = int(metric_audit.get("metric_row_count", 0) or 0)
         if metric_rows:
             metric_summary["qids_with_metric_rows"].append(qid)
@@ -666,7 +804,8 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         ]
         if retry_attempts:
             retrieval["retried_qids"].append(qid)
-            if answer.final_answer:
+            retry_improved = _retry_improved(attempts)
+            if retry_improved is True or (retry_improved is None and answer.final_answer):
                 retrieval["retry_helped_qids"].append(qid)
             else:
                 retrieval["retry_unresolved_qids"].append(qid)
@@ -683,6 +822,28 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         "quality_grade_qids": {
             grade: sorted(qids) for grade, qids in quality_grade_qids.items()
         },
+        "publication_status_stats": publication_status_stats,
+        "publication_status_qids": {
+            status: sorted(qids) for status, qids in publication_status_qids.items()
+        },
+        "publication_reason_stats": dict(sorted(publication_reason_stats.items())),
+        "publication_reason_qids": {
+            reason: sorted(qids)
+            for reason, qids in sorted(publication_reason_qids.items())
+        },
+        "publication_issue_stats": dict(sorted(publication_issue_stats.items())),
+        "publication_issue_qids": {
+            issue: sorted(qids)
+            for issue, qids in sorted(publication_issue_qids.items())
+        },
+        "customer_answer_count": len(customer_answer_qids),
+        "customer_answer_qids": sorted(customer_answer_qids),
+        "review_exported_count": len(review_exported_qids),
+        "review_exported_qids": sorted(review_exported_qids),
+        "rejected_candidate_count": len(rejected_candidate_qids),
+        "rejected_candidate_qids": sorted(rejected_candidate_qids),
+        "json_xlsx_answer_parity": not parity_mismatch_qids,
+        "json_xlsx_answer_parity_mismatch_qids": sorted(parity_mismatch_qids),
         "coverage_reason_stats": dict(sorted(coverage_reason_stats.items())),
         "coverage_reason_qids": {
             reason: sorted(qids) for reason, qids in sorted(coverage_reason_qids.items())
@@ -707,6 +868,14 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             "failure_code_stats": dict(sorted(rag_failure_code_stats.items())),
             "failure_code_qids": {
                 code: sorted(qids) for code, qids in sorted(rag_failure_code_qids.items())
+            },
+            "upstream_insufficient": {
+                "count": len(set(upstream_insufficient_qids)),
+                "qids": sorted(set(upstream_insufficient_qids)),
+                "failure_code_qids": {
+                    code: sorted(set(qids))
+                    for code, qids in sorted(upstream_insufficient_failure_qids.items())
+                },
             },
             "contract_violation_count": sum(
                 len(qids) for qids in rag_contract_violation_qids.values()
@@ -741,6 +910,19 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             "all_numeric_facts_conflicted_qids": sorted(
                 set(metric_summary["all_numeric_facts_conflicted_qids"])
             ),
+            "status_qids": {
+                status: sorted(set(qids))
+                for status, qids in sorted(metric_summary["status_qids"].items())
+            },
+            "absence_reason_qids": {
+                reason: sorted(set(qids))
+                for reason, qids in sorted(metric_summary["absence_reason_qids"].items())
+            },
+            "low_confidence_qids": sorted(set(metric_summary["low_confidence_qids"])),
+            "contract_qids": {
+                contract: sorted(set(qids))
+                for contract, qids in sorted(metric_summary["contract_qids"].items())
+            },
         },
         "provenance_fallback": {
             "count": len(set(provenance_fallback_qids)),
@@ -787,14 +969,47 @@ def _combined_filename_number(filename: str, output_date: str) -> int | None:
     return int(match.group("number"))
 
 
+def _retry_improved(attempts: list[dict[str, Any]]) -> bool | None:
+    result_attempts = [
+        attempt
+        for attempt in attempts
+        if str(attempt.get("answer_status", "") or "")
+    ]
+    if len(result_attempts) < 2:
+        return None
+    status_rank = {
+        "high_confidence": 5,
+        "medium_confidence": 4,
+        "thin_but_usable": 3,
+        "insufficient": 2,
+        "no_evidence": 1,
+    }
+    metric_rank = {"found_table": 2, "not_found": 1, "not_expected": 0}
+
+    def quality(attempt: dict[str, Any]) -> tuple[int, int, int, int, int, float]:
+        return (
+            status_rank.get(str(attempt.get("answer_status", "") or "").casefold(), 0),
+            metric_rank.get(str(attempt.get("metric_status", "") or "").casefold(), 0),
+            int(attempt.get("metric_primary_block_count", 0) or 0),
+            len(attempt.get("covered_facets", []) or []),
+            int(attempt.get("eligible_item_count", 0) or 0),
+            float(attempt.get("retrieval_confidence", 0.0) or 0.0),
+        )
+
+    return quality(result_attempts[-1]) > quality(result_attempts[0])
+
+
 def _combined_status(answer: Any) -> str:
     answer_status = getattr(getattr(answer, "qa", None), "status", "") or "unknown"
     evidence_status = getattr(answer, "answer_status", "") or "UNKNOWN"
     quality = resolved_answer_quality(answer)
+    publication = resolved_publication_decision(answer)
     return (
         f"Answer: {answer_status}\n"
         f"Consumer Decision: {getattr(answer, 'consumer_decision', '') or 'unknown'}\n"
         f"QA Grade: {quality.grade}\n"
+        f"Publication: {publication.status}\n"
+        f"Publication Reason: {publication.reason}\n"
         f"Coverage: {quality.reason}\n"
         f"RAG Coverage: {getattr(answer, 'rag_coverage_status', '') or 'unknown'}\n"
         f"Answerable: {getattr(answer, 'rag_answerable', None)}\n"

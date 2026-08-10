@@ -1,0 +1,110 @@
+{
+  "run_id": "publication_workbook",
+  "company": {
+    "company_id": "company",
+    "company_name": "Company",
+    "year": 2026
+  },
+  "template_selection": {
+    "template_version": "v1",
+    "question_count": 1
+  },
+  "answers": [
+    {
+      "qid": "Q075",
+      "source_id": "EBX-Q-075",
+      "category": "",
+      "question": "",
+      "answer_status": "medium_confidence",
+      "rag_pillar": "",
+      "rag_retrieval_confidence": null,
+      "rag_coverage_status": "",
+      "rag_answerable": null,
+      "rag_covered_facets": [],
+      "rag_missing_facets": [],
+      "rag_coverage": {},
+      "rag_failure_code": "",
+      "rag_failure_reason": "",
+      "rag_retrieval_notes": [],
+      "rag_contract_violations": [],
+      "rag_contract_warnings": [],
+      "rag_metric_expected": null,
+      "rag_metric_status": "",
+      "rag_metric_confidence": "",
+      "rag_metric_summary": {},
+      "rag_metric_absence": {},
+      "rag_metric_evidence": [
+        {
+          "table_block": "Committee activity",
+          "raw_evidence_ko": "Committee meetings | 2025=4",
+          "facts": [
+            {
+              "metric": "Committee meetings",
+              "period": "2025",
+              "value": "4"
+            }
+          ]
+        }
+      ],
+      "rag_narrative_evidence": [],
+      "consumer_decision": "blocked_evidence",
+      "upstream_hints": {},
+      "upstream_coverage_mismatch": false,
+      "metric_audit": {},
+      "result_bucket": null,
+      "draft_answer": "",
+      "final_answer": "A supported answer that still needs human review.",
+      "last_rejected_answer": "",
+      "qa_failure_stage": "",
+      "sanitizer_actions": [],
+      "evidence_summary": "",
+      "sources": [],
+      "claim_support": [],
+      "qa": {
+        "status": "passed",
+        "notes": [
+          "missing expected metric dimension: activity_count"
+        ]
+      },
+      "agent_profile": "general_section",
+      "skill_key": "general_section",
+      "skill_name": "",
+      "skill_version": "",
+      "skill_source_path": "",
+      "skill_selection_reason": "",
+      "skill_checks": [],
+      "disclosure_flags": [],
+      "hard_failures": [],
+      "quality_flags": [],
+      "revision_count": 0,
+      "retrieval_attempts": [],
+      "raw_rag_result": {},
+      "qa_grade": "partial",
+      "coverage_reason": "missing_metric_or_period",
+      "coverage_issues": [
+        "missing_metric_or_period"
+      ],
+      "publication_status": "review_required",
+      "publication_reason": "missing_metric_or_period",
+      "publication_issues": [
+        "qa_grade:partial"
+      ]
+    }
+  ],
+  "stats": {
+    "answered": 1,
+    "empty": 0,
+    "weak": 0,
+    "failed": 0
+  },
+  "quantitative_results": [],
+  "quantitative_stats": {},
+  "output_paths": {
+    "json": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_targeted_3\\test_review_answer_stays_in_js0\\company\\2026\\publication_workbook\\qualitative_run.json",
+    "coverage_summary": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_targeted_3\\test_review_answer_stays_in_js0\\company\\2026\\publication_workbook\\coverage_summary.json",
+    "excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_targeted_3\\test_review_answer_stays_in_js0\\company\\2026\\publication_workbook\\qualitative_audit.xlsx",
+    "combined_excel": "F:\\MY_PROJECT\\esg-report-langgraph\\.pytest_tmp\\implement_targeted_3\\test_review_answer_stays_in_js0\\company\\2026\\publication_workbook\\[langgraph][Company]report-2026.08.10_1.xlsx"
+  },
+  "provenance": {},
+  "rag_request_traces": []
+}

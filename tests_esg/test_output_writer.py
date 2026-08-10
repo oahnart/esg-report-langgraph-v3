@@ -155,6 +155,63 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
     assert coverage["rag"]["request_ids"] == ["rag-req-1"]
 
 
+def test_output_writer_adds_full_rag_metric_evidence_sheet(tmp_path):
+    artifacts = RunArtifacts(
+        run_id="run_metric_sheet",
+        company={"company_id": "c", "company_name": "C", "year": 2025},
+        template_selection={"template_version": "template_v1", "question_count": 1},
+        stats={"answered": 1, "empty": 0, "weak": 0, "failed": 0},
+        answers=[
+            AnswerRecord(
+                qid="Q039",
+                answer_status="medium_confidence",
+                rag_metric_expected=True,
+                rag_metric_status="found_table",
+                rag_metric_evidence=[
+                    {
+                        "table_block": "Water > Pharm",
+                        "block_rank": 1,
+                        "block_role": "primary",
+                        "entity": "Daewoong Pharm",
+                        "entity_class": "daewoong_pharm",
+                        "metric_form": "table_row",
+                        "raw_evidence_ko": "Water use | ton | 2025=10",
+                        "facts": [{"metric": "Water use", "period": "2025", "value": "10"}],
+                        "source_name": "metrics.xlsx",
+                        "source_path": "ESG/metrics.xlsx",
+                        "locator": {"sheet_name": "Water", "cell_range": "A1:D1"},
+                    },
+                    {
+                        "table_block": "Water > Pharm",
+                        "block_rank": 1,
+                        "block_role": "denominator",
+                        "entity": "Daewoong Pharm",
+                        "entity_class": "daewoong_pharm",
+                        "metric_form": "table_row",
+                        "raw_evidence_ko": "Sales | KRW | 2025=100",
+                        "facts": [],
+                    },
+                ],
+                final_answer="Water use was reported.",
+                qa=QAResult(status="passed"),
+            )
+        ],
+    )
+
+    written = OutputWriter(tmp_path).write(artifacts)
+    audit_book = load_workbook(written.output_paths["excel"])
+    combined_book = load_workbook(written.output_paths["combined_excel"])
+
+    assert "RAG Metric Evidence" in audit_book.sheetnames
+    assert combined_book.sheetnames == ["Qualitative"]
+    metric_sheet = audit_book["RAG Metric Evidence"]
+    assert metric_sheet.max_row == 3
+    assert metric_sheet["A2"].value == "Q039"
+    assert metric_sheet["F2"].value == "primary"
+    assert metric_sheet["F3"].value == "denominator"
+    assert "Water use" in metric_sheet["K2"].value
+
+
 def test_output_writer_cleans_illegal_excel_characters(tmp_path):
     artifacts = RunArtifacts(
         run_id="run_test",
@@ -202,12 +259,32 @@ def test_excel_formula_neutralization_does_not_change_json(tmp_path):
         template_selection={"template_version": "template_v1", "question_count": 1},
         stats={"answered": 1, "empty": 0, "weak": 0, "failed": 0},
         answers=[
-            AnswerRecord(
-                qid="Q001",
-                final_answer="=1+1",
-                evidence_summary="@SUM(A1:A2)",
-                qa=QAResult(status="passed", notes=["grounded"]),
-            )
+                AnswerRecord(
+                    qid="Q001",
+                    answer_status="high_confidence",
+                    final_answer="=1+1",
+                    evidence_summary="@SUM(A1:A2)",
+                    sources=[
+                        {
+                            "source_name": "source.pdf",
+                            "source_path": "ESG/source.pdf",
+                            "canonical_source_id": "src_formula",
+                            "source_tier": "tier_1_governing",
+                            "document_status": "governing",
+                        }
+                    ],
+                    claim_support=[
+                        ClaimSupport(
+                            claim_id="c1",
+                            claim_text="=1+1",
+                            source_ids=["src_formula"],
+                            support_tier="tier_1_governing",
+                            support_status="grounded",
+                        )
+                    ],
+                    qa=QAResult(status="passed", notes=["grounded"]),
+                    qa_grade="full",
+                )
         ],
     )
 
@@ -313,9 +390,26 @@ def _combined_artifacts(run_id, company_name="C"):
                 rag_answerable=True,
                 rag_covered_facets=["accountable_body", "role"],
                 final_answer="=unsafe",
+                qa_grade="full",
+                coverage_reason="complete_answer",
                 evidence_summary="prompt evidence",
-                sources=[{"source_name": "report.pdf", "source_path": "ESG/report.pdf"}],
+                sources=[{
+                    "source_name": "report.pdf",
+                    "source_path": "ESG/report.pdf",
+                    "canonical_source_id": "src_report",
+                    "source_tier": "tier_2_operational",
+                    "document_status": "approved",
+                }],
                 qa=QAResult(status="passed", notes=[]),
+                claim_support=[
+                    ClaimSupport(
+                        claim_id="c1",
+                        claim_text="=unsafe",
+                        source_ids=["src_report"],
+                        support_tier="tier_2_operational",
+                        support_status="grounded",
+                    )
+                ],
                 skill_name="ESG writer",
                 skill_version="1",
                 skill_selection_reason="matched topic",

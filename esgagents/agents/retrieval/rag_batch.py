@@ -6,6 +6,7 @@ from typing import Any
 from esgagents.rag_client import TeamRagClient
 from esgagents.schemas import (
     EvidenceItem,
+    MetricEvidenceItem,
     NormalizedCompany,
     RagQuestionResult,
     RagRequestTrace,
@@ -157,18 +158,39 @@ class RagBatchAgent:
         }
 
     def _should_retry(self, result: RagQuestionResult | None) -> bool:
-        if result is None or not result.items:
+        if result is None:
+            return True
+        if result.metric_status == "not_found":
+            return bool(
+                result.metric_absence
+                and result.metric_absence.reason
+                in {"no_candidate", "below_threshold", "blocked_by_gate"}
+            )
+        if result.metric_status == "found_table":
+            return not any(
+                item.block_role == "primary"
+                and bool(item.entity_class.strip() or item.entity.strip())
+                for item in result.metric_evidence
+            ) or bool(result.client_contract_violations)
+        if not result.items:
             return True
         if result.is_v3:
             return (
                 result.answer_status.strip().casefold() in {"insufficient", "no_evidence"}
                 or bool(result.client_contract_violations)
+                or bool(result.missing_facets)
+                or str(result.coverage_status or "").casefold() == "partial"
             )
         return not self._eligible_retry_items(result.items)
 
     def _retry_reason(self, result: RagQuestionResult | None) -> str:
         if result is None:
             return "missing RAG result"
+        if result.metric_status == "not_found":
+            absence_reason = result.metric_absence.reason if result.metric_absence else "unknown"
+            return f"metric_not_found:{absence_reason}"
+        if result.metric_status == "found_table" and not result.metric_evidence:
+            return "found_table_without_metric_evidence"
         if result.is_v3:
             if result.client_contract_violations:
                 return "v3 contract violation"
@@ -205,6 +227,15 @@ class RagBatchAgent:
             "request_id": response.request_id,
             "item_count": len(result.items),
             "eligible_item_count": eligible_count,
+            "metric_status": result.metric_status,
+            "metric_evidence_row_count": len(result.metric_evidence),
+            "metric_primary_block_count": len(
+                {
+                    item.table_block
+                    for item in result.metric_evidence
+                    if item.block_role == "primary"
+                }
+            ),
         }
 
     def _request_trace(
@@ -257,6 +288,8 @@ class RagBatchAgent:
             return retry
         if original.is_v3 or retry.is_v3:
             preferred, secondary = self._preferred_v3_result(original, retry)
+            if preferred is original:
+                return original
         else:
             preferred, secondary = retry, original
         seen: set[tuple[str, str]] = set()
@@ -267,7 +300,25 @@ class RagBatchAgent:
                 continue
             seen.add(key)
             merged_items.append(item)
-        return preferred.model_copy(update={"items": merged_items})
+        merged_metric_evidence = self._merge_metric_evidence(
+            preferred.metric_evidence,
+            secondary.metric_evidence,
+        )
+        narrative_seen: set[tuple[str, str]] = set()
+        merged_narrative = []
+        for item in [*preferred.narrative_evidence, *secondary.narrative_evidence]:
+            key = self._evidence_dedup_key(item)
+            if key in narrative_seen:
+                continue
+            narrative_seen.add(key)
+            merged_narrative.append(item)
+        return preferred.model_copy(
+            update={
+                "items": merged_items,
+                "metric_evidence": merged_metric_evidence,
+                "narrative_evidence": merged_narrative,
+            }
+        )
 
     def _preferred_v3_result(
         self,
@@ -282,7 +333,7 @@ class RagBatchAgent:
             "no_evidence": 1,
         }
 
-        def quality(result: RagQuestionResult) -> tuple[int, int, int, int, float]:
+        def quality(result: RagQuestionResult) -> tuple[int, int, int, int, int, int, float]:
             eligible = self._eligible_retry_items(result.items)
             preferred_source_count = sum(
                 str(getattr(item, "source_tier", "") or "")
@@ -290,8 +341,24 @@ class RagBatchAgent:
                 for item in eligible
             )
             structured_fact_count = sum(len(getattr(item, "facts", []) or []) for item in eligible)
+            primary_blocks = len(
+                {
+                    item.table_block
+                    for item in result.metric_evidence
+                    if item.block_role == "primary"
+                }
+            )
+            metric_rank = (
+                2
+                if result.metric_status == "found_table" and primary_blocks
+                else 1
+                if result.metric_status == "found_table"
+                else 0
+            ) if result.metric_expected else 0
             return (
+                metric_rank,
                 status_rank.get(result.answer_status.strip().casefold(), 0),
+                primary_blocks,
                 preferred_source_count,
                 structured_fact_count,
                 len(eligible),
@@ -299,6 +366,26 @@ class RagBatchAgent:
             )
 
         return (retry, original) if quality(retry) > quality(original) else (original, retry)
+
+    @staticmethod
+    def _merge_metric_evidence(
+        preferred: list[MetricEvidenceItem],
+        secondary: list[MetricEvidenceItem],
+    ) -> list[MetricEvidenceItem]:
+        seen: set[tuple[str, str, str, str]] = set()
+        merged: list[MetricEvidenceItem] = []
+        for item in [*preferred, *secondary]:
+            key = (
+                item.table_block.strip(),
+                item.block_role or "",
+                item.entity_class.strip() or item.entity.strip(),
+                evidence_fingerprint(item.raw_evidence_ko),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(item)
+        return merged
 
     @staticmethod
     def _evidence_dedup_key(item: EvidenceItem) -> tuple[str, str]:

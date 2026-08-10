@@ -11,6 +11,8 @@ DATA_GAP_TERMS = (
     "not disclosed",
     "not provided",
     "not available",
+    "no quantitative figure",
+    "quantitative figure was not",
     "공개되지",
     "제공되지",
     "명시되어 있지",

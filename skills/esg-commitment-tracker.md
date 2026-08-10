@@ -48,7 +48,7 @@ When evidence contains a risk, delay, revision, missed milestone, or dependency,
 When evidence contains memberships, standards, or certifications, state only the evidenced participation or certification status. Do not imply compliance, assurance, or external validation beyond the evidence.
 
 LANGUAGE AND QUALITY RULES
-Follow the requested output language. Use formal, factual language and avoid promotional wording. Mention an evidence-supported limitation only when it is necessary to answer the question; otherwise omit it.
+Follow the requested output language. Use formal, factual language and avoid promotional wording. Keep evidence gaps, missing facets, review status, and confirmation needs out of `final_answer`; record them only as quality flags. If no supported answer content remains, return an empty `final_answer`.
 
 Before returning the answer, verify that every claim is supported by the supplied evidence and that the answer contains only the qualitative ESG response.
 ```
