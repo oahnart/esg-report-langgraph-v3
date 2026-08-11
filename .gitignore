@@ -24,5 +24,8 @@ data/cache/
 
 node_modules
 
-.pytest_tmp
+.pytest_tmp/
 .codex_tmp
+
+
+.pytest_tmp_*

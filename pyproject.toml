@@ -32,3 +32,6 @@ skills = ["*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests_esg"]
+addopts = "--basetemp=.pytest_tmp/current"
+tmp_path_retention_policy = "failed"
+tmp_path_retention_count = 3

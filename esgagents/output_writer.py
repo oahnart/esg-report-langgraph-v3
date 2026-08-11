@@ -207,21 +207,39 @@ class OutputWriter:
         year: int,
         run_id: str,
     ) -> RunArtifacts | None:
-        output_root, run_dir = self._resolve_run_dir(company_id, year, run_id)
-        json_path = run_dir / "qualitative_run.json"
-        if not json_path.is_file():
-            return None
-        try:
-            with json_path.open("r", encoding="utf-8") as handle:
-                artifacts = RunArtifacts.model_validate(json.load(handle))
-            paths = [Path(value).resolve() for value in artifacts.output_paths.values()]
-            if not paths or any(not path.is_file() for path in paths):
-                return None
-            for path in paths:
-                path.relative_to(output_root)
-            return artifacts
-        except (OSError, ValueError, TypeError):
-            return None
+        output_root = self.output_dir.resolve()
+        safe_company_id = validate_identifier(str(company_id), "company_id")
+        safe_run_id = validate_identifier(str(run_id), "run_id")
+        company_root = output_root / safe_company_id
+        candidates = [
+            path
+            for date_dir in company_root.glob("????_??_??")
+            for path in [date_dir / safe_run_id]
+        ]
+        # Keep runs written before the date-directory layout readable for retries.
+        candidates.append(company_root / str(int(year)) / safe_run_id)
+        for run_dir in candidates:
+            json_path = run_dir / "qualitative_run.json"
+            if not json_path.is_file():
+                continue
+            try:
+                with json_path.open("r", encoding="utf-8") as handle:
+                    artifacts = RunArtifacts.model_validate(json.load(handle))
+                if (
+                    str(artifacts.company.get("company_id")) != safe_company_id
+                    or int(artifacts.company.get("year")) != int(year)
+                    or artifacts.run_id != safe_run_id
+                ):
+                    continue
+                paths = [Path(value).resolve() for value in artifacts.output_paths.values()]
+                if not paths or any(not path.is_file() for path in paths):
+                    continue
+                for path in paths:
+                    path.relative_to(output_root)
+                return artifacts
+            except (OSError, ValueError, TypeError):
+                continue
+        return None
 
     def write(
         self,
@@ -318,7 +336,10 @@ class OutputWriter:
         output_root = self.output_dir.resolve()
         safe_company_id = validate_identifier(str(company_id), "company_id")
         safe_run_id = validate_identifier(str(run_id), "run_id")
-        run_dir = (output_root / safe_company_id / str(int(year)) / safe_run_id).resolve()
+        run_dir = (output_root / safe_company_id / self._output_folder_date() / safe_run_id).resolve()
+        legacy_run_dir = (output_root / safe_company_id / str(int(year)) / safe_run_id).resolve()
+        if legacy_run_dir.is_dir() and not run_dir.exists():
+            run_dir = legacy_run_dir
         try:
             comparable_root = os.path.normcase(os.path.normpath(str(output_root))).removeprefix("\\\\?\\")
             comparable_run = os.path.normcase(os.path.normpath(str(run_dir))).removeprefix("\\\\?\\")
@@ -810,12 +831,12 @@ class OutputWriter:
         run_dir: Path,
     ) -> tuple[Path, Path]:
         output_date = self._output_date()
-        company_year_root = output_root / company_id / str(year)
-        reservation_dir = company_year_root / ".filename_reservations"
+        company_root = output_root / company_id
+        reservation_dir = company_root / ".filename_reservations"
         reservation_dir.mkdir(parents=True, exist_ok=True)
         used_numbers = {
             number
-            for path in company_year_root.rglob("*.xlsx")
+            for path in company_root.rglob("*.xlsx")
             if (number := _combined_filename_number(path.name, output_date)) is not None
         }
         for lock_path in reservation_dir.glob(f"{output_date}_*.lock"):
@@ -834,7 +855,7 @@ class OutputWriter:
                 os.close(descriptor)
                 if any(
                     _combined_filename_number(path.name, output_date) == number
-                    for path in company_year_root.rglob("*.xlsx")
+                    for path in company_root.rglob("*.xlsx")
                 ):
                     reservation_path.unlink(missing_ok=True)
                     number += 1
@@ -857,6 +878,9 @@ class OutputWriter:
         else:
             current = current.astimezone(timezone)
         return current.strftime("%Y.%m.%d")
+
+    def _output_folder_date(self) -> str:
+        return self._output_date().replace(".", "_")
 
     def _append_excel_row(self, ws, values: list[Any]) -> None:
         is_empty_sheet = ws.max_row == 1 and ws.max_column == 1 and ws["A1"].value is None

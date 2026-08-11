@@ -542,7 +542,7 @@ flowchart TD
 Sau khi generate thanh cong, output duoc ghi vao:
 
 ```text
-data/outputs/{company_id}/{year}/{run_id}/
+data/outputs/{company_id}/YYYY_MM_DD/{run_id}/
   qualitative_run.json
   qualitative_audit.xlsx
   [langgraph][company_name]report-YYYY.MM.DD_N.xlsx
