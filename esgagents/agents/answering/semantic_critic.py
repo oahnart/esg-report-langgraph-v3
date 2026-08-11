@@ -16,7 +16,7 @@ from esgagents.agents.evidence.metric_facts import (
     conflicting_metric_claims,
     metric_facts_supporting_claim,
     salvage_conflicting_metric_claims,
-    salvage_unsupported_numeric_metric_claims,
+    salvage_metric_narrative_without_values,
 )
 from esgagents.schemas import QAResult, SemanticReview
 from skills.agents.context_builder import compact
@@ -260,15 +260,30 @@ class SemanticCompletenessCriticAgent:
             metric_support_actions: list[str] = []
             metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
             if metric_status in {"found_table", "not_found"}:
-                numeric_metric_audit = (
-                    {**normalized.get("metric_audit", {}), "accepted_facts": []}
-                    if metric_status == "found_table"
-                    else normalized.get("metric_audit", {})
-                )
-                answer, metric_support_actions = salvage_unsupported_numeric_metric_claims(
+                numeric_metric_audit = {
+                    **normalized.get("metric_audit", {}),
+                    "accepted_facts": [],
+                }
+                answer, metric_support_actions = salvage_metric_narrative_without_values(
                     answer,
                     numeric_metric_audit,
                 )
+                if not answer and evidence_items:
+                    from skills.agents.writer import SkillWriterAgent
+
+                    answer, fallback_flags = SkillWriterAgent._metric_narrative_fallback(
+                        {
+                            "question": str(getattr(item, "item_ko", "") or ""),
+                            "description": str(getattr(item, "description_ko", "") or ""),
+                            "evidence_items": evidence_items,
+                            "output_language": output_language,
+                        }
+                    )
+                    if answer:
+                        metric_support_actions.append("restored_qualitative_narrative")
+                        quality_flags[qid] = sorted(
+                            set(quality_flags.get(qid, []) + fallback_flags)
+                        )
             if (
                 evidence_items
                 and "metric_audit" in normalized
@@ -296,6 +311,22 @@ class SemanticCompletenessCriticAgent:
                 *conflict_actions,
                 *support_actions,
             ]
+            if metric_status in {"found_table", "not_found"} and not answer and evidence_items:
+                from skills.agents.writer import SkillWriterAgent
+
+                answer, fallback_flags = SkillWriterAgent._metric_narrative_fallback(
+                    {
+                        "question": str(getattr(item, "item_ko", "") or ""),
+                        "description": str(getattr(item, "description_ko", "") or ""),
+                        "evidence_items": evidence_items,
+                        "output_language": output_language,
+                    }
+                )
+                if answer:
+                    salvage_actions.append("restored_qualitative_narrative")
+                    quality_flags[qid] = sorted(
+                        set(quality_flags.get(qid, []) + fallback_flags)
+                    )
             if salvage_actions:
                 sanitizer_actions[qid] = sorted(
                     set(sanitizer_actions.get(qid, []) + salvage_actions)
@@ -487,6 +518,12 @@ class SemanticCompletenessCriticAgent:
             review = reviews[qid]
             contract = build_question_contract(item)
             flags = quality_flags.setdefault(qid, [])
+            item_metric_status = str(
+                getattr(state.get("rag_results", {}).get(qid), "metric_status", "")
+                or ""
+            ).casefold()
+            if item_metric_status == "not_found":
+                flags.extend(["metric_not_found", "partial_answer"])
             draft_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_4_draft" and support.support_status in {"grounded", "partial"}]
             assessment_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_3_assessment" and support.support_status in {"grounded", "partial"}]
             if draft_claims or self._draft_only_sources(state, qid):
@@ -639,14 +676,7 @@ class SemanticCompletenessCriticAgent:
                 covered.append("qualitative_narrative")
             else:
                 missing.append("qualitative_narrative")
-            missing.extend(("metric_result", "reporting_period"))
             advisory_missing_dimensions = []
-            for dimension in contract.metric_dimensions:
-                facet = f"metric_{dimension}"
-                if self._has_metric_dimension(answer, dimension):
-                    covered.append(facet)
-                else:
-                    advisory_missing_dimensions.append(facet)
         elif contract.pillar == "metrics" and metric_status == "found_table":
             if self._has_non_gap_statement(answer):
                 covered.append("qualitative_narrative")

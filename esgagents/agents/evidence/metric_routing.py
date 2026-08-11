@@ -117,14 +117,14 @@ def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
     if result.metric_status == "found_table":
         return _dedupe([*result.narrative_evidence])
     if result.metric_status == "not_found":
+        # Contract §2c: the numeric cells remain empty and the qualitative
+        # answer comes from legacy items[] only. narrative_evidence belongs to
+        # the found_table interpretation path and must not leak into this one.
         return _dedupe(
             [
-                *result.narrative_evidence,
-                *[
-                    item
-                    for item in result.items
-                    if item.semantic_label.strip().casefold() != "metric_row"
-                ],
+                item
+                for item in result.items
+                if item.semantic_label.strip().casefold() != "metric_row"
             ]
         )
     return _dedupe(result.items)

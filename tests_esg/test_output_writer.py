@@ -2,6 +2,7 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -15,6 +16,7 @@ from esgagents.output_writer import (
     OutputRunExistsError,
     OutputWriter,
     QUANTITATIVE_COLUMNS,
+    _metric_excel_value,
     build_coverage_summary,
     clean_excel_text,
 )
@@ -31,6 +33,12 @@ from esgagents.schemas import (
 def _audit_value(worksheet, column_name, row=2):
     column = AUDIT_COLUMNS.index(column_name) + 1
     return worksheet.cell(row=row, column=column).value
+
+
+def test_metric_excel_value_rounds_display_precision_without_decimal_artifacts():
+    assert _metric_excel_value("0.000000000000000000") == 0
+    assert _metric_excel_value("12771.822287491") == 12771.822287
+    assert _metric_excel_value("10.500000") == 10.5
 
 
 def test_output_writer_creates_json_and_excel_audit(tmp_path):
@@ -551,11 +559,7 @@ def test_excel_formula_neutralization_does_not_change_json(tmp_path):
     written = OutputWriter(tmp_path).write(artifacts)
     workbook = load_workbook(written.output_paths["excel"], data_only=False)
     worksheet = workbook["Qualitative Audit"]
-    payload = json.loads(
-        (tmp_path / "c" / "2025" / "run_formula" / "qualitative_run.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    payload = json.loads(Path(written.output_paths["json"]).read_text(encoding="utf-8"))
 
     final_answer_cell = worksheet.cell(row=2, column=AUDIT_COLUMNS.index("Final Answer") + 1)
     assert final_answer_cell.value == "'=1+1"
@@ -575,7 +579,7 @@ def test_output_writer_rejects_existing_run_without_overwriting(tmp_path):
     )
     writer = OutputWriter(tmp_path)
     written = writer.write(artifacts)
-    json_path = tmp_path / "c" / "2025" / "run_existing" / "qualitative_run.json"
+    json_path = Path(written.output_paths["json"])
     original = json_path.read_bytes()
 
     with pytest.raises(OutputRunExistsError, match="output run already exists"):
@@ -594,7 +598,7 @@ def test_output_writer_temporal_retry_reuses_complete_existing_run(tmp_path):
     )
     writer = OutputWriter(tmp_path)
     first = writer.write(artifacts)
-    json_path = tmp_path / "c" / "2025" / "run_retry" / "qualitative_run.json"
+    json_path = Path(first.output_paths["json"])
     original = json_path.read_bytes()
 
     retried = writer.write(artifacts, retry_existing=True)
@@ -725,12 +729,11 @@ def test_output_writer_creates_two_sheet_combined_workbook_and_numbered_names(tm
     assert quantitative["A252"].value == "QUANT-0251"
     assert quantitative["D2"].value == 1
     assert quantitative.freeze_panes == "A2"
-    assert len(list((tmp_path / "c" / "2025" / "run_1").iterdir())) == 4
+    first_run_dir = Path(first.output_paths["json"]).parent
+    assert len(list(first_run_dir.iterdir())) == 4
 
     payload = json.loads(
-        (tmp_path / "c" / "2025" / "run_1" / "qualitative_run.json").read_text(
-            encoding="utf-8"
-        )
+        Path(first.output_paths["json"]).read_text(encoding="utf-8")
     )
     assert payload["quantitative_stats"] == {"total": 251, "filled": 1, "missing": 250}
     assert payload["output_paths"]["combined_excel"] == first_path

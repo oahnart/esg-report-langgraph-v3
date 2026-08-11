@@ -8,6 +8,7 @@ from esgagents.schemas import QAResult
 from esgagents.customer_text import strip_customer_meta_limitations
 
 from .text_quality import (
+    clean_customer_evidence_text,
     non_narrative_reason,
     normalize_answer_coherence,
 )
@@ -65,8 +66,18 @@ class OutputHygieneAgent:
             normalized = normalize_markdown(original) if original else ""
             flags = quality_flags.setdefault(qid, [])
             actions = sanitizer_actions.setdefault(qid, [])
+            planned = planned_by_id.get(qid)
             if original and normalized != original:
                 flags.append("markdown_normalized")
+
+            normalized, cleanup_actions = clean_customer_evidence_text(normalized)
+            if cleanup_actions:
+                flags.append("source_boilerplate_removed")
+                actions.extend(cleanup_actions)
+            normalized, question_actions = strip_leading_planned_context(normalized, planned)
+            if question_actions:
+                flags.append("question_context_removed")
+                actions.extend(question_actions)
 
             normalized, coherence_actions = normalize_answer_coherence(normalized)
             if coherence_actions:
@@ -78,7 +89,6 @@ class OutputHygieneAgent:
                 flags.append("customer_meta_limitation_removed")
                 actions.extend(limitation_actions)
 
-            planned = planned_by_id.get(qid)
             question_text = " ".join(
                 str(value or "")
                 for value in (
@@ -174,3 +184,16 @@ def sanitize_person_names(text: str) -> tuple[str, list[str]]:
 def redact_person_names(text: str) -> str:
     value, _ = sanitize_person_names(text)
     return value
+
+
+def strip_leading_planned_context(text: str, planned: Any | None) -> tuple[str, list[str]]:
+    value = str(text or "").strip()
+    if not value or planned is None:
+        return value, []
+    for field in ("item_ko", "description_ko"):
+        phrase = " ".join(str(getattr(planned, field, "") or "").split())
+        if len(phrase) < 10:
+            continue
+        if value.casefold().startswith(phrase.casefold()):
+            return value[len(phrase):].lstrip(" \t\r\n,;:-·•|"), ["removed_leading_question_context"]
+    return value, []

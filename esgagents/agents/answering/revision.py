@@ -22,7 +22,7 @@ from .attribution import (
 from esgagents.agents.evidence.metric_facts import (
     metric_facts_prompt_lines,
     salvage_conflicting_metric_claims,
-    salvage_unsupported_numeric_metric_claims,
+    salvage_metric_narrative_without_values,
 )
 from .question_contracts import build_question_contract
 from .revision_selection import eligible_revision_qids
@@ -121,12 +121,8 @@ class RevisionAgent:
                 metric_audit,
             )
             if metric_status in {"found_table", "not_found"}:
-                numeric_metric_audit = (
-                    {**metric_audit, "accepted_facts": []}
-                    if metric_status == "found_table"
-                    else metric_audit
-                )
-                revised, numeric_actions = salvage_unsupported_numeric_metric_claims(
+                numeric_metric_audit = {**metric_audit, "accepted_facts": []}
+                revised, numeric_actions = salvage_metric_narrative_without_values(
                     revised,
                     numeric_metric_audit,
                 )
@@ -151,6 +147,11 @@ class RevisionAgent:
                 state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
             )
             actions = sorted(set([*actions, *source_actions]))
+            if metric_status in {"found_table", "not_found"} and not revised:
+                revised, fallback_flags = self._deterministic_safe_fallback(state, qid)
+                revision_flags = self._with_flags(revision_flags, fallback_flags)
+                if revised:
+                    actions = sorted(set([*actions, "restored_qualitative_narrative"]))
             if revised and gate_reason == "accepted_draft_evidence" and not attribution_flags:
                 revised = attribute_draft_statement(revised, str(getattr(state.get("company"), "output_language", "") or ""))
                 attribution_flags.extend(["draft_attributed", "draft_based_answer"])
@@ -240,6 +241,32 @@ class RevisionAgent:
         if metric_fallback:
             return metric_fallback, ["structured_metric_fallback"]
 
+        normalized = state.get("normalized_evidence", {}).get(qid, {})
+        metric_status = str(
+            (normalized.get("metric_audit") or {}).get("metric_status") or ""
+        ).casefold()
+        planned = next(
+            (
+                item
+                for item in state.get("planned_questions", [])
+                if str(getattr(item, "id", "")) == qid
+            ),
+            None,
+        )
+        if metric_status in {"found_table", "not_found"}:
+            from skills.agents.writer import SkillWriterAgent
+
+            return SkillWriterAgent._metric_narrative_fallback(
+                {
+                    "question": str(getattr(planned, "item_ko", "") or ""),
+                    "description": str(getattr(planned, "description_ko", "") or ""),
+                    "evidence_items": normalized.get("items", []),
+                    "output_language": str(
+                        getattr(state.get("company"), "output_language", "") or ""
+                    ),
+                }
+            )
+
         notes = [
             str(note or "").strip().casefold()
             for note in getattr(state.get("qa_results", {}).get(qid), "notes", [])
@@ -257,15 +284,6 @@ class RevisionAgent:
         ):
             return "", []
 
-        normalized = state.get("normalized_evidence", {}).get(qid, {})
-        planned = next(
-            (
-                item
-                for item in state.get("planned_questions", [])
-                if str(getattr(item, "id", "")) == qid
-            ),
-            None,
-        )
         from skills.agents.writer import SkillWriterAgent
 
         evidence_fallback = SkillWriterAgent._evidence_fallback(
@@ -365,7 +383,7 @@ class RevisionAgent:
                 "- Cover every required facet that is explicitly supported by evidence.",
                 "- For metric_status=found_table, rewrite Final Answer only from narrative_evidence. Never copy accepted structured metric facts into Final Answer; they are exported to the separate Qualitative Table Metrics worksheet.",
                 "- Never use scope_variant or denominator rows in Final Answer.",
-                "- For metric_status=not_found, keep only a supported qualitative answer and add metric_not_found to quality_flags; never infer a figure from narrative evidence.",
+                "- For metric_status=not_found, use only supported qualitative content routed from non-metric items[], ignore narrative_evidence and normalized_answer_ko, add metric_not_found to quality_flags, and never infer a figure from prose.",
                 "- If evidence does not support a facet, keep only the supported portion and record the missing facet in quality_flags; do not describe the gap in final_answer. Return an empty final_answer when no safe supported answer remains.",
             ]
         )

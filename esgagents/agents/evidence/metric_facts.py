@@ -99,6 +99,100 @@ def salvage_unsupported_numeric_metric_claims(
     return " ".join(kept), actions
 
 
+def salvage_metric_narrative_without_values(
+    answer: str,
+    metric_audit: dict[str, Any],
+) -> tuple[str, list[str]]:
+    """Keep qualitative narrative while withholding unsupported metric values.
+
+    Unlike ``salvage_unsupported_numeric_metric_claims``, this metric-contract
+    helper does not discard an otherwise useful sentence merely because one
+    unsupported quantity appears in it. It preserves reporting years and ISO
+    identifiers, replaces other quantities with non-numeric wording, and only
+    drops a segment when no substantive prose remains.
+    """
+
+    del metric_audit  # Final-answer policy never publishes metric values.
+    statements = _metric_statements(answer)
+    if not statements:
+        return "", []
+    kept: list[str] = []
+    actions: list[str] = []
+    for index, statement in enumerate(statements, start=1):
+        had_numeric_claim = _has_substantive_numeric_claim(statement)
+        redacted = _redact_metric_quantities(statement)
+        if _is_substantive_qualitative_text(redacted) and not _has_substantive_numeric_claim(redacted):
+            kept.append(redacted)
+            if had_numeric_claim:
+                actions.append(f"redacted_claim:unsupported_metric:c{index}")
+            elif redacted != statement:
+                actions.append(f"cleaned_claim:metric_narrative:c{index}")
+        else:
+            actions.append(f"removed_claim:unsupported_metric:c{index}")
+    return " ".join(kept), actions
+
+
+def _redact_metric_quantities(statement: str) -> str:
+    value = unicodedata.normalize("NFKC", statement or "")
+    protected: list[str] = []
+
+    def protect(match: re.Match[str]) -> str:
+        protected.append(match.group(0))
+        return f"__METRIC_ALLOWED_{chr(0xE000 + len(protected) - 1)}__"
+
+    # Reporting years and formal standard identifiers are narrative context,
+    # not metric results. Preserve both full and abbreviated Korean years.
+    value = re.sub(r"\bISO\s*\d{4,5}\b", protect, value, flags=re.IGNORECASE)
+    value = re.sub(r"(?<!\d)(?:19|20)\d{2}\s*년", protect, value)
+    value = re.sub(r"(?<!\d)\d{2}\s*년", protect, value)
+
+    value = re.sub(r"https?://\S+", "", value)
+    value = re.sub(r"#(?:DIV/0!|VALUE!|REF!|N/A)", "", value, flags=re.IGNORECASE)
+    value = re.sub(
+        r"\d+(?:,\d{3})*(?:\.\d+)?\s*건으로\s*확인되었으며\s*"
+        r"\d+(?:,\d{3})*(?:\.\d+)?\s*건\s*모두\s*처리가\s*완료되었습니다",
+        "고충이 접수되었으며 접수 건 모두 처리가 완료되었습니다",
+        value,
+    )
+    value = re.sub(r"\d+(?:\.\d+)?\s*분의\s*\d+(?:\.\d+)?", "일정 비율", value)
+    value = re.sub(r"(?:총\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:명|인)", "복수의 인원", value)
+    value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개월(?:\s*이상)?", "일정 기간", value)
+    value = re.sub(r"(?:연|매년|반기)\s*\d+(?:\.\d+)?\s*회(?:\s*이상)?", "정기적으로", value)
+    value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*회(?:\s*이상)?", "정기적인 횟수로", value)
+    value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*건", "관련 건", value)
+    value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개(?:의)?", "여러 ", value)
+    value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*단계", "단계별", value)
+    value = re.sub(
+        r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*%(?=\s*(?:향상|절감|감소|증가))",
+        "",
+        value,
+    )
+    value = re.sub(r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*%", "해당 비율", value)
+    value = re.sub(
+        r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:톤|tCO2e?q?|GJ|kWh|MWh|L|mL|㎥|억원|백만원|원|KRW|USD)",
+        "해당 수준",
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(r"(?<![A-Za-z가-힣])\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z가-힣])", "", value)
+
+    for index, original in enumerate(protected):
+        value = value.replace(f"__METRIC_ALLOWED_{chr(0xE000 + index)}__", original)
+    value = re.sub(r"\b총\s+(?=복수의|여러|관련)", "", value)
+    value = re.sub(r"(?:연|반기)\s+(?=정기적으로)", "", value)
+    value = re.sub(r"(?:정기적으로\s*){2,}", "정기적으로 ", value)
+    value = re.sub(r"\s+([,.;:!?])", r"\1", value)
+    value = re.sub(r"([,;:])\s*\1+", r"\1", value)
+    value = re.sub(r"\s{2,}", " ", value)
+    return value.strip(" ,;:-")
+
+
+def _is_substantive_qualitative_text(value: str) -> bool:
+    if len(value.strip()) < 20:
+        return False
+    return len(re.findall(r"[A-Za-z가-힣]", value)) >= 8
+
+
 def _metric_statements(answer: str) -> list[str]:
     return [
         statement.strip()
@@ -130,6 +224,8 @@ def _has_substantive_numeric_claim(statement: str) -> bool:
             after.startswith("년")
             or not re.match(r"\s*(?:%|건|명|회|개|톤|tco2e|원|krw|usd)", after)
         ):
+            continue
+        if re.fullmatch(r"\d{2}", plain) and after.startswith("년"):
             continue
         return True
     return False

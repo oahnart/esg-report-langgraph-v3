@@ -4,7 +4,7 @@ import json
 import os
 import re
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
@@ -165,6 +165,8 @@ def _metric_excel_value(value: Any) -> Any:
         return value
     if abs(number) < Decimal("1e-12"):
         return 0
+    if number.as_tuple().exponent < -6:
+        number = number.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
     if number == number.to_integral_value():
         return int(number)
     return float(number)
@@ -593,7 +595,7 @@ class OutputWriter:
         worksheet.column_dimensions["A"].width = 46
         worksheet.column_dimensions["B"].width = 14
         for column in range(3, table_width + 1):
-            worksheet.column_dimensions[get_column_letter(column)].width = 14
+            worksheet.column_dimensions[get_column_letter(column)].width = 16
         worksheet.page_setup.orientation = "landscape"
         worksheet.page_setup.fitToWidth = 1
         worksheet.sheet_properties.pageSetUpPr.fitToPage = True
@@ -747,7 +749,7 @@ class OutputWriter:
                     wrap_text=cell.column <= 2,
                 )
                 if cell.column >= 3 and isinstance(cell.value, (int, float)):
-                    cell.number_format = "#,##0.########"
+                    cell.number_format = "#,##0.######"
             worksheet.row_dimensions[row[0].row].height = 24
 
         worksheet.append([" "])

@@ -27,9 +27,23 @@ DOCUMENT_NAV_TERMS = (
     "company profile",
     "business performance",
     "esg framework",
+    "esg journey",
+    "esg performance",
+    "human rights impact",
     "esg highlight",
     "sustainability performance",
     "appendix",
+)
+EDITORIAL_CUE_TERMS = (
+    "왼쪽처럼",
+    "오른쪽 그림 참고",
+    "체계 수정",
+    "도식화",
+    "업데이트 현재 그림",
+    "상세프로세스",
+    "name tag",
+    "원본 sr",
+    "참고 부탁드립니다",
 )
 START_CONNECTOR_RE = re.compile(r"^(?:또한|이에 따라|그리고|아울러)[,，]?\s*")
 ATTRIBUTION_PHRASES = (
@@ -53,12 +67,35 @@ INTRO_ONLY_RE = re.compile(
     r"(?:다음과\s*같습니다|다음과\s*같다|as\s+follows)\s*[:.]?\s*(?:\d+[.)]?)?\s*$",
     flags=re.IGNORECASE,
 )
+ARROW_EDITORIAL_RE = re.compile(r"[\u25c0\u25b6]\s*[^.!?\u3002\uff01\uff1f]{0,700}?[\u25c0\u25b6]")
+NAME_TAG_PREFIX_RE = re.compile(
+    r"^\s*\[name\s+tag\].{0,500}?(?=(?:대웅제약은|회사는|당사는|디지털\s*전환|정보보호\s*정책|그\s*결과|앞으로도)\b)",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+REPORT_NAV_RE = re.compile(
+    r"(?:[가-힣A-Za-z0-9_.()/-]{1,40}\s*)?(?:20\d{2}\s*)?지속가능경영보고서\s*\d*\s*"
+    r"(?:(?:COMPANY\s+OVERVIEW|COMPANY\s+PROFILE|BUSINESS\s+PERFORMANCE|ESG\s+JOURNEY|"
+    r"ESG\s+FRAMEWORK|ESG\s+HIGHLIGHT|ESG\s+PERFORMANCE|SUSTAINABILITY\s+PERFORMANCE|"
+    r"HUMAN\s+RIGHTS\s+IMPACT|APPENDIX)\s*)+",
+    flags=re.IGNORECASE,
+)
+SECTION_HEADING_RE = re.compile(
+    r"\b정보보안\s*및\s*개인정보\s*보호\s*보안사고\s*예방\s*및\s*대응\s*활동\b"
+)
+EDITORIAL_SENTENCE_RE = re.compile(
+    r"(?:왼쪽처럼|오른쪽\s*그림\s*참고|체계\s*수정|도식화|상세프로세스|"
+    r"업데이트\s*현재\s*그림|참고\s*부탁드립니다)",
+    flags=re.IGNORECASE,
+)
+
 
 def non_narrative_reason(text: str) -> str:
     value = " ".join(str(text or "").split())
     if not value:
         return ""
     lower = value.casefold()
+    if any(term.casefold() in lower[:500] for term in EDITORIAL_CUE_TERMS):
+        return "editorial_instruction_output"
     if any(term.casefold() in lower for term in RAW_TABLE_TERMS):
         return "raw_table_output"
     if LEADING_NUMBERED_BLOCK_RE.search(value):
@@ -134,6 +171,58 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
     return value, list(dict.fromkeys(actions))
 
 
+def clean_customer_evidence_text(text: str) -> tuple[str, list[str]]:
+    """Remove source/editorial boilerplate before deterministic answer fallback."""
+
+    value = str(text or "").strip()
+    actions: list[str] = []
+    if not value:
+        return "", []
+    lower = value.casefold()
+    cleanup_needed = (
+        bool(ARROW_EDITORIAL_RE.search(value))
+        or bool(NAME_TAG_PREFIX_RE.search(value))
+        or bool(REPORT_NAV_RE.search(value))
+        or bool(SECTION_HEADING_RE.search(value))
+        or any(term.casefold() in lower for term in EDITORIAL_CUE_TERMS)
+        or sum(term in lower for term in DOCUMENT_NAV_TERMS) >= 2
+    )
+    if not cleanup_needed:
+        return value, []
+
+    cleaned = ARROW_EDITORIAL_RE.sub(" ", value)
+    cleaned = NAME_TAG_PREFIX_RE.sub(" ", cleaned)
+    cleaned = REPORT_NAV_RE.sub(" ", cleaned)
+    cleaned = SECTION_HEADING_RE.sub(" ", cleaned)
+    for term in DOCUMENT_NAV_TERMS:
+        cleaned = re.sub(re.escape(term), " ", cleaned, flags=re.IGNORECASE)
+
+    segments = [
+        segment.strip(" \t\r\n,;:-·•")
+        for segment in re.split(r"(?<=[.!?\u3002\uff01\uff1f])\s+|\n+", cleaned)
+        if segment.strip(" \t\r\n,;:-·•")
+    ]
+    retained: list[str] = []
+    for segment in segments:
+        normalized = " ".join(segment.split())
+        lower = normalized.casefold()
+        if EDITORIAL_SENTENCE_RE.search(normalized):
+            continue
+        if sum(term in lower for term in DOCUMENT_NAV_TERMS) >= 2:
+            continue
+        if re.fullmatch(r"(?:[A-Z][A-Z\s&/-]{2,}|[0-9\s.]+)", normalized):
+            continue
+        retained.append(normalized)
+
+    result = " ".join(retained).strip()
+    result = re.sub(r"\s{2,}", " ", result)
+    result = re.sub(r"\s+([.!?\u3002\uff01\uff1f])", r"\1", result).strip()
+    if result != value:
+        actions.append("removed_source_boilerplate")
+    return result, actions
+
+
 def safe_narrative_text(text: str) -> str:
-    normalized, _ = normalize_answer_coherence(text)
+    cleaned, _ = clean_customer_evidence_text(text)
+    normalized, _ = normalize_answer_coherence(cleaned)
     return "" if non_narrative_reason(normalized) else normalized

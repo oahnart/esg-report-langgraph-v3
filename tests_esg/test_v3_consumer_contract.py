@@ -239,6 +239,54 @@ def test_found_table_writer_replaces_stub_with_narrative_evidence_fallback():
     assert "evidence_extract_fallback" in flags
 
 
+def test_found_table_writer_cleans_editorial_boilerplate_from_narrative_fallback():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(final_answer="1.", quality_flags=[])
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    question = "개인정보 침해 및 정보보안 사고 현황"
+    raw = (
+        f"{question} ◀ 왼쪽처럼 수직으로 체계 수정 가능한가요 "
+        "상세프로세스는 오른쪽 그림 참고 ▶ 대웅제약 2025 지속가능경영보고서 "
+        "64 COMPANY OVERVIEW ESG JOURNEY HUMAN RIGHTS IMPACT ESG PERFORMANCE APPENDIX "
+        "정보보안 및 개인정보보호 보안사고 예방 및 대응 활동 "
+        "디지털 전환이 빠르게 진행됨에 따라 정보보안 및 정보보호의 중요성이 증가함에 따라 "
+        "대웅제약은 글로벌 수준의 강력한 보안 체계를 지속 강화하고 있습니다. "
+        "정보보호 정책을 제정하고 매년 1회 이상 개정을 통해 보안 역량을 강화하고 있습니다."
+    )
+    context = {
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use only narrative evidence.",
+        "metric_audit": {"accepted_facts": []},
+        "question": question,
+        "description": "",
+        "evidence_items": [_item(raw, semantic_label="useful")],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id="Q019",
+        answer_status="medium_confidence",
+        metric_status="found_table",
+        metric_confidence="low",
+    )
+
+    answer, flags = SkillWriterAgent({}, LLM())._draft_answer(context, rag)
+
+    assert answer.startswith("디지털 전환이 빠르게 진행됨에 따라")
+    assert question not in answer
+    assert "◀" not in answer
+    assert "▶" not in answer
+    assert "왼쪽처럼" not in answer
+    assert "COMPANY OVERVIEW" not in answer
+    assert "APPENDIX" not in answer
+    assert "non_substantive_llm_output" in flags
+    assert "evidence_extract_fallback" in flags
+
+
 def test_evidence_fallback_prefers_question_relevant_claims():
     answer = SkillWriterAgent._evidence_fallback(
         {

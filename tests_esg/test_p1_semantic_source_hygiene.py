@@ -232,7 +232,7 @@ def _with_metric_not_found(state, qid, reason="no_candidate"):
     return state
 
 
-def test_q011_metric_not_found_removes_unsupported_number_and_blocks_gap_only_answer():
+def test_q011_metric_not_found_withholds_number_and_keeps_qualitative_answer():
     planned = _planned(qid="Q011", item="Human-rights grievances", description="Count and resolution")
     answer = (
         "In 2025, human-rights grievances totaled 63 cases. "
@@ -245,11 +245,13 @@ def test_q011_metric_not_found_removes_unsupported_number_and_blocks_gap_only_an
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id]
+    assert "63" not in result["final_answers"][planned.id]
+    assert "metric_not_found" in result["quality_flags"][planned.id]
 
 
-def test_q023_metric_not_found_blocks_process_only_claim_after_numeric_salvage():
+def test_q023_metric_not_found_keeps_process_claim_after_numeric_salvage():
     planned = _planned(
         qid="Q023",
         item="Environmental performance and incidents",
@@ -267,13 +269,16 @@ def test_q023_metric_not_found_blocks_process_only_claim_after_numeric_salvage()
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
-    assert "facet_metric_environmental_accident_count: missing" in result["skill_checks"][planned.id]
-    assert "facet_metric_environmental_violation_count: missing" in result["skill_checks"][planned.id]
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "ISO 14001" in result["final_answers"][planned.id]
+    assert "9.34" not in result["final_answers"][planned.id]
+    assert not any(
+        flag.startswith("missing_facet:metric_")
+        for flag in result["quality_flags"][planned.id]
+    )
 
 
-def test_q051_metric_not_found_blocks_packaging_roadmap_without_requested_dimensions():
+def test_q051_metric_not_found_keeps_qualitative_packaging_roadmap():
     planned = _planned(
         qid="Q051",
         item="Eco-friendly product and certification counts",
@@ -290,10 +295,12 @@ def test_q051_metric_not_found_blocks_packaging_roadmap_without_requested_dimens
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
-    assert "facet_metric_eco_friendly_product_count: missing" in result["skill_checks"][planned.id]
-    assert "facet_metric_environmental_certification_count: missing" in result["skill_checks"][planned.id]
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "eco-friendly packaging roadmap" in result["final_answers"][planned.id]
+    assert not any(
+        flag.startswith("missing_facet:metric_")
+        for flag in result["quality_flags"][planned.id]
+    )
 
 
 def test_q095_metric_not_found_keeps_grounded_stakeholder_activity_as_partial():
@@ -313,13 +320,11 @@ def test_q095_metric_not_found_keeps_grounded_stakeholder_activity_as_partial():
     assert result["qa_results"][planned.id].status == "passed"
     assert result["final_answers"][planned.id] == answer
     assert "partial_answer" in result["quality_flags"][planned.id]
-    assert (
-        "metric_stakeholder_communication_activity"
-        in result["semantic_reviews"][planned.id].covered_facets
-    )
+    assert "qualitative_narrative" in result["semantic_reviews"][planned.id].covered_facets
+    assert "metric_not_found" in result["quality_flags"][planned.id]
 
 
-def test_q015_metric_not_found_blocks_product_safety_process_without_incident_metrics():
+def test_q015_metric_not_found_keeps_product_safety_process_without_numbers():
     planned = _planned(
         qid="Q015",
         item="Product safety and quality incidents",
@@ -333,8 +338,9 @@ def test_q015_metric_not_found_blocks_product_safety_process_without_incident_me
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "metric_not_found" in result["quality_flags"][planned.id]
 
 
 def test_q021_board_only_answer_is_partial_without_operating_and_site_facets():
@@ -958,6 +964,42 @@ def test_output_hygiene_blocks_raw_table_and_path_dump(qid):
     assert result["qa_results"][qid].status == "failed"
     assert "non_narrative_output" in result["quality_flags"][qid]
     assert "raw_table_output" in result["hard_failures"][qid]
+
+
+def test_output_hygiene_cleans_q019_editorial_final_answer():
+    qid = "Q019"
+    planned = _planned(
+        qid=qid,
+        pillar="Metrics",
+        item="개인정보 침해 및 정보보안 사고 현황",
+        description="개인정보 침해 및 정보보안 사고 현황",
+    )
+    raw = (
+        "개인정보 침해 및 정보보안 사고 현황 ◀ 왼쪽처럼 수직으로 체계 수정 가능한가요 "
+        "상세프로세스는 오른쪽 그림 참고 ▶ 대웅제약 2025 지속가능경영보고서 "
+        "64 COMPANY OVERVIEW ESG JOURNEY HUMAN RIGHTS IMPACT ESG PERFORMANCE APPENDIX "
+        "정보보안 및 개인정보보호 보안사고 예방 및 대응 활동 "
+        "디지털 전환이 빠르게 진행됨에 따라 정보보안 및 정보보호의 중요성이 증가함에 따라 "
+        "대웅제약은 글로벌 수준의 강력한 보안 체계를 지속 강화하고 있습니다."
+    )
+
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: raw},
+            "quality_flags": {qid: []},
+            "qa_results": {qid: QAResult(status="passed")},
+        }
+    )
+
+    final = result["final_answers"][qid]
+    assert final.startswith("디지털 전환이 빠르게 진행됨에 따라")
+    assert "개인정보 침해 및 정보보안 사고 현황" not in final
+    assert "◀" not in final
+    assert "▶" not in final
+    assert "COMPANY OVERVIEW" not in final
+    assert "removed_source_boilerplate" in result["sanitizer_actions"][qid]
+    assert "removed_leading_question_context" in result["sanitizer_actions"][qid]
 
 
 @pytest.mark.parametrize("qid", ["Q052", "Q063", "Q083"])

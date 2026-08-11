@@ -18,6 +18,7 @@ from esgagents.agents.evidence.source_policy import (
 )
 from esgagents.schemas import SkillDraft
 from esgagents.agents.answering.text_quality import (
+    clean_customer_evidence_text,
     has_substantive_answer,
     non_substantive_reason,
     safe_narrative_text,
@@ -25,7 +26,7 @@ from esgagents.agents.answering.text_quality import (
 from esgagents.agents.evidence.metric_facts import (
     format_metric_number,
     metric_facts_supporting_claim,
-    salvage_unsupported_numeric_metric_claims,
+    salvage_metric_narrative_without_values,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,13 +86,19 @@ class SkillWriterAgent:
 
         for planned, context, rag, gate, metric_audit in candidates:
             answer, draft_flags = results[planned.id]
-            if rag.metric_status == "not_found":
-                answer, unsupported_actions = salvage_unsupported_numeric_metric_claims(
+            metric_status = str(rag.metric_status or "").casefold()
+            if metric_status in {"found_table", "not_found"}:
+                numeric_metric_audit = {**metric_audit, "accepted_facts": []}
+                answer, unsupported_actions = salvage_metric_narrative_without_values(
                     answer,
-                    metric_audit,
+                    numeric_metric_audit,
                 )
                 if unsupported_actions:
                     draft_flags.append("claim_salvage_applied")
+                if not answer:
+                    answer, fallback_flags = self._metric_narrative_fallback(context)
+                    draft_flags.extend(fallback_flags)
+            if metric_status == "not_found":
                 draft_flags.append("metric_not_found")
                 reason = str((context.get("metric_absence") or {}).get("reason") or "")
                 if reason:
@@ -250,7 +257,11 @@ class SkillWriterAgent:
         for item in context.get("evidence_items", []):
             if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
                 continue
-            text = str(getattr(item, "raw_evidence_ko", "") or "").strip()
+            text, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            text = SkillWriterAgent._strip_leading_question_context(text, context)
+            text = text.strip()
             for part in re.split(r"(?<=[.!?。！？])\s+|\n+|\s*[•·]\s*", text):
                 claim = compact(part).strip(" •·")
                 if len(claim) < 20 or "|" in claim:
@@ -272,6 +283,64 @@ class SkillWriterAgent:
         ranked_claims.sort(key=lambda row: (-row[0], row[1]))
         return compact(" ".join(claim for _, _, claim in ranked_claims[:3]))
 
+    @classmethod
+    def _metric_narrative_fallback(
+        cls,
+        context: dict[str, Any],
+    ) -> tuple[str, list[str]]:
+        evidence_fallback = cls._evidence_fallback(context)
+        if evidence_fallback:
+            sanitized, actions = salvage_metric_narrative_without_values(
+                evidence_fallback,
+                {"accepted_facts": []},
+            )
+            sanitized = safe_narrative_text(compact(sanitized))
+            if sanitized and not non_substantive_reason(sanitized):
+                return sanitized, sorted(
+                    set(["deterministic_narrative_fallback", *actions])
+                )
+
+        # Some narrative payloads are table-shaped and therefore rejected by
+        # the ordinary prose fallback. They are still the only authorized
+        # source for Final Answer, so make a conservative text-only extract.
+        raw_parts: list[str] = []
+        for item in context.get("evidence_items", []):
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            raw = compact(raw)
+            if raw:
+                raw_parts.append(raw.replace("|", ". ")[:900])
+            if len(raw_parts) >= 2:
+                break
+        if raw_parts:
+            sanitized, actions = salvage_metric_narrative_without_values(
+                " ".join(raw_parts),
+                {"accepted_facts": []},
+            )
+            sanitized = compact(sanitized)
+            if len(sanitized) > 650:
+                sanitized = sanitized[:650].rsplit(" ", 1)[0].rstrip(" ,;:-")
+            if sanitized and not re.search(r"[.!?。！？]$", sanitized):
+                sanitized += "."
+            sanitized = safe_narrative_text(sanitized)
+            if sanitized and not non_substantive_reason(sanitized):
+                return sanitized, sorted(
+                    set(
+                        [
+                            "deterministic_narrative_fallback",
+                            "table_shaped_narrative_fallback",
+                            "human_review_required",
+                            *actions,
+                        ]
+                    )
+                )
+
+        return "", ["metric_narrative_unusable", "human_review_required"]
+
     @staticmethod
     def _fallback_search_terms(text: str) -> set[str]:
         generic = {
@@ -290,6 +359,17 @@ class SkillWriterAgent:
             for token in re.findall(r"[^\W\d_]{2,}|[a-z][a-z0-9_-]{2,}", text.casefold())
             if token not in generic
         }
+
+    @staticmethod
+    def _strip_leading_question_context(text: str, context: dict[str, Any]) -> str:
+        value = str(text or "").strip()
+        for key in ("question", "description"):
+            phrase = compact(str(context.get(key) or ""))
+            if len(phrase) < 10:
+                continue
+            if value.casefold().startswith(phrase.casefold()):
+                value = value[len(phrase):].lstrip(" \t\r\n,;:-·•|")
+        return value
 
     @staticmethod
     def _metric_fallback(context: dict[str, Any]) -> str:

@@ -9,6 +9,7 @@ from esgagents.agents.evidence.metric_facts import (
     metric_numbers_equivalent,
     resolve_metric_facts,
     salvage_conflicting_metric_claims,
+    salvage_metric_narrative_without_values,
     salvage_unsupported_numeric_metric_claims,
 )
 from esgagents.default_config import load_config
@@ -89,6 +90,26 @@ def test_metric_not_found_salvage_removes_values_but_keeps_years_and_iso_identif
     assert "9.34%" not in salvaged
     assert actions == ["removed_claim:unsupported_metric:c2"]
     assert format_metric_number("12771.822287491") == "12,771.822"
+
+
+def test_metric_final_narrative_redacts_values_but_keeps_full_and_short_years():
+    answer = (
+        "ISO 14001 절차에 따라 2025년 환경 활동을 운영했습니다. "
+        "23년 CP 위반자는 중징계(감봉 3개월 이상) 절차에 회부했습니다. "
+        "재활용률은 9.34%였습니다."
+    )
+
+    salvaged, actions = salvage_metric_narrative_without_values(
+        answer,
+        {"accepted_facts": [{"value": "9.34"}]},
+    )
+
+    assert "ISO 14001" in salvaged
+    assert "2025년" in salvaged
+    assert "23년" in salvaged
+    assert "9.34" not in salvaged
+    assert "3개월" not in salvaged
+    assert actions
 
 
 @pytest.mark.parametrize(
@@ -597,7 +618,57 @@ def test_metric_expected_and_status_route_final_answer_sources_separately():
         narrative.raw_evidence_ko
     ]
     assert normalized["Q039"]["metric_audit"]["accepted_facts"]
-    assert {
-        item.raw_evidence_ko for item in normalized["Q095"]["items"]
-    } == {legacy.raw_evidence_ko, narrative.raw_evidence_ko}
+    assert [item.raw_evidence_ko for item in normalized["Q095"]["items"]] == [
+        legacy.raw_evidence_ko
+    ]
+    assert [
+        item.raw_evidence_ko
+        for item in normalized["Q095"]["narrative_evidence"]
+    ] == [narrative.raw_evidence_ko]
     assert normalized["Q095"]["metric_audit"]["accepted_facts"] == []
+
+
+def test_not_found_writer_uses_items_and_ignores_narrative_evidence():
+    config = load_config({"agent_mode": "offline"})
+    qid = "Q095"
+    item_evidence = _narrative(
+        "The company engages stakeholders through employee surveys."
+    )
+    forbidden_narrative = _narrative(
+        "Narrative evidence says 37 stakeholder meetings were held."
+    )
+    rag = RagQuestionResult(
+        question_id=qid,
+        answer_status="medium_confidence",
+        metric_expected=True,
+        metric_status="not_found",
+        metric_absence={"reason": "below_threshold"},
+        items=[item_evidence],
+        narrative_evidence=[forbidden_narrative],
+    )
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {qid: rag}}
+    )["normalized_evidence"][qid]
+    planned = _planned(qid)
+
+    result = SkillWriterAgent({"agent_mode": "offline"}, None).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {
+                qid: {
+                    "accepted": True,
+                    "metric_audit": normalized["metric_audit"],
+                    "metric_absence": normalized["metric_audit"]["metric_absence"],
+                    "evidence_items": normalized["narrative_items"],
+                    "output_language": "English",
+                }
+            },
+            "evidence_gate": {qid: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {qid: rag},
+            "normalized_evidence": {qid: normalized},
+        }
+    )
+
+    assert result["final_answers"][qid] == item_evidence.raw_evidence_ko
+    assert "37" not in result["final_answers"][qid]
+    assert "metric_not_found" in result["quality_flags"][qid]
