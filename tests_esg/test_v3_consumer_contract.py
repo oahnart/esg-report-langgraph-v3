@@ -8,7 +8,7 @@ from esgagents.agents.evidence.evidence_gate import EvidenceGateAgent
 from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
 from esgagents.agents.evidence.metric_facts import resolve_metric_facts
 from esgagents.default_config import load_config
-from esgagents.schemas import EvidenceItem, RagQuestionResult
+from esgagents.schemas import EvidenceItem, RagQuestionResult, SkillDraft
 from skills.agents.writer import SkillWriterAgent
 
 
@@ -189,6 +189,104 @@ def test_writer_uses_non_conflicting_structured_facts_without_llm():
     assert "2025" in answer
     assert "25 %" in answer
     assert flags == ["structured_metric_fallback"]
+
+
+def test_found_table_writer_replaces_stub_with_narrative_evidence_fallback():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(final_answer="1.", quality_flags=[])
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    context = {
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use only accepted facts.",
+        "metric_audit": {
+            "accepted_facts": [
+                {
+                    "metric": "Water reuse",
+                    "period": "2025",
+                    "value": "25",
+                    "normalized_value": "25",
+                    "unit": "%",
+                }
+            ]
+        },
+        "question": "Water management approach",
+        "description": "Describe the qualitative management approach.",
+        "evidence_items": [
+            _item(
+                "The company manages water risks through site-level monitoring and governance.",
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "English",
+    }
+    rag = RagQuestionResult(
+        question_id="Q039",
+        answer_status="medium_confidence",
+        metric_status="found_table",
+    )
+
+    answer, flags = SkillWriterAgent({}, LLM())._draft_answer(context, rag)
+
+    assert answer.startswith("The company manages water risks")
+    assert "Water reuse" not in answer
+    assert "25 %" not in answer
+    assert "non_substantive_llm_output" in flags
+    assert "evidence_extract_fallback" in flags
+
+
+def test_evidence_fallback_prefers_question_relevant_claims():
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "question": "Stakeholder communication activities",
+            "description": "Current stakeholder engagement activities",
+            "evidence_items": [
+                _item("Risk likelihood is assessed annually.", semantic_label="useful"),
+                _item(
+                    "The company conducted stakeholder communication through employee "
+                    "surveys and external focus groups.",
+                    semantic_label="useful",
+                ),
+            ],
+        }
+    )
+
+    assert answer.startswith("The company conducted stakeholder communication")
+    assert "Risk likelihood" not in answer
+
+
+def test_writer_replaces_q033_style_navigation_dump_with_relevant_evidence():
+    raw_dump = (
+        "1) Recalculation disclosure Company Overview Company Profile "
+        "ESG Framework ESG Highlight Sustainability Performance Appendix"
+    )
+    context = {
+        "qid": "Q033",
+        "question": "Waste reduction strategy",
+        "description": "Waste reduction and resource circulation activities",
+        "output_language": "English",
+        "metric_audit": {"metric_status": "not_found", "accepted_facts": []},
+        "evidence_items": [
+            _item(
+                "The company reduces waste by prioritizing qualified recycling providers.",
+                semantic_label="useful",
+            )
+        ],
+    }
+    rag = SimpleNamespace(metric_status="not_found", normalized_answer_ko=raw_dump)
+
+    answer, flags = SkillWriterAgent({"agent_mode": "offline"}, None)._draft_answer(
+        context, rag
+    )
+
+    assert answer == (
+        "The company reduces waste by prioritizing qualified recycling providers."
+    )
+    assert flags == ["evidence_extract_fallback"]
 
 
 def test_claim_salvage_keeps_grounded_sentence_only():

@@ -51,9 +51,13 @@ class SkillContextBuilderAgent:
             rag = state["rag_results"].get(planned.id)
             contract = build_question_contract(planned)
             metric_audit = normalized_evidence.get(planned.id, {}).get("metric_audit", {})
-            metric_lines = metric_facts_prompt_lines(metric_audit)
+            metric_status = str(metric_audit.get("metric_status") or "").casefold()
+            narrative_only = metric_status in {"found_table", "not_found"}
+            metric_lines = [] if narrative_only else metric_facts_prompt_lines(metric_audit)
             normalized = normalized_evidence.get(planned.id, {})
-            metric_items = list(normalized.get("metric_items", []))
+            metric_items = (
+                [] if narrative_only else list(normalized.get("metric_items", []))
+            )
             narrative_items = list(normalized.get("narrative_items", []))
             if metric_audit.get("numeric_withheld"):
                 metric_items = []
@@ -65,6 +69,9 @@ class SkillContextBuilderAgent:
             ]
             contexts[planned.id] = {
                 "qid": planned.id,
+                "question": planned.item_ko,
+                "description": planned.description_ko,
+                "metric_dimensions": list(contract.metric_dimensions),
                 "output_language": company.output_language,
                 "system_prompt": spec.system_prompt(),
                 "user_prompt": "\n".join(
@@ -92,9 +99,10 @@ class SkillContextBuilderAgent:
                         "Evidence:",
                         *(f"- {line}" for line in evidence_lines),
                         "Source-use policy: Draft/proposal/consultant evidence may only support explicitly attributed proposed, draft, or planned statements. External assessments support the assessment result and assessed content, not an unstated detailed policy.",
-                        "Coverage policy: Address required facets using only accepted evidence. Local metric dimensions are advisory, not hard requirements. For Metrics, include reporting period and metric value/unit only from accepted structured facts. Never infer a metric from narrative evidence. Preserve formulas, boundary changes, accounting-method changes, and comparability caveats found in narrative evidence.",
+                        "Coverage policy: Address required facets using only accepted narrative evidence. For metric_status=found_table, write Final Answer only from narrative_evidence; metric_evidence is reserved for the separate Qualitative Table Metrics worksheet. For metric_status=not_found, write only qualitative content and never infer a figure from narrative text. Preserve formulas, boundary changes, accounting-method changes, and comparability caveats found in narrative evidence.",
+                        "Metric scope policy: Never copy accepted structured metric facts, metric rows, scope_variant rows, or denominator rows into Final Answer. The metric table export handles table_block and entity_class separately.",
                         "Conflict policy: Never use a metric-period pair listed as conflicting. Keep other non-conflicting supported facts.",
-                        "Length policy: Target 2-4 factual sentences when the evidence supports them; a shorter answer is allowed when only one safe claim remains.",
+                        "Length policy: Target 3-5 factual sentences when the evidence supports them; a shorter answer is allowed when only one safe claim remains. Never pad the answer with repetition or unsupported context.",
                         "Customer-answer policy: State only supported answer content. Do not mention missing evidence, document scope, partial coverage, review status, additional confirmation, or requests for more information in final_answer; record such gaps only in quality_flags. If no supported answer content remains, return an empty final_answer.",
                         "Return only an evidence-grounded final_answer and concise quality_flags.",
                     ]

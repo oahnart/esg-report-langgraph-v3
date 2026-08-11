@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from esgagents.agents.answering.revision import RevisionAgent
@@ -25,6 +26,9 @@ from esgagents.rag_client import TeamRagClient
 from esgagents.template_loader import TemplateRepository
 
 
+logger = logging.getLogger(__name__)
+
+
 class ESGAgents:
     """Facade that exposes graph node callables while keeping agents modular."""
 
@@ -38,6 +42,18 @@ class ESGAgents:
         self.templates = templates
         self.rag_client = rag_client
         self.quick_llm, self.deep_llm = create_llm_pair(config)
+        logger.info(
+            "ESG LLM runtime provider=%s quick_model=%s deep_model=%s "
+            "writer_concurrency=%s revision_concurrency=%s "
+            "semantic_concurrency=%s semantic_incremental=%s",
+            config.get("llm_provider"),
+            config.get("quick_think_llm"),
+            config.get("deep_think_llm"),
+            config.get("writer_concurrency", 4),
+            config.get("revision_concurrency", 4),
+            config.get("semantic_qa_concurrency", 4),
+            config.get("semantic_qa_incremental", True),
+        )
 
         self.company_intake_agent = CompanyIntakeAgent(config, templates)
         self.template_selector_agent = TemplateSelectorAgent(templates)

@@ -16,6 +16,9 @@ class ESGPropagator:
             "company_input": company_input,
             "quality_flags": {},
             "revision_counts": {},
+            "semantic_reviews": {},
+            "semantic_llm_reviews": {},
+            "semantic_review_fingerprints": {},
         }
 
     def graph_config(self, thread_id_value: str | None = None) -> dict[str, Any]:

@@ -156,6 +156,34 @@ def test_metric_contract_fields_and_unknown_metadata_survive_model_dump():
     assert dumped["narrative_evidence"][0]["raw_evidence_ko"] == "Boundary changed in 2024."
 
 
+@pytest.mark.parametrize("metric_form", [None, "", "   "])
+def test_empty_metric_form_uses_current_table_row_contract_default(metric_form):
+    result = RagQuestionResult.model_validate(
+        {
+            "question_id": "Q039",
+            "metric_expected": True,
+            "metric_status": "found_table",
+            "metric_evidence": [
+                {
+                    **model_to_dict(_metric("Water use | ton | 2025=10", block="Water")),
+                    "metric_form": metric_form,
+                }
+            ],
+        }
+    )
+
+    normalized = EvidenceNormalizerAgent(load_config({"agent_mode": "offline"})).run(
+        {"rag_results": {"Q039": result}}
+    )["normalized_evidence"]["Q039"]
+
+    assert result.metric_evidence[0].metric_form == "table_row"
+    assert normalized["metric_audit"]["accepted_fact_count"] == 1
+    assert not any(
+        "unsupported metric_form" in warning
+        for warning in normalized["metric_audit"]["metric_contract_warnings"]
+    )
+
+
 def test_found_table_uses_only_primary_rows_and_keeps_entities_separate():
     config = load_config({"agent_mode": "offline"})
     rag = RagQuestionResult(
@@ -199,6 +227,11 @@ def test_found_table_uses_only_primary_rows_and_keeps_entities_separate():
     assert audit["denominator_row_count"] == 1
     assert audit["scope_variant_row_count"] == 1
     assert len(normalized["metric_items"]) == 2
+    assert normalized["items"] == normalized["narrative_items"]
+    assert all(
+        item.semantic_label.casefold() != "metric_row"
+        for item in normalized["items"]
+    )
     assert "boundary changed" in normalized["evidence_summary"].casefold()
     assert len(normalized["metric_evidence"]) == 4
 
@@ -295,6 +328,136 @@ def test_found_table_invalid_primary_identity_is_warned_and_excluded():
     )
 
 
+def test_metric_summary_mismatch_uses_actual_evidence_counts_and_requests_warning():
+    config = load_config({"agent_mode": "offline"})
+    rag = RagQuestionResult(
+        question_id="Q039",
+        metric_expected=True,
+        metric_status="found_table",
+        metric_summary={
+            "n_rows": 99,
+            "n_blocks": 3,
+            "n_primary": 2,
+            "n_scope_variant": 0,
+            "n_denominator": 0,
+        },
+        metric_evidence=[
+            _metric("Water use | ton | 2025=10", block="Water"),
+        ],
+    )
+
+    audit = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {"Q039": rag}}
+    )["normalized_evidence"]["Q039"]["metric_audit"]
+
+    assert audit["metric_summary_actual"] == {
+        "n_rows": 1,
+        "n_blocks": 1,
+        "n_primary": 1,
+        "n_scope_variant": 0,
+        "n_denominator": 0,
+    }
+    assert audit["metric_summary_mismatches"] == {
+        "n_rows": {"expected": 99, "actual": 1},
+        "n_blocks": {"expected": 3, "actual": 1},
+        "n_primary": {"expected": 2, "actual": 1},
+    }
+    assert any(
+        warning.startswith("metric_summary_mismatch:n_rows:")
+        for warning in audit["metric_contract_warnings"]
+    )
+
+    planned = _planned("Q039")
+    result = SkillWriterAgent({"agent_mode": "offline"}, None).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {
+                "Q039": {
+                    "accepted": True,
+                    "metric_audit": audit,
+                    "metric_absence": {},
+                    "evidence_items": [],
+                    "output_language": "English",
+                }
+            },
+            "evidence_gate": {"Q039": {"accepted": True, "reason": "accepted"}},
+            "rag_results": {"Q039": rag},
+            "normalized_evidence": {"Q039": {"metric_audit": audit}},
+        }
+    )
+    assert "metric_summary_mismatch" in result["quality_flags"]["Q039"]
+    assert "human_review_required" in result["quality_flags"]["Q039"]
+
+
+def test_metric_summary_block_count_uses_only_primary_blocks():
+    config = load_config({"agent_mode": "offline"})
+    rag = RagQuestionResult(
+        question_id="Q039",
+        metric_expected=True,
+        metric_status="found_table",
+        metric_summary={
+            "n_rows": 3,
+            "n_blocks": 1,
+            "n_primary": 1,
+            "n_scope_variant": 1,
+            "n_denominator": 1,
+        },
+        metric_evidence=[
+            _metric("Water use | ton | 2025=10", block="Primary water"),
+            _metric(
+                "Factory water | ton | 2025=3",
+                block="Factory water",
+                role="scope_variant",
+            ),
+            _metric(
+                "Sales | KRW | 2025=100",
+                block="Sales denominator",
+                role="denominator",
+            ),
+        ],
+    )
+
+    audit = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {"Q039": rag}}
+    )["normalized_evidence"]["Q039"]["metric_audit"]
+
+    assert audit["metric_summary_actual"]["n_blocks"] == 1
+    assert audit["metric_summary_mismatches"] == {}
+
+
+@pytest.mark.parametrize(
+    ("updates", "warning_fragment"),
+    [
+        ({"table_block": ""}, "missing table_block"),
+        ({"metric_form": "inline_figure"}, "unsupported metric_form"),
+    ],
+)
+def test_primary_metric_row_outside_table_contract_is_audit_only(
+    updates, warning_fragment
+):
+    config = load_config({"agent_mode": "offline"})
+    item = _metric("Water use | ton | 2025=10", block="Water")
+    item = item.model_copy(update=updates)
+    rag = RagQuestionResult(
+        question_id="Q039",
+        metric_expected=True,
+        metric_status="found_table",
+        metric_evidence=[item],
+    )
+
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {"Q039": rag}}
+    )["normalized_evidence"]["Q039"]
+
+    assert normalized["metric_items"] == []
+    assert normalized["metric_audit"]["accepted_facts"] == []
+    assert len(normalized["metric_evidence"]) == 1
+    assert any(
+        warning_fragment in warning
+        for warning in normalized["metric_audit"]["metric_contract_warnings"]
+    )
+
+
 @pytest.mark.parametrize("reason", ["no_candidate", "below_threshold", "blocked_by_gate"])
 def test_not_found_with_insufficient_status_is_blocked_by_evidence_gate(reason):
     config = load_config({"agent_mode": "offline"})
@@ -382,5 +545,59 @@ def test_low_metric_confidence_withholds_numeric_facts_and_requests_review():
         }
     )
     assert "2025=4" not in result["final_answers"][qid]
+    assert result["final_answers"][qid].startswith(
+        "The company maintains an incident response process"
+    )
     assert "metric_low_confidence" in result["quality_flags"][qid]
     assert "human_review_required" in result["quality_flags"][qid]
+
+
+def test_metric_expected_and_status_route_final_answer_sources_separately():
+    config = load_config({"agent_mode": "offline"})
+    narrative = _narrative("The company monitors water risks and reporting boundaries.")
+    legacy = _narrative("The company maintains a legacy qualitative policy.")
+    results = {
+        "Q001": RagQuestionResult(
+            question_id="Q001",
+            metric_expected=False,
+            metric_status="not_expected",
+            items=[legacy],
+        ),
+        "Q039": RagQuestionResult(
+            question_id="Q039",
+            metric_expected=True,
+            metric_status="found_table",
+            metric_evidence=[
+                _metric("Water use | ton | 2025=10", block="Water")
+            ],
+            narrative_evidence=[narrative],
+            items=[
+                _metric("Water use | ton | 2025=10", block="Water"),
+                narrative,
+            ],
+        ),
+        "Q095": RagQuestionResult(
+            question_id="Q095",
+            metric_expected=True,
+            metric_status="not_found",
+            metric_absence={"reason": "below_threshold"},
+            items=[legacy],
+            narrative_evidence=[narrative],
+        ),
+    }
+
+    normalized = EvidenceNormalizerAgent(config).run({"rag_results": results})[
+        "normalized_evidence"
+    ]
+
+    assert [item.raw_evidence_ko for item in normalized["Q001"]["items"]] == [
+        legacy.raw_evidence_ko
+    ]
+    assert [item.raw_evidence_ko for item in normalized["Q039"]["items"]] == [
+        narrative.raw_evidence_ko
+    ]
+    assert normalized["Q039"]["metric_audit"]["accepted_facts"]
+    assert {
+        item.raw_evidence_ko for item in normalized["Q095"]["items"]
+    } == {legacy.raw_evidence_ko, narrative.raw_evidence_ko}
+    assert normalized["Q095"]["metric_audit"]["accepted_facts"] == []

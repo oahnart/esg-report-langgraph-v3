@@ -11,6 +11,7 @@ from .metric_routing import (
     metric_contract_warnings,
     routed_gate_items,
 )
+from esgagents.agents.answering.question_contracts import build_question_contract
 
 
 CONDITIONAL_SEMANTIC_LABELS = {"useful", "partial", "metric_row", "keep", "keep_supportive"}
@@ -26,6 +27,8 @@ FUTURE_PLAN_TERMS = (
     "target",
     "goal",
 )
+LOCAL_PARTIAL_FAILURE_CODES = {"MISSING_REQUIRED_FACETS"}
+LOCALLY_BLOCKING_FAILURE_CODES = {"NO_EVIDENCE", "WRONG_TOPIC"}
 
 
 class EvidenceGateAgent:
@@ -55,6 +58,7 @@ class EvidenceGateAgent:
                 )
             answer_status = rag.answer_status.strip().casefold()
             eligible_by_status = answer_status in accepted_statuses or answer_status in conditional_statuses
+            failure_code = str(rag.failure_code or "").strip().upper()
             hints = {
                 "answerable": rag.answerable,
                 "coverage_status": rag.coverage_status,
@@ -90,12 +94,6 @@ class EvidenceGateAgent:
                             "accepted": False,
                             "reason": "rag_v3_contract_violation:"
                             + " | ".join(rag.client_contract_violations),
-                        }
-                        continue
-                    if not eligible_by_status:
-                        gate[planned.id] = {
-                            "accepted": False,
-                            "reason": f"answer_status={rag.answer_status or 'empty'}",
                         }
                         continue
                     accepted_label_items = [
@@ -135,11 +133,16 @@ class EvidenceGateAgent:
                 ):
                     accepted_reason = "accepted_metric_not_found"
                 policy_exception = ""
-                failure_code = str(rag.failure_code or "").strip().upper()
                 if rag.is_v3 and failure_code == "DRAFT_ONLY" and self._draft_only_evidence(accepted_label_items):
                     policy_exception = "accepted_draft_evidence"
                 elif rag.is_v3 and failure_code == "ASSESSMENT_ONLY" and self._assessment_only_evidence(accepted_label_items):
                     policy_exception = "accepted_assessment_evidence"
+                elif (
+                    rag.is_v3
+                    and failure_code in LOCAL_PARTIAL_FAILURE_CODES
+                    and self._has_local_partial_support(planned, rag, accepted_label_items)
+                ):
+                    policy_exception = "accepted_v3_local_partial"
                 if not evidence_with_text:
                     gate[planned.id] = {"accepted": False, "reason": "empty evidence"}
                 elif not accepted_label_items:
@@ -149,8 +152,18 @@ class EvidenceGateAgent:
                     }
                 elif not any(has_stable_provenance(item) for item in accepted_label_items):
                     gate[planned.id] = {"accepted": False, "reason": "missing stable provenance"}
+                elif rag.is_v3 and failure_code in LOCALLY_BLOCKING_FAILURE_CODES:
+                    gate[planned.id] = {
+                        "accepted": False,
+                        "reason": f"rag_v3:{failure_code}",
+                    }
                 elif policy_exception:
                     gate[planned.id] = {"accepted": True, "reason": policy_exception}
+                elif not eligible_by_status:
+                    gate[planned.id] = {
+                        "accepted": False,
+                        "reason": f"answer_status={rag.answer_status or 'empty'}",
+                    }
                 elif self._draft_only_evidence(accepted_label_items):
                     gate[planned.id] = {"accepted": True, "reason": "accepted_draft_evidence"}
                 elif self._assessment_only_evidence(accepted_label_items):
@@ -179,6 +192,31 @@ class EvidenceGateAgent:
         if not items:
             return False
         return all(classify_source(item).source_tier == "tier_3_assessment" for item in items)
+
+    @staticmethod
+    def _has_local_partial_support(planned: Any, rag: Any, items: list[Any]) -> bool:
+        """Admit incomplete V3 evidence only when it covers this question locally."""
+
+        if not items:
+            return False
+        contract = build_question_contract(planned)
+        covered = {
+            str(facet or "").strip().casefold()
+            for facet in getattr(rag, "covered_facets", []) or []
+            if str(facet or "").strip()
+        }
+        relevant = {
+            *contract.required_facets,
+            *contract.expected_facets,
+        }
+        if covered.intersection(relevant):
+            return True
+        if contract.pillar == "metrics" and {
+            "metric_result",
+            "reporting_period",
+        }.issubset(covered):
+            return True
+        return any(is_metric_row(item) for item in items) and "metric_result" in covered
 
     @staticmethod
     def _allows_draft_evidence(planned: Any) -> bool:

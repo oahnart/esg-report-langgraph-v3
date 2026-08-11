@@ -7,6 +7,7 @@ from esgagents.rag_client import TeamRagClient
 from esgagents.schemas import (
     EvidenceItem,
     MetricEvidenceItem,
+    MetricSummary,
     NormalizedCompany,
     RagQuestionResult,
     RagRequestTrace,
@@ -288,7 +289,10 @@ class RagBatchAgent:
             return retry
         if original.is_v3 or retry.is_v3:
             preferred, secondary = self._preferred_v3_result(original, retry)
-            if preferred is original:
+            if preferred is original and not (
+                original.metric_status == "found_table"
+                and retry.metric_status == "found_table"
+            ):
                 return original
         else:
             preferred, secondary = retry, original
@@ -317,8 +321,32 @@ class RagBatchAgent:
                 "items": merged_items,
                 "metric_evidence": merged_metric_evidence,
                 "narrative_evidence": merged_narrative,
+                "metric_summary": self._merged_metric_summary(
+                    preferred.metric_summary,
+                    merged_metric_evidence,
+                ) if preferred.metric_status == "found_table" else preferred.metric_summary,
             }
         )
+
+    @staticmethod
+    def _merged_metric_summary(
+        summary: MetricSummary | None,
+        items: list[MetricEvidenceItem],
+    ) -> MetricSummary:
+        counts = {
+            "n_rows": len(items),
+            "n_blocks": len(
+                {
+                    item.table_block.strip()
+                    for item in items
+                    if item.table_block.strip()
+                }
+            ),
+            "n_primary": sum(item.block_role == "primary" for item in items),
+            "n_scope_variant": sum(item.block_role == "scope_variant" for item in items),
+            "n_denominator": sum(item.block_role == "denominator" for item in items),
+        }
+        return summary.model_copy(update=counts) if summary is not None else MetricSummary(**counts)
 
     def _preferred_v3_result(
         self,

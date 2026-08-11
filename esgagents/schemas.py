@@ -184,10 +184,19 @@ class MetricEvidenceItem(EvidenceItem):
     entity_class: str = ""
     metric_form: str = "table_row"
 
-    @field_validator("table_block", "entity", "entity_class", "metric_form", mode="before")
+    @field_validator("table_block", "entity", "entity_class", mode="before")
     @classmethod
     def _metric_text(cls, value: Any) -> str:
         return "" if value is None else str(value)
+
+    @field_validator("metric_form", mode="before")
+    @classmethod
+    def _metric_form(cls, value: Any) -> str:
+        # The current metric contract only supports table rows. Some v3
+        # producers omit this optional discriminator or serialize it as an
+        # empty value, so treat those representations as the contract default.
+        normalized = "" if value is None else str(value).strip()
+        return normalized or "table_row"
 
 
 class RagQuestionResult(BaseModel):
@@ -383,6 +392,8 @@ class AnswerRecord(BaseModel):
     ] = "blocked_evidence"
     upstream_hints: dict[str, Any] = Field(default_factory=dict)
     upstream_coverage_mismatch: bool = False
+    local_evidence_accepted: bool = False
+    local_acceptance_reason: str = ""
     metric_audit: dict[str, Any] = Field(default_factory=dict)
     result_bucket: Literal["answered", "empty", "weak", "failed"] | None = None
     draft_answer: str = ""

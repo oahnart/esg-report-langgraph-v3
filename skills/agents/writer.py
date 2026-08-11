@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, InvalidOperation
 import re
+from time import perf_counter
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -15,9 +17,14 @@ from esgagents.agents.evidence.source_policy import (
     attribute_draft_statement,
 )
 from esgagents.schemas import SkillDraft
-from esgagents.agents.answering.text_quality import safe_narrative_text
+from esgagents.agents.answering.text_quality import (
+    has_substantive_answer,
+    non_substantive_reason,
+    safe_narrative_text,
+)
 from esgagents.agents.evidence.metric_facts import (
     format_metric_number,
+    metric_facts_supporting_claim,
     salvage_unsupported_numeric_metric_claims,
 )
 
@@ -29,11 +36,14 @@ class SkillWriterAgent:
         self.config = config or {}
         self.llm = llm
         self.structured_llm = bind_structured(llm, SkillDraft, "Skill Writer")
+        self.concurrency = max(1, int(self.config.get("writer_concurrency", 4)))
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         drafts: dict[str, str] = {}
         flags: dict[str, list[str]] = dict(state.get("quality_flags", {}))
         revision_counts = {planned.id: state.get("revision_counts", {}).get(planned.id, 0) for planned in state["planned_questions"]}
+        candidates: list[tuple[Any, dict[str, Any], Any, dict[str, Any], dict[str, Any]]] = []
+        started = perf_counter()
         for planned in state["planned_questions"]:
             context = state["skill_contexts"][planned.id]
             gate = state["evidence_gate"].get(planned.id, {})
@@ -52,7 +62,29 @@ class SkillWriterAgent:
                     )
                 )
                 continue
-            answer, draft_flags = self._draft_answer(context, rag)
+            candidates.append((planned, context, rag, gate, metric_audit))
+
+        results: dict[str, tuple[str, list[str]]] = {}
+        if candidates:
+            workers = min(self.concurrency, len(candidates))
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                futures = {
+                    planned.id: executor.submit(self._draft_answer, context, rag)
+                    for planned, context, rag, _, _ in candidates
+                }
+                for planned, context, rag, _, _ in candidates:
+                    try:
+                        results[planned.id] = futures[planned.id].result()
+                    except Exception as exc:  # Defensive isolation beyond agent fallback.
+                        logger.warning(
+                            "Skill Writer task failed for %s; using deterministic fallback: %s",
+                            planned.id,
+                            exc,
+                        )
+                        results[planned.id] = self._offline_fallback(context, rag)
+
+        for planned, context, rag, gate, metric_audit in candidates:
+            answer, draft_flags = results[planned.id]
             if rag.metric_status == "not_found":
                 answer, unsupported_actions = salvage_unsupported_numeric_metric_claims(
                     answer,
@@ -82,6 +114,8 @@ class SkillWriterAgent:
                 draft_flags.extend(["assessment_attributed", "assessment_based_answer"])
             if gate.get("reason") == "accepted_v3_partial":
                 draft_flags.append("rag_partial_coverage")
+            if gate.get("reason") == "accepted_v3_local_partial":
+                draft_flags.extend(["local_partial_evidence", "rag_partial_coverage"])
             if state.get("upstream_coverage_mismatches", {}).get(planned.id, False):
                 draft_flags.append("upstream_coverage_mismatch")
             normalized = state.get("normalized_evidence", {}).get(planned.id, {})
@@ -91,8 +125,20 @@ class SkillWriterAgent:
                 draft_flags.append("conflicting_metric")
             if metric_audit.get("malformed_metric_row_count"):
                 draft_flags.append("malformed_metric_row")
+            if metric_audit.get("metric_summary_mismatches"):
+                draft_flags.extend(
+                    ["metric_summary_mismatch", "human_review_required"]
+                )
             drafts[planned.id] = answer
             flags[planned.id] = sorted(set(flags.get(planned.id, []) + draft_flags))
+        elapsed_ms = round((perf_counter() - started) * 1000)
+        logger.info(
+            "writer_phase elapsed_ms=%s candidates=%s llm_calls=%s max_workers=%s",
+            elapsed_ms,
+            len(candidates),
+            len(candidates) if self.llm is not None else 0,
+            min(self.concurrency, len(candidates)) if candidates else 0,
+        )
         return {
             "draft_answers": drafts,
             "final_answers": dict(drafts),
@@ -100,11 +146,31 @@ class SkillWriterAgent:
             "revision_counts": revision_counts,
         }
 
+    def _offline_fallback(
+        self, context: dict[str, Any], rag: Any
+    ) -> tuple[str, list[str]]:
+        metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
+        narrative_only = metric_status in {"found_table", "not_found"}
+        metric_fallback = "" if narrative_only else self._metric_fallback(context)
+        normalized_fallback = (
+            ""
+            if narrative_only
+            else safe_narrative_text(compact(getattr(rag, "normalized_answer_ko", "")))
+        )
+        evidence_fallback = self._evidence_fallback(context)
+        answer = metric_fallback or normalized_fallback or evidence_fallback
+        if metric_fallback and answer == metric_fallback:
+            return answer, ["structured_metric_fallback", "llm_error_fallback"]
+        if evidence_fallback and answer == evidence_fallback:
+            return answer, ["evidence_extract_fallback", "llm_error_fallback"]
+        return answer, ["llm_error_fallback"]
+
     def _draft_answer(self, context: dict[str, Any], rag: Any) -> tuple[str, list[str]]:
-        metric_found = str(getattr(rag, "metric_status", "") or "") == "found_table"
-        fallback = "" if metric_found else safe_narrative_text(compact(rag.normalized_answer_ko))
-        metric_fallback = self._metric_fallback(context)
-        evidence_fallback = "" if metric_found else self._evidence_fallback(context)
+        metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
+        narrative_only = metric_status in {"found_table", "not_found"}
+        fallback = "" if narrative_only else safe_narrative_text(compact(rag.normalized_answer_ko))
+        metric_fallback = "" if narrative_only else self._metric_fallback(context)
+        evidence_fallback = self._evidence_fallback(context)
         if self.llm is None:
             if metric_fallback:
                 return metric_fallback, ["structured_metric_fallback"]
@@ -118,19 +184,69 @@ class SkillWriterAgent:
                 result = self.structured_llm.invoke(prompt)
                 if isinstance(result, SkillDraft):
                     answer = safe_narrative_text(compact(result.final_answer))
-                    answer = answer or metric_fallback or fallback or evidence_fallback
-                    return answer, sorted(set(result.quality_flags))
+                    fallback_flags: list[str] = []
+                    substantive_reason = non_substantive_reason(answer)
+                    metric_facts = (
+                        []
+                        if narrative_only
+                        else list((context.get("metric_audit") or {}).get("accepted_facts", []))
+                    )
+                    if substantive_reason:
+                        answer = ""
+                        fallback_flags.extend(
+                            ["non_substantive_llm_output", substantive_reason]
+                        )
+                    elif metric_facts and not metric_facts_supporting_claim(
+                        answer,
+                        context.get("metric_audit", {}),
+                    ):
+                        answer = ""
+                        fallback_flags.append("unsupported_metric_llm_output")
+                    if not answer:
+                        answer = metric_fallback or fallback or evidence_fallback
+                        if metric_fallback and answer == metric_fallback:
+                            fallback_flags.append("structured_metric_fallback")
+                        elif evidence_fallback and answer == evidence_fallback:
+                            fallback_flags.append("evidence_extract_fallback")
+                    return answer, sorted(
+                        set([*result.quality_flags, *fallback_flags])
+                    )
+                raise RuntimeError("skill writer returned an invalid structured response")
             response = self.llm.invoke(prompt)
             answer = safe_narrative_text(compact(getattr(response, "content", str(response))))
+            flags = ["llm_free_text_fallback"]
+            if not has_substantive_answer(answer):
+                flags.extend(["non_substantive_llm_output", non_substantive_reason(answer)])
+                answer = ""
+            metric_facts = (
+                []
+                if narrative_only
+                else list((context.get("metric_audit") or {}).get("accepted_facts", []))
+            )
+            if answer and metric_facts and not metric_facts_supporting_claim(
+                answer,
+                context.get("metric_audit", {}),
+            ):
+                flags.append("unsupported_metric_llm_output")
+                answer = ""
             answer = answer or metric_fallback or fallback or evidence_fallback
-            return answer, ["llm_free_text_fallback"]
+            if metric_fallback and answer == metric_fallback:
+                flags.append("structured_metric_fallback")
+            return answer, sorted(set(flags))
         except Exception as exc:
             logger.warning("Skill Writer failed for %s; using deterministic fallback: %s", context.get("qid"), exc)
             return metric_fallback or fallback or evidence_fallback, ["llm_error_fallback"]
 
     @staticmethod
     def _evidence_fallback(context: dict[str, Any]) -> str:
-        claims: list[str] = []
+        ranked_claims: list[tuple[int, int, str]] = []
+        question_terms = SkillWriterAgent._fallback_search_terms(
+            " ".join(
+                str(context.get(key) or "")
+                for key in ("question", "description")
+            )
+        )
+        sequence = 0
         for item in context.get("evidence_items", []):
             if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
                 continue
@@ -142,11 +258,38 @@ class SkillWriterAgent:
                 safe_claim = safe_narrative_text(claim[:700])
                 if not safe_claim:
                     continue
-                claims.append(safe_claim)
-                break
-            if len(claims) >= 3:
-                break
-        return compact(" ".join(claims))
+                normalized_claim = safe_claim.casefold()
+                relevance = sum(
+                    1 for term in question_terms if term in normalized_claim
+                )
+                ranked_claims.append((relevance, sequence, safe_claim))
+                sequence += 1
+
+        if not ranked_claims:
+            return ""
+        if question_terms and any(score > 0 for score, _, _ in ranked_claims):
+            ranked_claims = [row for row in ranked_claims if row[0] > 0]
+        ranked_claims.sort(key=lambda row: (-row[0], row[1]))
+        return compact(" ".join(claim for _, _, claim in ranked_claims[:3]))
+
+    @staticmethod
+    def _fallback_search_terms(text: str) -> set[str]:
+        generic = {
+            "status",
+            "current",
+            "activity",
+            "activities",
+            "management",
+            "company",
+            "현황",
+            "활동",
+            "관리",
+        }
+        return {
+            token
+            for token in re.findall(r"[^\W\d_]{2,}|[a-z][a-z0-9_-]{2,}", text.casefold())
+            if token not in generic
+        }
 
     @staticmethod
     def _metric_fallback(context: dict[str, Any]) -> str:

@@ -167,7 +167,7 @@ def test_graph_uses_v3_metric_items_without_quantitative_loader(tmp_path):
     assert answer.sources[0]["semantic_label"] == "metric_row"
     assert answer.sources[0]["locator"]["spans_units"] == ["tCO2e"]
     workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)
-    assert workbook.sheetnames == ["Qualitative"]
+    assert workbook.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
 
 
 def test_quantitative_output_does_not_overwrite_v3_qualitative_metric_evidence(tmp_path):
@@ -223,7 +223,11 @@ def test_quantitative_output_does_not_overwrite_v3_qualitative_metric_evidence(t
     assert "quantitative_metric_bridge" not in answer.quality_flags
     assert "999" not in answer.evidence_summary
     workbook = load_workbook(Path(artifacts.output_paths["combined_excel"]), read_only=True)
-    assert workbook.sheetnames == ["Qualitative", "Quantitative"]
+    assert workbook.sheetnames == [
+        "Qualitative",
+        "Qualitative Table Metrics",
+        "Quantitative",
+    ]
 
 
 def test_graph_writes_combined_workbook_with_quantitative_input(tmp_path):
@@ -301,7 +305,11 @@ def test_graph_writes_combined_workbook_with_quantitative_input(tmp_path):
     combined_path = Path(artifacts.output_paths["combined_excel"])
     assert combined_path.exists()
     workbook = load_workbook(combined_path, read_only=True)
-    assert workbook.sheetnames == ["Qualitative", "Quantitative"]
+    assert workbook.sheetnames == [
+        "Qualitative",
+        "Qualitative Table Metrics",
+        "Quantitative",
+    ]
     assert workbook["Quantitative"].max_row == 252
 
 

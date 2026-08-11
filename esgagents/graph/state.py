@@ -31,6 +31,8 @@ class ESGState(TypedDict, total=False):
     draft_answers: dict[str, str]
     qa_results: dict[str, Any]
     semantic_reviews: dict[str, Any]
+    semantic_llm_reviews: dict[str, Any]
+    semantic_review_fingerprints: dict[str, str]
     claim_support: dict[str, list[Any]]
     final_answers: dict[str, str]
     last_rejected_answers: dict[str, str]

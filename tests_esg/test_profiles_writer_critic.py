@@ -693,3 +693,45 @@ def test_revision_writer_keeps_failed_draft_empty_when_llm_is_unavailable():
     assert result["final_answers"]["Q001"] == ""
     assert result["revision_counts"] == {"Q001": 1}
     assert "revision_error" in result["quality_flags"]["Q001"]
+
+
+def test_revision_error_uses_relevant_narrative_fallback_for_missing_metric_facet():
+    planned = _planned("Q095", "Stakeholder communication activities")
+    state = _revision_state(
+        [planned],
+        {
+            "Q095": QAResult(
+                status="failed",
+                notes=[
+                    "missing expected metric dimension: stakeholder_communication_activity"
+                ],
+            )
+        },
+        {"Q095": "Risk likelihood is assessed before stakeholder engagement."},
+    )
+    state["normalized_evidence"]["Q095"]["items"] = [
+        EvidenceItem(
+            raw_evidence_ko="Risk likelihood is assessed annually.",
+            source_name="risk.pdf",
+            source_path="ESG/risk.pdf",
+        ),
+        EvidenceItem(
+            raw_evidence_ko=(
+                "The company conducted stakeholder communication through employee "
+                "surveys and external focus groups."
+            ),
+            source_name="engagement.pdf",
+            source_path="ESG/engagement.pdf",
+        ),
+    ]
+    state["normalized_evidence"]["Q095"]["metric_audit"] = {
+        "metric_status": "not_found",
+        "accepted_facts": [],
+    }
+
+    result = RevisionAgent({"max_revision_rounds": 1}, None).run(state)
+
+    assert "stakeholder communication" in result["final_answers"]["Q095"]
+    assert "Risk likelihood is assessed annually" not in result["final_answers"]["Q095"]
+    assert "revision_error" in result["quality_flags"]["Q095"]
+    assert "deterministic_narrative_fallback" in result["quality_flags"]["Q095"]

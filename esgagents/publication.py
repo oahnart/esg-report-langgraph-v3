@@ -23,9 +23,11 @@ REVIEW_FLAGS = {
     "draft_based_answer",
     "human_review_required",
     "legal_review_required",
+    "local_partial_evidence",
     "metric_low_confidence",
     "metric_not_found",
     "metric_numeric_withheld",
+    "metric_summary_mismatch",
     "partial_answer",
     "rag_partial_coverage",
     "provenance_fallback",
@@ -69,6 +71,16 @@ def evaluate_publication(
     final_answer = str(getattr(answer, "final_answer", "") or "").strip()
     qa_status = str(getattr(getattr(answer, "qa", None), "status", "") or "").casefold()
     answer_status = str(getattr(answer, "answer_status", "") or "").strip().casefold()
+    local_acceptance_reason = str(
+        getattr(answer, "local_acceptance_reason", "") or ""
+    )
+    local_evidence_accepted = bool(
+        getattr(answer, "local_evidence_accepted", False)
+    ) and local_acceptance_reason in {
+        "accepted_v3_local_partial",
+        "accepted_draft_evidence",
+        "accepted_assessment_evidence",
+    }
     flags = {
         str(flag or "").strip().casefold()
         for flag in (getattr(answer, "quality_flags", []) or [])
@@ -100,8 +112,13 @@ def evaluate_publication(
         or ""
     ).casefold()
     unresolved_conflicts = conflicting_metric_claims(final_answer, metric_audit)
+    final_answer_metric_audit = (
+        {**metric_audit, "accepted_facts": []}
+        if metric_status == "found_table"
+        else metric_audit
+    )
     unsupported_metric_claims = (
-        unsupported_numeric_metric_claims(final_answer, metric_audit)
+        unsupported_numeric_metric_claims(final_answer, final_answer_metric_audit)
         if metric_status in {"found_table", "not_found"}
         else []
     )
@@ -112,7 +129,7 @@ def evaluate_publication(
 
     blocking_issues: set[str] = set()
     blocking_reason = ""
-    if answer_status not in accepted | conditional:
+    if answer_status not in accepted | conditional and not local_evidence_accepted:
         blocking_reason = "unaccepted_answer_status"
         blocking_issues.add(f"unaccepted_answer_status:{answer_status or 'missing'}")
     if hard_failures:
@@ -156,6 +173,8 @@ def evaluate_publication(
     review_issues.update(source_review)
     review_issues.update(qid_review)
     review_issues.update(invariant_issues)
+    if local_evidence_accepted:
+        review_issues.add("local_partial_evidence")
     if metric_status == "not_found":
         review_issues.add("metric_not_found")
     if unresolved_conflicts:

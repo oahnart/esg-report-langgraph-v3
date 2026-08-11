@@ -52,7 +52,8 @@ python -m pip install -U pip
 python -m pip install -e .
 ```
 
-Tao file `.env` tu file mau neu runtime cua ban co loader rieng:
+Tao file `.env` tu file mau. Local CLI va Docker deu doc file nay; bien da co
+trong process environment duoc uu tien hon gia tri trong file:
 
 ```powershell
 Copy-Item .env.example .env
@@ -97,11 +98,14 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | `ESG_LLM_BASE_URL`                |                                          rong | Base URL tuy chinh cua provider.                                                             |
 | `ESG_QUICK_THINK_LLM`             |                                `gpt-4.1-mini` | Model dung cho drafting nhanh.                                                               |
 | `ESG_DEEP_THINK_LLM`              |                                     `gpt-4.1` | Model du phong cho tac vu can reasoning sau.                                                 |
+| `ESG_WRITER_CONCURRENCY`           |                                           `4` | So draft LLM chay dong thoi; giam neu provider rate-limit.                                  |
+| `ESG_REVISION_CONCURRENCY`         |                                           `4` | So revision LLM chay dong thoi; ket qua van ghep theo thu tu QID.                           |
 | `ESG_CHECKPOINT_ENABLED`          |                                       `false` | Bat LangGraph SQLite checkpoint theo cong ty/run.                                            |
-| `ESG_MAX_REVISION_ROUNDS`         |                                           `1` | So vong sua draft sau QA.                                                                    |
+| `ESG_MAX_REVISION_ROUNDS`         |                                           `2` | So vong sua draft sau QA.                                                                    |
 | `ESG_CONDITIONAL_ANSWER_STATUSES` |                             `thin_but_usable` | Trang thai RAG duoc chap nhan khi co evidence co nguon va semantic label hop le.             |
 | `ESG_SEMANTIC_QA_ENABLED`         |                                        `true` | Bat semantic QA theo pillar sau grounding QA.                                                |
 | `ESG_SEMANTIC_QA_CONCURRENCY`     |                                           `4` | So semantic review LLM chay dong thoi.                                                       |
+| `ESG_SEMANTIC_QA_INCREMENTAL`     |                                        `true` | Sau revision, chi goi lai semantic LLM cho answer/prompt da thay doi.                       |
 | `ESG_SOURCE_POLICY_ENABLED`       |                                        `true` | Phan tier, xep hang va deduplicate nguon.                                                    |
 | `ESG_OUTPUT_HYGIENE_ENABLED`      |                                        `true` | Chuan hoa Markdown va an ten ca nhan khong can thiet.                                        |
 
@@ -118,6 +122,10 @@ ESG_LLM_BASE_URL=https://api.hallmdr.com
 HALLMDR_API_KEY=your-hallmdr-key
 ESG_QUICK_THINK_LLM=llm/gemma4
 ESG_DEEP_THINK_LLM=llm/gemma4
+ESG_WRITER_CONCURRENCY=4
+ESG_REVISION_CONCURRENCY=4
+ESG_SEMANTIC_QA_CONCURRENCY=4
+ESG_SEMANTIC_QA_INCREMENTAL=true
 ```
 
 Neu `ESG_AGENT_MODE=auto` ma thieu key, graph dung offline fallback. Neu
@@ -392,6 +400,11 @@ hoac object storage.
 | `TEMPORAL_ACTIVITY_MAX_ATTEMPTS`            | `2`              | So lan thu Activity toi da.        |
 | `TEMPORAL_WORKER_MAX_CONCURRENT_ACTIVITIES` | `2`              | Gioi han job dong thoi moi worker. |
 | `ESG_LLM_TIMEOUT_SECONDS`                   | `120`            | Timeout moi LLM request.           |
+| `ESG_LLM_JSON_REPAIR_RETRY`                 | `false`          | Goi LLM lan hai de sua JSON loi.   |
+| `ESG_LLM_STRUCTURED_FAILURE_LIMIT`          | `3`              | Mo fallback sau N JSON loi lien tiep; `0` de tat gioi han. |
+| `ESG_WRITER_CONCURRENCY`                    | `4`              | Gioi han draft LLM dong thoi.    |
+| `ESG_REVISION_CONCURRENCY`                  | `4`              | Gioi han revision LLM dong thoi. |
+| `ESG_SEMANTIC_QA_INCREMENTAL`              | `true`           | Cache semantic review cho input khong doi. |
 
 ## Team RAG Contract
 

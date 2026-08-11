@@ -55,7 +55,7 @@ def test_review_answer_is_identical_in_json_audit_and_customer_workbook(tmp_path
     audit_sheet = audit["Qualitative Audit"]
     final_answer_column = AUDIT_COLUMNS.index("Final Answer") + 1
     assert audit_sheet.cell(2, final_answer_column).value == customer_answer
-    assert customer.sheetnames == ["Qualitative"]
+    assert customer.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
     assert customer["Qualitative"]["H2"].value == customer_answer
     assert "Publication: review_required" in customer["Qualitative"]["B2"].value
 

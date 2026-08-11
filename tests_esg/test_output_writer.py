@@ -1,4 +1,5 @@
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -167,6 +168,26 @@ def test_output_writer_adds_full_rag_metric_evidence_sheet(tmp_path):
                 answer_status="medium_confidence",
                 rag_metric_expected=True,
                 rag_metric_status="found_table",
+                metric_audit={
+                    "metric_status": "found_table",
+                    "accepted_facts": [
+                        {
+                            "table_block": "Water > Pharm",
+                            "block_rank": 1,
+                            "block_role": "primary",
+                            "entity": "Daewoong Pharm",
+                            "entity_class": "daewoong_pharm",
+                            "metric": "Water use",
+                            "period": "2025",
+                            "value": "10",
+                            "normalized_value": "10",
+                            "unit": "ton",
+                            "value_role": "actual",
+                            "source_name": "metrics.xlsx",
+                            "source_id": "ESG/metrics.xlsx",
+                        }
+                    ],
+                },
                 rag_metric_evidence=[
                     {
                         "table_block": "Water > Pharm",
@@ -203,13 +224,252 @@ def test_output_writer_adds_full_rag_metric_evidence_sheet(tmp_path):
     combined_book = load_workbook(written.output_paths["combined_excel"])
 
     assert "RAG Metric Evidence" in audit_book.sheetnames
-    assert combined_book.sheetnames == ["Qualitative"]
+    assert combined_book.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
     metric_sheet = audit_book["RAG Metric Evidence"]
     assert metric_sheet.max_row == 3
     assert metric_sheet["A2"].value == "Q039"
     assert metric_sheet["F2"].value == "primary"
     assert metric_sheet["F3"].value == "denominator"
     assert "Water use" in metric_sheet["K2"].value
+    customer_metric_sheet = combined_book["Qualitative Table Metrics"]
+    assert customer_metric_sheet["A1"].value.startswith("Q039-T01 | Q039")
+    assert "Table block: Water > Pharm" in customer_metric_sheet["A2"].value
+    assert "Entity: Daewoong Pharm" in customer_metric_sheet["A2"].value
+    assert "Numeric status: accepted_primary" in customer_metric_sheet["A2"].value
+    assert [customer_metric_sheet.cell(3, column).value for column in range(1, 4)] == [
+        "Metric",
+        "Unit",
+        "2025",
+    ]
+    assert [customer_metric_sheet.cell(4, column).value for column in range(1, 4)] == [
+        "Water use",
+        "ton",
+        10,
+    ]
+
+
+def test_coverage_summary_tracks_metric_summary_mismatch_fields():
+    artifacts = RunArtifacts(
+        run_id="run_metric_mismatch",
+        company={"company_id": "c", "company_name": "C", "year": 2025},
+        template_selection={"template_version": "template_v1", "question_count": 1},
+        stats={"answered": 1, "empty": 0, "weak": 0, "failed": 0},
+        answers=[
+            AnswerRecord(
+                qid="Q039",
+                answer_status="medium_confidence",
+                rag_metric_status="found_table",
+                metric_audit={
+                    "metric_contract": "new",
+                    "metric_status": "found_table",
+                    "metric_summary_mismatches": {
+                        "n_rows": {"expected": 23, "actual": 22},
+                        "n_blocks": {"expected": 5, "actual": 4},
+                    },
+                },
+                final_answer="Water use was reported.",
+                quality_flags=["metric_summary_mismatch", "human_review_required"],
+                qa=QAResult(status="passed"),
+            )
+        ],
+    )
+
+    coverage = build_coverage_summary(artifacts)
+
+    assert coverage["metric_facts"]["summary_mismatch_count"] == 1
+    assert coverage["metric_facts"]["summary_mismatch_qids"] == ["Q039"]
+    assert coverage["metric_facts"]["summary_mismatch_fields"] == {
+        "n_blocks": ["Q039"],
+        "n_rows": ["Q039"],
+    }
+
+
+def test_customer_metric_sheet_respects_status_roles_and_low_confidence(tmp_path):
+    primary_fact = {
+        "table_block": "Water > Pharm",
+        "block_rank": 1,
+        "block_role": "primary",
+        "entity": "Daewoong Pharm",
+        "entity_class": "daewoong_pharm",
+        "metric": "Water use",
+        "period": "2025",
+        "value": "10.5",
+        "normalized_value": "10.5",
+        "unit": "ton",
+        "value_role": "actual",
+    }
+    scope_fact = {
+        **primary_fact,
+        "block_role": "scope_variant",
+        "entity": "Factory A",
+        "entity_class": "factory",
+        "value": "3",
+        "normalized_value": "3",
+    }
+    artifacts = RunArtifacts(
+        run_id="run_customer_metric_contract",
+        company={"company_id": "c", "company_name": "C", "year": 2025},
+        template_selection={"template_version": "v1", "question_count": 4},
+        stats={"answered": 4, "empty": 0, "weak": 0, "failed": 0},
+        answers=[
+            AnswerRecord(
+                qid="Q001",
+                source_id="EBX-Q-001",
+                rag_metric_expected=False,
+                rag_metric_status="not_expected",
+                final_answer="Legacy qualitative answer.",
+                qa=QAResult(status="passed"),
+            ),
+            AnswerRecord(
+                qid="Q039",
+                source_id="EBX-Q-039",
+                rag_metric_expected=True,
+                rag_metric_status="found_table",
+                metric_audit={
+                    "metric_status": "found_table",
+                    "accepted_facts": [primary_fact, scope_fact],
+                },
+                final_answer="Narrative water-management explanation.",
+                qa=QAResult(status="passed"),
+            ),
+            AnswerRecord(
+                qid="Q019",
+                source_id="EBX-Q-019",
+                rag_metric_expected=True,
+                rag_metric_status="found_table",
+                rag_metric_confidence="low",
+                metric_audit={
+                    "metric_status": "found_table",
+                    "numeric_withheld": True,
+                    "accepted_facts": [primary_fact],
+                    "withheld_facts": [primary_fact],
+                },
+                final_answer="Narrative incident-response explanation.",
+                qa=QAResult(status="passed"),
+            ),
+            AnswerRecord(
+                qid="Q095",
+                source_id="EBX-Q-095",
+                rag_metric_expected=True,
+                rag_metric_status="not_found",
+                rag_metric_absence={"reason": "below_threshold"},
+                metric_audit={"metric_status": "not_found", "accepted_facts": []},
+                final_answer="Narrative stakeholder-engagement explanation.",
+                qa=QAResult(status="passed"),
+            ),
+        ],
+    )
+
+    written = OutputWriter(tmp_path).write(artifacts)
+    sheet = load_workbook(written.output_paths["combined_excel"])[
+        "Qualitative Table Metrics"
+    ]
+    title_rows = {
+        str(sheet.cell(row, 1).value).split("-T", 1)[0]: row
+        for row in range(1, sheet.max_row + 1)
+        if re.match(r"^Q\d{3}-T\d{2}\s+\|", str(sheet.cell(row, 1).value or ""))
+    }
+
+    assert "Q001" not in title_rows
+
+    q039 = title_rows["Q039"]
+    assert "Entity: Daewoong Pharm" in sheet.cell(q039 + 1, 1).value
+    assert "Numeric status: accepted_primary" in sheet.cell(q039 + 1, 1).value
+    assert sheet.cell(q039 + 2, 3).value == "2025"
+    assert sheet.cell(q039 + 3, 1).value == "Water use"
+    assert sheet.cell(q039 + 3, 3).value == 10.5
+
+    q019 = title_rows["Q019"]
+    assert "Numeric status: withheld_low_confidence" in sheet.cell(q019 + 1, 1).value
+    assert sheet.cell(q019 + 3, 1).value == "Water use"
+    assert sheet.cell(q019 + 3, 3).value is None
+
+    q095 = title_rows["Q095"]
+    assert "Absence reason: below_threshold" in sheet.cell(q095 + 1, 1).value
+    assert sheet.cell(q095 + 2, 3).value == "Status"
+    assert sheet.cell(q095 + 3, 3).value == "not_found"
+
+
+def test_customer_metric_sheet_renders_each_block_and_entity_as_an_independent_table(tmp_path):
+    facts = [
+        {
+            "table_block": "Water > Pharm",
+            "block_rank": 1,
+            "block_role": "primary",
+            "entity": "Daewoong Pharm",
+            "entity_class": "daewoong_pharm",
+            "metric": "Water use",
+            "period": "2024",
+            "normalized_value": "9",
+            "unit": "ton",
+        },
+        {
+            "table_block": "Water > Pharm",
+            "block_rank": 1,
+            "block_role": "primary",
+            "entity": "Daewoong Pharm",
+            "entity_class": "daewoong_pharm",
+            "metric": "Total",
+            "period": "2025",
+            "normalized_value": "12",
+            "unit": "ton",
+        },
+        {
+            "table_block": "Water > Group",
+            "block_rank": 2,
+            "block_role": "primary",
+            "entity": "Daewoong Group",
+            "entity_class": "group_total",
+            "metric": "Water use",
+            "period": "2025",
+            "normalized_value": "20",
+            "unit": "ton",
+        },
+    ]
+    artifacts = RunArtifacts(
+        run_id="run_independent_metric_tables",
+        company={"company_id": "c", "company_name": "C", "year": 2025},
+        template_selection={"template_version": "v1", "question_count": 1},
+        stats={"answered": 1, "empty": 0, "weak": 0, "failed": 0},
+        answers=[
+            AnswerRecord(
+                qid="Q039",
+                source_id="EBX-Q-039",
+                question="Water metrics",
+                rag_metric_expected=True,
+                rag_metric_status="found_table",
+                metric_audit={"metric_status": "found_table", "accepted_facts": facts},
+                final_answer="Narrative water-management explanation.",
+                qa=QAResult(status="passed"),
+            )
+        ],
+    )
+
+    written = OutputWriter(tmp_path).write(artifacts)
+    sheet = load_workbook(written.output_paths["combined_excel"])[
+        "Qualitative Table Metrics"
+    ]
+    title_rows = [
+        row
+        for row in range(1, sheet.max_row + 1)
+        if re.match(r"^Q039-T\d{2}\s+\|", str(sheet.cell(row, 1).value or ""))
+    ]
+
+    assert len(title_rows) == 2
+    first, second = title_rows
+    assert sheet.cell(first, 1).value.startswith("Q039-T01 | Q039 | EBX-Q-039")
+    assert "Entity: Daewoong Pharm" in sheet.cell(first + 1, 1).value
+    assert [sheet.cell(first + 2, column).value for column in range(1, 5)] == [
+        "Metric",
+        "Unit",
+        "2024",
+        "2025",
+    ]
+    assert sheet.cell(first + 3, 1).value == "Total"
+    assert sheet.cell(first + 3, 4).value == 12
+    assert "Entity: Daewoong Group" in sheet.cell(second + 1, 1).value
+    assert sheet.cell(second + 3, 1).value == "Water use"
+    assert sheet.cell(second + 3, 3).value == 20
 
 
 def test_output_writer_cleans_illegal_excel_characters(tmp_path):
@@ -449,7 +709,11 @@ def test_output_writer_creates_two_sheet_combined_workbook_and_numbered_names(tm
     assert second_path.endswith("[langgraph][Công ty_ A_B]report-2026.07.31_2.xlsx")
 
     workbook = load_workbook(first_path, data_only=False)
-    assert workbook.sheetnames == ["Qualitative", "Quantitative"]
+    assert workbook.sheetnames == [
+        "Qualitative",
+        "Qualitative Table Metrics",
+        "Quantitative",
+    ]
     qualitative = workbook["Qualitative"]
     quantitative = workbook["Quantitative"]
     assert [cell.value for cell in qualitative[1]] == COMBINED_QUALITATIVE_COLUMNS

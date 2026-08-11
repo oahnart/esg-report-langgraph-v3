@@ -204,8 +204,8 @@ def attribute_draft_statement(text: str, output_language: str = "") -> str:
         return value
     language = (output_language or "").strip().casefold()
     if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):
-        return f"제안/검토 자료에 따르면, {value}"
-    return f"According to the draft proposal, {value}"
+        return f"검토 중인 제안 자료상 {value}"
+    return f"The proposal under review states: {value}"
 
 
 def attribute_assessment_statement(text: str, output_language: str = "") -> str:
@@ -218,6 +218,7 @@ def attribute_assessment_statement(text: str, output_language: str = "") -> str:
         for term in (
             "평가에 따르면",
             "평가 자료에 따르면",
+            "평가 자료상",
             "평가 결과",
             "assessment",
             "assessed",
@@ -226,5 +227,5 @@ def attribute_assessment_statement(text: str, output_language: str = "") -> str:
         return value
     language = (output_language or "").strip().casefold()
     if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):
-        return f"평가 자료에 따르면, {value}"
-    return f"According to the assessment, {value}"
+        return f"외부 평가 자료상 {value}"
+    return f"The external assessment records: {value}"

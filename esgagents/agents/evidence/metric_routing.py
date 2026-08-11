@@ -5,6 +5,15 @@ from typing import Any, Iterable
 from esgagents.schemas import EvidenceItem, MetricEvidenceItem, RagQuestionResult
 
 
+METRIC_SUMMARY_FIELDS = (
+    "n_rows",
+    "n_blocks",
+    "n_primary",
+    "n_scope_variant",
+    "n_denominator",
+)
+
+
 def has_metric_contract(result: RagQuestionResult) -> bool:
     return result.metric_expected is not None or result.metric_status is not None
 
@@ -17,7 +26,9 @@ def metric_contract_warnings(result: RagQuestionResult) -> list[str]:
 
     warnings: list[str] = []
     status = result.metric_status
-    if result.metric_expected is False and status not in {None, "not_expected"}:
+    if result.metric_expected is None and status is not None:
+        warnings.append("metric_status present without metric_expected")
+    if result.metric_expected is False and status != "not_expected":
         warnings.append("metric_expected=false conflicts with metric_status")
     if result.metric_expected is True and status == "not_expected":
         warnings.append("metric_expected=true conflicts with metric_status=not_expected")
@@ -30,26 +41,79 @@ def metric_contract_warnings(result: RagQuestionResult) -> list[str]:
     if status == "not_expected" and result.metric_evidence:
         warnings.append("metric_status=not_expected with metric_evidence")
     for index, item in enumerate(result.metric_evidence):
+        if not item.table_block.strip():
+            warnings.append(f"metric_evidence[{index}] missing table_block")
         if item.block_role is None:
             warnings.append(f"metric_evidence[{index}] missing block_role")
         if not item.entity_class.strip() and not item.entity.strip():
             warnings.append(f"metric_evidence[{index}] missing entity identity")
+        if not item.raw_evidence_ko.strip():
+            warnings.append(f"metric_evidence[{index}] missing raw evidence")
+        if item.metric_form.strip().casefold() != "table_row":
+            warnings.append(
+                f"metric_evidence[{index}] unsupported metric_form={item.metric_form or 'empty'}"
+            )
+    for field, values in metric_summary_mismatches(result).items():
+        warnings.append(
+            f"metric_summary_mismatch:{field}:"
+            f"expected={values['expected']}:actual={values['actual']}"
+        )
     return list(dict.fromkeys(warnings))
 
 
+def metric_actual_counts(result: RagQuestionResult) -> dict[str, int]:
+    items = list(result.metric_evidence)
+    return {
+        "n_rows": len(items),
+        "n_blocks": len(
+            {
+                item.table_block.strip()
+                for item in items
+                if item.block_role == "primary" and item.table_block.strip()
+            }
+        ),
+        "n_primary": sum(item.block_role == "primary" for item in items),
+        "n_scope_variant": sum(item.block_role == "scope_variant" for item in items),
+        "n_denominator": sum(item.block_role == "denominator" for item in items),
+    }
+
+
+def metric_summary_mismatches(result: RagQuestionResult) -> dict[str, dict[str, int]]:
+    summary = result.metric_summary
+    if summary is None:
+        return {}
+    actual = metric_actual_counts(result)
+    explicitly_set = set(getattr(summary, "model_fields_set", set(METRIC_SUMMARY_FIELDS)))
+    mismatches: dict[str, dict[str, int]] = {}
+    for field in METRIC_SUMMARY_FIELDS:
+        if field not in explicitly_set:
+            continue
+        expected = int(getattr(summary, field, 0) or 0)
+        if expected != actual[field]:
+            mismatches[field] = {"expected": expected, "actual": actual[field]}
+    return mismatches
+
+
 def valid_primary_metric_items(result: RagQuestionResult) -> list[MetricEvidenceItem]:
-    if result.metric_status != "found_table":
+    if result.metric_expected is not True or result.metric_status != "found_table":
         return []
     return [
         item
         for item in result.metric_evidence
         if item.block_role == "primary"
+        and bool(item.table_block.strip())
         and bool(item.entity_class.strip() or item.entity.strip())
         and bool(item.raw_evidence_ko.strip())
+        and item.metric_form.strip().casefold() == "table_row"
     ]
 
 
 def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
+    # metric_expected is the first routing discriminator in the API contract.
+    # A non-metric question keeps the legacy items[] behavior even when newer
+    # metadata is present.
+    if result.metric_expected is False:
+        return _dedupe(result.items)
     if result.metric_status == "found_table":
         return _dedupe([*result.narrative_evidence])
     if result.metric_status == "not_found":
@@ -67,14 +131,10 @@ def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
 
 
 def routed_writer_items(result: RagQuestionResult) -> list[EvidenceItem]:
-    if result.metric_status == "found_table":
-        return [*valid_primary_metric_items(result), *narrative_items(result)]
     return narrative_items(result)
 
 
 def routed_gate_items(result: RagQuestionResult) -> list[EvidenceItem]:
-    if result.metric_status == "found_table":
-        return [*valid_primary_metric_items(result), *narrative_items(result)]
     return narrative_items(result)
 
 

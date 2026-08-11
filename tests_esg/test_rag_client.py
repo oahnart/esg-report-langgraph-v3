@@ -502,6 +502,64 @@ def test_weaker_metric_retry_does_not_merge_into_stronger_initial_result():
     assert merged.metric_status == "found_table"
 
 
+def test_weaker_found_table_retry_enriches_stronger_initial_without_losing_blocks():
+    agent = RagBatchAgent(load_config({"agent_mode": "offline"}), SimpleNamespace())
+    original = RagQuestionResult(
+        question_id="Q039",
+        answer_status="high_confidence",
+        coverage_status="complete",
+        answerable=True,
+        metric_expected=True,
+        metric_status="found_table",
+        metric_summary={"n_rows": 1, "n_blocks": 1, "n_primary": 1},
+        metric_evidence=[
+            MetricEvidenceItem(
+                raw_evidence_ko="Water use | ton | 2025=10",
+                source_path="ESG/water.xlsx",
+                source_tier="tier_2_operational",
+                semantic_label="metric_row",
+                table_block="Pharm water",
+                block_rank=1,
+                block_role="primary",
+                entity="Daewoong Pharm",
+                entity_class="daewoong_pharm",
+            )
+        ],
+    )
+    retry = RagQuestionResult(
+        question_id="Q039",
+        answer_status="medium_confidence",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=True,
+        metric_status="found_table",
+        metric_evidence=[
+            MetricEvidenceItem(
+                raw_evidence_ko="Water use | ton | 2025=20",
+                source_path="ESG/water.xlsx",
+                source_tier="tier_2_operational",
+                semantic_label="metric_row",
+                table_block="Group water",
+                block_rank=2,
+                block_role="primary",
+                entity="Daewoong Group",
+                entity_class="group_total",
+            )
+        ],
+    )
+
+    merged = agent._merge_retry_result(original, retry)
+
+    assert merged.answer_status == "high_confidence"
+    assert {item.table_block for item in merged.metric_evidence} == {
+        "Pharm water",
+        "Group water",
+    }
+    assert merged.metric_summary.n_rows == 2
+    assert merged.metric_summary.n_blocks == 2
+    assert merged.metric_summary.n_primary == 2
+
+
 def test_v3_synthesizes_missing_result_and_records_contract_violation():
     client = TeamRagClient(
         "https://rag.example",

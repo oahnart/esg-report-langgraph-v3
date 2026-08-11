@@ -1,0 +1,298 @@
+{
+  "run_id": "run_combined",
+  "company": {
+    "company_id": "combined_company",
+    "company_name": "Combined Company",
+    "year": 2025,
+    "scale": "large_enterprise",
+    "industry": "TC",
+    "top_k": 5,
+    "item_ids": [
+      "Q001"
+    ],
+    "output_language": "Korean",
+    "run_id": "run_combined"
+  },
+  "total_qids": 1,
+  "stats": {
+    "answered": 0,
+    "empty": 1,
+    "weak": 0,
+    "failed": 0
+  },
+  "bucket_stats": {
+    "answered": 0,
+    "empty": 1,
+    "weak": 0,
+    "failed": 0
+  },
+  "final_answer_stats": {
+    "non_empty": 0,
+    "empty": 1
+  },
+  "qa_stats": {
+    "passed": 1,
+    "failed": 0,
+    "empty": 0
+  },
+  "quality_grade_stats": {
+    "full": 0,
+    "partial": 0,
+    "cautious": 0,
+    "failed": 1
+  },
+  "quality_grade_qids": {
+    "full": [],
+    "partial": [],
+    "cautious": [],
+    "failed": [
+      "Q001"
+    ]
+  },
+  "publication_status_stats": {
+    "published": 0,
+    "review_required": 0,
+    "blocked": 1
+  },
+  "publication_status_qids": {
+    "published": [],
+    "review_required": [],
+    "blocked": [
+      "Q001"
+    ]
+  },
+  "publication_reason_stats": {
+    "unsupported_claim": 1
+  },
+  "publication_reason_qids": {
+    "unsupported_claim": [
+      "Q001"
+    ]
+  },
+  "publication_issue_stats": {
+    "unsupported_claim:c1": 1
+  },
+  "publication_issue_qids": {
+    "unsupported_claim:c1": [
+      "Q001"
+    ]
+  },
+  "customer_answer_count": 0,
+  "customer_answer_qids": [],
+  "review_exported_count": 0,
+  "review_exported_qids": [],
+  "rejected_candidate_count": 1,
+  "rejected_candidate_qids": [
+    "Q001"
+  ],
+  "json_xlsx_answer_parity": true,
+  "json_xlsx_answer_parity_mismatch_qids": [],
+  "coverage_reason_stats": {
+    "qa_failed": 1
+  },
+  "coverage_reason_qids": {
+    "qa_failed": [
+      "Q001"
+    ]
+  },
+  "coverage_issue_stats": {
+    "missing_expected_facets": 1,
+    "partial_answer": 1
+  },
+  "coverage_issue_qids": {
+    "missing_expected_facets": [
+      "Q001"
+    ],
+    "partial_answer": [
+      "Q001"
+    ]
+  },
+  "coverage_matrix": {
+    "full": {},
+    "partial": {},
+    "cautious": {},
+    "failed": {
+      "qa_failed": 1
+    }
+  },
+  "provenance": {
+    "schema_version": 1,
+    "mode": "off",
+    "verified": false,
+    "source_digest": "",
+    "runtime_source_digest": "",
+    "expected_source_digest": "",
+    "built_at_utc": "",
+    "git_sha": "unknown"
+  },
+  "rag": {
+    "coverage_status_stats": {
+      "unknown": 1
+    },
+    "coverage_status_qids": {
+      "unknown": [
+        "Q001"
+      ]
+    },
+    "answerable_stats": {
+      "true": 0,
+      "false": 0,
+      "unknown": 1
+    },
+    "answerable_qids": {
+      "true": [],
+      "false": [],
+      "unknown": [
+        "Q001"
+      ]
+    },
+    "failure_code_stats": {},
+    "failure_code_qids": {},
+    "upstream_insufficient": {
+      "count": 0,
+      "qids": [],
+      "failure_code_qids": {}
+    },
+    "contract_violation_count": 0,
+    "contract_violation_qids": {},
+    "contract_warning_count": 0,
+    "contract_warning_qids": {},
+    "request_ids": [],
+    "api_versions": [],
+    "rag_versions": [],
+    "index_versions": [],
+    "request_traces": [
+      {
+        "request_id": "",
+        "api_version": "",
+        "rag_version": "",
+        "index_version": "",
+        "generated_at": null,
+        "latency_ms": null,
+        "warnings": [],
+        "requested_item_ids": [
+          "Q001"
+        ],
+        "top_k": 5,
+        "phase": "initial",
+        "contract_violations": [],
+        "error": ""
+      }
+    ]
+  },
+  "consumer_funnel": {
+    "total": 1,
+    "api_status_eligible": 1,
+    "local_evidence_eligible": 0,
+    "draft_non_empty": 1,
+    "qa_passed": 1,
+    "final_non_empty": 0
+  },
+  "consumer_decision_stats": {
+    "blocked_evidence": 1
+  },
+  "consumer_decision_qids": {
+    "blocked_evidence": [
+      "Q001"
+    ]
+  },
+  "local_admission": {
+    "count": 0,
+    "reason_qids": {}
+  },
+  "writer_fallback": {
+    "count": 0,
+    "reason_qids": {}
+  },
+  "metric_facts": {
+    "qids_with_metric_rows": [],
+    "metric_row_count": 0,
+    "parsed_metric_row_count": 0,
+    "malformed_metric_row_count": 0,
+    "accepted_fact_count": 0,
+    "conflict_count": 0,
+    "conflict_qids": [],
+    "all_numeric_facts_conflicted_qids": [],
+    "status_qids": {
+      "legacy": [
+        "Q001"
+      ]
+    },
+    "absence_reason_qids": {},
+    "low_confidence_qids": [],
+    "summary_mismatch_qids": [],
+    "summary_mismatch_fields": {},
+    "contract_qids": {
+      "legacy": [
+        "Q001"
+      ]
+    },
+    "summary_mismatch_count": 0
+  },
+  "provenance_fallback": {
+    "count": 0,
+    "qids": []
+  },
+  "upstream_mismatch": {
+    "count": 0,
+    "qids": []
+  },
+  "claim_salvage": {
+    "claim_count": 0,
+    "qid_count": 0,
+    "qids": []
+  },
+  "empty_final_answer_qids": [
+    "Q001"
+  ],
+  "top_failure_notes": [
+    {
+      "note": "missing facet: policy_or_direction",
+      "count": 1
+    },
+    {
+      "note": "missing facet: target",
+      "count": 1
+    }
+  ],
+  "groups": {
+    "empty_evidence": [],
+    "metrics_missing": [],
+    "draft_evidence": [],
+    "draft_based_answers": [],
+    "partial_answers": [],
+    "missing_required_facets": [],
+    "missing_expected_facets": [
+      "Q001"
+    ],
+    "source_overstated": [],
+    "unsupported_claim": []
+  },
+  "retrieval": {
+    "retried_qids": [],
+    "retry_helped_qids": [],
+    "retry_unresolved_qids": [],
+    "attempts_by_qid": {
+      "Q001": [
+        {
+          "top_k": 5,
+          "retry_top_k": 5,
+          "retry_reason": "initial",
+          "answer_status": "high_confidence",
+          "coverage_status": null,
+          "answerable": null,
+          "retrieval_confidence": null,
+          "covered_facets": [],
+          "missing_facets": [],
+          "failure_code": null,
+          "request_id": "",
+          "item_count": 1,
+          "eligible_item_count": 1,
+          "metric_status": null,
+          "metric_evidence_row_count": 0,
+          "metric_primary_block_count": 0
+        }
+      ]
+    }
+  }
+}

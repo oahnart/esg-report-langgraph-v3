@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from time import perf_counter
 from typing import Any, Callable
 
 from esgagents.agents import ESGAgents
@@ -15,6 +17,9 @@ from .conditional_logic import ESGConditionalLogic
 from .propagation import ESGPropagator
 from .setup import ESGGraphSetup
 from .state import ESGState
+
+
+logger = logging.getLogger(__name__)
 
 
 class ESGQualitativeGraph:
@@ -74,10 +79,16 @@ class ESGQualitativeGraph:
         if write_outputs:
             if self.progress_observer:
                 self.progress_observer("Write Report Output", "started")
+            write_started = perf_counter()
             artifacts = self.output_writer.write(
                 artifacts,
                 retry_existing=retry_outputs,
             )
             if self.progress_observer:
                 self.progress_observer("Write Report Output", "completed")
+            logger.info(
+                "graph_node node=%r status=completed elapsed_ms=%s",
+                "Write Report Output",
+                round((perf_counter() - write_started) * 1000),
+            )
         return artifacts

@@ -25,24 +25,40 @@ class ReportManagerAgent:
         stats = {"answered": 0, "empty": 0, "weak": 0, "failed": 0}
         rag_results = state["rag_results"]
         accepted_statuses = {str(s).lower() for s in self.config["accepted_answer_statuses"]}
+        conditional_statuses = {
+            str(s).lower()
+            for s in self.config.get("conditional_answer_statuses", set())
+        }
         for planned in state["planned_questions"]:
             rag = rag_results.get(planned.id)
             qa = state["qa_results"][planned.id]
             final_answer = state["final_answers"].get(planned.id, "")
-            if rag and rag.is_v3 and rag.answer_status.strip().casefold() not in {
-                "high_confidence",
-                "medium_confidence",
-                "thin_but_usable",
-            }:
-                final_answer = ""
             gate = state["evidence_gate"].get(planned.id, {})
+            gate_reason = str(gate.get("reason", "") or "")
+            local_evidence_accepted = bool(gate.get("accepted")) and gate_reason in {
+                "accepted_v3_local_partial",
+                "accepted_draft_evidence",
+                "accepted_assessment_evidence",
+            }
+            status_eligible = bool(
+                rag
+                and rag.answer_status.strip().casefold()
+                in accepted_statuses | conditional_statuses
+            )
+            if rag and rag.is_v3 and not status_eligible and not local_evidence_accepted:
+                final_answer = ""
             if final_answer and not bool(gate.get("accepted")):
                 final_answer = ""
             if final_answer:
                 result_bucket = "answered"
             elif qa.status == "failed":
                 result_bucket = "failed"
-            elif "weak" in gate.get("reason", "") or (rag and rag.answer_status.lower() not in accepted_statuses):
+            elif "weak" in gate.get("reason", "") or (
+                rag
+                and rag.answer_status.lower()
+                not in accepted_statuses | conditional_statuses
+                and not local_evidence_accepted
+            ):
                 result_bucket = "weak"
             else:
                 result_bucket = "empty"
@@ -51,7 +67,23 @@ class ReportManagerAgent:
             local_dimensions = list(build_question_contract(planned).metric_dimensions)
             if local_dimensions:
                 metric_audit["local_dimensions"] = local_dimensions
-            quality_flags = state.get("quality_flags", {}).get(planned.id, [])
+            quality_flags = list(
+                state.get("quality_flags", {}).get(planned.id, [])
+            )
+            if metric_audit.get("metric_summary_mismatches"):
+                quality_flags = sorted(
+                    set(
+                        [
+                            *quality_flags,
+                            "metric_summary_mismatch",
+                            "human_review_required",
+                        ]
+                    )
+                )
+            if local_evidence_accepted and not status_eligible:
+                quality_flags = sorted(
+                    set([*quality_flags, "local_partial_evidence", "partial_answer"])
+                )
             consumer_decision = self._consumer_decision(
                 final_answer=final_answer,
                 answer_status=rag.answer_status if rag else "",
@@ -92,6 +124,8 @@ class ReportManagerAgent:
                 upstream_coverage_mismatch=bool(
                     state.get("upstream_coverage_mismatches", {}).get(planned.id, False)
                 ),
+                local_evidence_accepted=local_evidence_accepted,
+                local_acceptance_reason=gate_reason if local_evidence_accepted else "",
                 metric_audit=metric_audit,
                 result_bucket=result_bucket,
                 draft_answer=state.get("draft_answers", {}).get(planned.id, ""),
@@ -174,6 +208,7 @@ class ReportManagerAgent:
                 "metric_not_found",
                 "metric_low_confidence",
                 "metric_numeric_withheld",
+                "metric_summary_mismatch",
             }
             return (
                 "answered_partial"

@@ -11,8 +11,11 @@ from .metric_routing import (
     has_metric_contract,
     is_low_metric_confidence,
     is_metric_row,
+    metric_actual_counts,
     metric_contract_warnings,
+    metric_summary_mismatches,
     routed_writer_items,
+    valid_primary_metric_items,
 )
 from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
 from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
@@ -95,7 +98,26 @@ class EvidenceNormalizerAgent:
             )
             summary_parts = [normalized_answer] if normalized_answer else []
             if rag.metric_status == "found_table":
-                primary_rows = [item for item in ranked if isinstance(item, MetricEvidenceItem)]
+                primary_rows = []
+                for item in valid_primary_metric_items(rag):
+                    normalized_metric_item = item
+                    if not normalized_metric_item.facts:
+                        inferred_facts = self._infer_structured_facts(normalized_metric_item)
+                        if inferred_facts:
+                            normalized_metric_item = normalized_metric_item.model_copy(
+                                update={"facts": inferred_facts}
+                            )
+                    classification = classify_source(normalized_metric_item)
+                    if self.source_policy_enabled:
+                        upstream_canonical_id = normalized_metric_item.canonical_source_id.strip()
+                        normalized_metric_item = normalized_metric_item.model_copy(
+                            update=classification.__dict__
+                        )
+                        if rag.is_v3:
+                            normalized_metric_item = normalized_metric_item.model_copy(
+                                update={"canonical_source_id": upstream_canonical_id}
+                            )
+                    primary_rows.append(normalized_metric_item)
                 metric_audit = resolve_metric_facts(primary_rows)
                 if is_low_metric_confidence(rag):
                     metric_audit["withheld_facts"] = list(metric_audit.get("accepted_facts", []))
@@ -116,7 +138,16 @@ class EvidenceNormalizerAgent:
                     "metric_summary": model_to_dict(rag.metric_summary) if rag.metric_summary else {},
                     "metric_absence": model_to_dict(rag.metric_absence) if rag.metric_absence else {},
                     "metric_contract_warnings": metric_contract_warnings(rag),
+                    "metric_summary_actual": metric_actual_counts(rag),
+                    "metric_summary_mismatches": metric_summary_mismatches(rag),
                     "metric_evidence_row_count": len(rag.metric_evidence),
+                    "metric_primary_block_count": len(
+                        {
+                            item.table_block.strip()
+                            for item in rag.metric_evidence
+                            if item.block_role == "primary" and item.table_block.strip()
+                        }
+                    ),
                     "primary_row_count": sum(item.block_role == "primary" for item in rag.metric_evidence),
                     "scope_variant_row_count": sum(
                         item.block_role == "scope_variant" for item in rag.metric_evidence
@@ -190,7 +221,11 @@ class EvidenceNormalizerAgent:
                 all_metric_evidence.append(normalized_metric_item)
             normalized[qid] = {
                 "items": ranked,
-                "metric_items": [item for item in ranked if is_metric_row(item)],
+                "metric_items": (
+                    primary_rows
+                    if rag.metric_status == "found_table"
+                    else [item for item in ranked if is_metric_row(item)]
+                ),
                 "narrative_items": [item for item in ranked if not is_metric_row(item)],
                 "evidence_summary": "\n".join(summary_parts),
                 "sources": sources,

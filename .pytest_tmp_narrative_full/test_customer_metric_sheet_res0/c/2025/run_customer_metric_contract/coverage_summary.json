@@ -1,0 +1,277 @@
+{
+  "run_id": "run_customer_metric_contract",
+  "company": {
+    "company_id": "c",
+    "company_name": "C",
+    "year": 2025
+  },
+  "total_qids": 4,
+  "stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 4,
+    "failed": 0
+  },
+  "bucket_stats": {
+    "answered": 0,
+    "empty": 0,
+    "weak": 4,
+    "failed": 0
+  },
+  "final_answer_stats": {
+    "non_empty": 0,
+    "empty": 4
+  },
+  "qa_stats": {
+    "passed": 4,
+    "failed": 0,
+    "empty": 0
+  },
+  "quality_grade_stats": {
+    "full": 0,
+    "partial": 0,
+    "cautious": 0,
+    "failed": 4
+  },
+  "quality_grade_qids": {
+    "full": [],
+    "partial": [],
+    "cautious": [],
+    "failed": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "publication_status_stats": {
+    "published": 0,
+    "review_required": 0,
+    "blocked": 4
+  },
+  "publication_status_qids": {
+    "published": [],
+    "review_required": [],
+    "blocked": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "publication_reason_stats": {
+    "unaccepted_answer_status": 4
+  },
+  "publication_reason_qids": {
+    "unaccepted_answer_status": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "publication_issue_stats": {
+    "unaccepted_answer_status:missing": 4
+  },
+  "publication_issue_qids": {
+    "unaccepted_answer_status:missing": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "customer_answer_count": 0,
+  "customer_answer_qids": [],
+  "review_exported_count": 0,
+  "review_exported_qids": [],
+  "rejected_candidate_count": 4,
+  "rejected_candidate_qids": [
+    "Q001",
+    "Q019",
+    "Q039",
+    "Q095"
+  ],
+  "json_xlsx_answer_parity": true,
+  "json_xlsx_answer_parity_mismatch_qids": [],
+  "coverage_reason_stats": {
+    "rag_no_evidence": 4
+  },
+  "coverage_reason_qids": {
+    "rag_no_evidence": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "coverage_issue_stats": {
+    "rag_no_evidence": 4
+  },
+  "coverage_issue_qids": {
+    "rag_no_evidence": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "coverage_matrix": {
+    "full": {},
+    "partial": {},
+    "cautious": {},
+    "failed": {
+      "rag_no_evidence": 4
+    }
+  },
+  "provenance": {},
+  "rag": {
+    "coverage_status_stats": {
+      "unknown": 4
+    },
+    "coverage_status_qids": {
+      "unknown": [
+        "Q001",
+        "Q019",
+        "Q039",
+        "Q095"
+      ]
+    },
+    "answerable_stats": {
+      "true": 0,
+      "false": 0,
+      "unknown": 4
+    },
+    "answerable_qids": {
+      "true": [],
+      "false": [],
+      "unknown": [
+        "Q001",
+        "Q019",
+        "Q039",
+        "Q095"
+      ]
+    },
+    "failure_code_stats": {},
+    "failure_code_qids": {},
+    "upstream_insufficient": {
+      "count": 0,
+      "qids": [],
+      "failure_code_qids": {}
+    },
+    "contract_violation_count": 0,
+    "contract_violation_qids": {},
+    "contract_warning_count": 0,
+    "contract_warning_qids": {},
+    "request_ids": [],
+    "api_versions": [],
+    "rag_versions": [],
+    "index_versions": [],
+    "request_traces": []
+  },
+  "consumer_funnel": {
+    "total": 4,
+    "api_status_eligible": 0,
+    "local_evidence_eligible": 0,
+    "draft_non_empty": 0,
+    "qa_passed": 4,
+    "final_non_empty": 0
+  },
+  "consumer_decision_stats": {
+    "blocked_api_status": 4
+  },
+  "consumer_decision_qids": {
+    "blocked_api_status": [
+      "Q001",
+      "Q019",
+      "Q039",
+      "Q095"
+    ]
+  },
+  "local_admission": {
+    "count": 0,
+    "reason_qids": {}
+  },
+  "writer_fallback": {
+    "count": 0,
+    "reason_qids": {}
+  },
+  "metric_facts": {
+    "qids_with_metric_rows": [],
+    "metric_row_count": 0,
+    "parsed_metric_row_count": 0,
+    "malformed_metric_row_count": 0,
+    "accepted_fact_count": 0,
+    "conflict_count": 0,
+    "conflict_qids": [],
+    "all_numeric_facts_conflicted_qids": [],
+    "status_qids": {
+      "found_table": [
+        "Q019",
+        "Q039"
+      ],
+      "not_expected": [
+        "Q001"
+      ],
+      "not_found": [
+        "Q095"
+      ]
+    },
+    "absence_reason_qids": {
+      "below_threshold": [
+        "Q095"
+      ]
+    },
+    "low_confidence_qids": [
+      "Q019"
+    ],
+    "summary_mismatch_qids": [],
+    "summary_mismatch_fields": {},
+    "contract_qids": {
+      "legacy": [
+        "Q001",
+        "Q019",
+        "Q039",
+        "Q095"
+      ]
+    },
+    "summary_mismatch_count": 0
+  },
+  "provenance_fallback": {
+    "count": 0,
+    "qids": []
+  },
+  "upstream_mismatch": {
+    "count": 0,
+    "qids": []
+  },
+  "claim_salvage": {
+    "claim_count": 0,
+    "qid_count": 0,
+    "qids": []
+  },
+  "empty_final_answer_qids": [
+    "Q001",
+    "Q019",
+    "Q039",
+    "Q095"
+  ],
+  "top_failure_notes": [],
+  "groups": {
+    "empty_evidence": [],
+    "metrics_missing": [],
+    "draft_evidence": [],
+    "draft_based_answers": [],
+    "partial_answers": [],
+    "missing_required_facets": [],
+    "missing_expected_facets": [],
+    "source_overstated": [],
+    "unsupported_claim": []
+  },
+  "retrieval": {
+    "retried_qids": [],
+    "retry_helped_qids": [],
+    "retry_unresolved_qids": [],
+    "attempts_by_qid": {}
+  }
+}

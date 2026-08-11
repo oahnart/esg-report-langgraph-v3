@@ -110,6 +110,10 @@ def _metric_statements(answer: str) -> list[str]:
 def _has_substantive_numeric_claim(statement: str) -> bool:
     normalized = unicodedata.normalize("NFKC", statement or "")
     lower = normalized.casefold()
+    # Formulas explain methodology rather than report a result. Preserve them
+    # in narrative answers even when they contain constants such as x 100.
+    if re.search(r"(?:=|×|÷).*(?:/|×|÷)|(?:/|×|÷).*(?:=|×|÷)", normalized):
+        return False
     if re.search(
         r"(?:해당\s*사항\s*없음|미발생|발생하지\s*않|no\s+incidents?|none|zero)",
         lower,

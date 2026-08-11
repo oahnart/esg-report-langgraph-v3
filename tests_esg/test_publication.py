@@ -61,6 +61,24 @@ def test_unsafe_answers_are_blocked(updates, reason):
     assert decision.reason == reason
 
 
+def test_locally_admitted_insufficient_answer_requires_review_and_is_exported():
+    answer = _answer(
+        answer_status="insufficient",
+        local_evidence_accepted=True,
+        local_acceptance_reason="accepted_v3_local_partial",
+        quality_flags=["local_partial_evidence", "partial_answer"],
+        qa_grade="partial",
+        coverage_reason="missing_expected_facets",
+        coverage_issues=["missing_expected_facets", "partial_answer"],
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "review_required"
+    assert "local_partial_evidence" in decision.issues
+    assert customer_export_answer(answer) == answer.final_answer
+
+
 def test_legacy_record_without_publication_fields_is_inferred_by_current_policy():
     legacy = _answer(publication_status=None)
 
@@ -178,6 +196,7 @@ def test_vietnamese_meta_limitation_is_removed_from_substantive_answer():
     "flag",
     [
         "metric_low_confidence",
+        "metric_summary_mismatch",
         "human_review_required",
         "conflicting_metric",
         "legal_review_required",

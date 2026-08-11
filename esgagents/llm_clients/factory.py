@@ -79,7 +79,16 @@ def create_llm_client(config: dict[str, Any], model_key: str = "quick_think_llm"
         "temperature": 0,
         "timeout": config.get("llm_timeout_seconds", 120),
         "api_key": api_key,
-        "metadata": {"esg_llm_provider": provider},
+        "metadata": {
+            "esg_llm_provider": provider,
+            "esg_json_repair_retry": bool(
+                config.get("llm_json_repair_retry", False)
+            ),
+            "esg_structured_failure_limit": max(
+                0,
+                int(config.get("llm_structured_failure_limit", 3) or 0),
+            ),
+        },
     }
     if provider == "hallmdr":
         kwargs["base_url"] = _hallmdr_base_url(config)

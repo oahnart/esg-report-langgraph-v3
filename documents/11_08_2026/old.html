@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESG LangGraph: báo cáo run Daewoong 11/08/2026</title>
+    <style>
+      :root {
+        --bg: #f3f5f6;
+        --panel: #fff;
+        --ink: #17232d;
+        --muted: #566470;
+        --faint: #84919b;
+        --line: #dbe2e6;
+        --slate: #243746;
+        --blue: #3d5db3;
+        --blue-soft: #e9edf9;
+        --teal: #08796d;
+        --teal-soft: #e2f2ef;
+        --green: #257747;
+        --green-soft: #e5f2e9;
+        --amber: #a76b13;
+        --amber-soft: #f8eddc;
+        --red: #b44833;
+        --red-soft: #f8e7e3;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--bg);
+        font-family:
+          Arial, "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR",
+          sans-serif;
+        line-height: 1.58;
+      }
+      body[data-lang="vi"] [lang="ko"],
+      body[data-lang="ko"] [lang="vi"] {
+        display: none;
+      }
+      .wrap {
+        width: min(1200px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+      .mono,
+      code {
+        font-family: Consolas, "Courier New", monospace;
+      }
+      .hero {
+        color: #fff;
+        border-bottom: 6px solid var(--teal);
+        background: var(--slate);
+      }
+      .hero-inner {
+        padding: 38px 0 32px;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        color: #cbd7df;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .title-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      h1 {
+        max-width: 920px;
+        margin: 0;
+        font-size: clamp(30px, 4vw, 43px);
+        line-height: 1.12;
+      }
+      .badge {
+        padding: 7px 11px;
+        border: 1px solid #7d91a1;
+        border-radius: 6px;
+        background: #334b5d;
+        font-weight: 800;
+      }
+      .lead {
+        max-width: 980px;
+        margin: 15px 0 0;
+        color: #d9e2e8;
+        font-size: 17px;
+      }
+      .latest-report-link {
+        display: inline-flex;
+        gap: 8px;
+        margin-top: 18px;
+        padding: 9px 13px;
+        border: 1px solid #a9c9bf;
+        border-radius: 6px;
+        color: #fff;
+        background: var(--teal);
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      .lang-switch {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 6px;
+        padding: 5px;
+        border: 1px solid #607788;
+        border-radius: 7px;
+      }
+      .lang-switch button {
+        min-width: 45px;
+        border: 0;
+        border-radius: 5px;
+        padding: 7px 10px;
+        color: #fff;
+        background: transparent;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .lang-switch button.active {
+        color: var(--ink);
+        background: #fff;
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+      .hero-stat {
+        min-height: 112px;
+        padding: 16px;
+        border: 1px solid #607788;
+        border-radius: 7px;
+        background: #2e4556;
+      }
+      .hero-stat strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 29px;
+        line-height: 1;
+      }
+      .hero-stat span {
+        color: #d5dfe6;
+        font-size: 13px;
+      }
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.97);
+      }
+      nav .wrap {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 0;
+      }
+      nav button {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: var(--ink);
+        background: #fff;
+        font-weight: 750;
+        cursor: pointer;
+      }
+      nav button.active {
+        color: #fff;
+        border-color: var(--blue);
+        background: var(--blue);
+      }
+      main {
+        padding: 24px 0 54px;
+      }
+      .tab-panel {
+        display: none;
+        padding: 27px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 14px 35px rgba(23, 35, 45, 0.07);
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      h3 {
+        margin: 26px 0 10px;
+        font-size: 19px;
+      }
+      h4 {
+        margin: 0 0 7px;
+        font-size: 15px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .section-lead {
+        max-width: 1020px;
+        color: var(--muted);
+      }
+      .section-kicker {
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .card {
+        padding: 17px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+      .card p {
+        color: var(--muted);
+      }
+      .tone-blue {
+        border-top: 4px solid var(--blue);
+      }
+      .tone-teal {
+        border-top: 4px solid var(--teal);
+      }
+      .tone-green {
+        border-top: 4px solid var(--green);
+      }
+      .tone-amber {
+        border-top: 4px solid var(--amber);
+      }
+      .tone-red {
+        border-top: 4px solid var(--red);
+      }
+      .metric {
+        font-size: 30px;
+        font-weight: 850;
+        line-height: 1.1;
+      }
+      .callout {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-left: 5px solid var(--blue);
+        background: var(--blue-soft);
+      }
+      .callout.good {
+        border-left-color: var(--green);
+        background: var(--green-soft);
+      }
+      .callout.warn {
+        border-left-color: var(--amber);
+        background: var(--amber-soft);
+      }
+      .callout.bad {
+        border-left-color: var(--red);
+        background: var(--red-soft);
+      }
+      .table-wrap {
+        margin-top: 16px;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: #314250;
+        background: #edf1f3;
+        font-size: 13px;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .delta-up {
+        color: var(--green);
+        font-weight: 850;
+      }
+      .delta-down {
+        color: var(--red);
+        font-weight: 850;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .pill.pass {
+        color: var(--green);
+        background: var(--green-soft);
+      }
+      .pill.warn {
+        color: #79500f;
+        background: var(--amber-soft);
+      }
+      .pill.fail {
+        color: var(--red);
+        background: var(--red-soft);
+      }
+      .pill.info {
+        color: var(--blue);
+        background: var(--blue-soft);
+      }
+      .flow-main {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(115px, 1fr));
+        gap: 9px;
+        margin-top: 18px;
+      }
+      .flow-box {
+        min-height: 104px;
+        padding: 13px;
+        border: 1px solid #bfcad2;
+        border-radius: 6px;
+        background: #f9fafb;
+      }
+      .flow-box strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 13px;
+      }
+      .flow-box span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .bar-list {
+        display: grid;
+        gap: 11px;
+        margin-top: 15px;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: minmax(155px, 225px) 1fr 95px;
+        gap: 12px;
+        align-items: center;
+      }
+      .bar-label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .bar-track {
+        height: 13px;
+        overflow: hidden;
+        border-radius: 4px;
+        background: #e8edef;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--blue);
+      }
+      .bar-value {
+        text-align: right;
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .bar-value small {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .id-list {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.8;
+        overflow-wrap: anywhere;
+      }
+      .decision {
+        padding: 18px;
+        border: 1px solid #a8cbb8;
+        border-radius: 7px;
+        background: var(--green-soft);
+      }
+      .decision strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 18px;
+      }
+      footer {
+        padding: 20px 0 34px;
+        color: var(--faint);
+        text-align: center;
+        font-size: 12px;
+      }
+      @media (max-width: 980px) {
+        .hero-grid,
+        .grid-4 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .grid-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .flow-main {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 650px) {
+        .wrap {
+          width: min(100% - 24px, 1200px);
+        }
+        .topbar {
+          display: block;
+        }
+        .lang-switch {
+          width: max-content;
+          margin-top: 18px;
+        }
+        .hero-grid,
+        .grid-2,
+        .grid-3,
+        .grid-4,
+        .flow-main {
+          grid-template-columns: 1fr;
+        }
+        .tab-panel {
+          padding: 18px;
+        }
+        .bar-row {
+          grid-template-columns: 1fr 70px;
+        }
+        .bar-track {
+          grid-column: 1/-1;
+          grid-row: 2;
+        }
+      }
+      @media print {
+        nav,
+        .lang-switch {
+          display: none;
+        }
+        body {
+          background: #fff;
+        }
+        .tab-panel {
+          display: block !important;
+          margin: 12px 0;
+          box-shadow: none;
+          break-inside: avoid;
+        }
+        .hero {
+          background: #243746 !important;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body data-lang="vi">
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">
+              <span lang="vi"
+                >Báo cáo kiến trúc và vận hành · Daewoong ESG 2025 ·
+                11/08/2026</span
+              ><span lang="ko"
+                >아키텍처 및 운영 보고서 · 대웅제약 ESG 2025 · 2026/08/11</span
+              >
+            </p>
+            <div class="title-line">
+              <h1>
+                <span lang="vi"
+                  >ESG LangGraph: báo cáo run Daewoong 11/08/2026</span
+                ><span lang="ko"
+                  >ESG LangGraph: 대웅제약 2026/08/11 실행 보고서</span
+                >
+              </h1>
+              <span class="badge">V3</span>
+            </div>
+            <p class="lead">
+              <span lang="vi"
+                >Báo cáo sử dụng template report.md và dữ liệu run mới
+                run_20260811T073243021490Z_5ebbd901. Nội dung chỉ phản ánh kết
+                quả của Daewoong năm 2025.</span
+              ><span lang="ko"
+                >report.md 템플릿과 새 실행 run_20260811T073243021490Z_5ebbd901
+                데이터를 사용한 보고서입니다. 2025년 대웅제약 결과만
+                반영합니다.</span
+              >
+            </p>
+            <a
+              class="latest-report-link"
+              href="https://docs.google.com/spreadsheets/d/1sW2mBt2z27rxZsIa4MrS3UtVUQNgbj0Y/edit?usp=sharing&amp;ouid=114916983520042353804&amp;rtpof=true&amp;sd=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              >↗ <span lang="vi">Mở báo cáo mới nhất trên Google Drive</span
+              ><span lang="ko">Google Drive 최신 보고서 열기</span></a
+            >
+          </div>
+          <div class="lang-switch">
+            <button type="button" class="active" data-lang-button="vi">
+              VI</button
+            ><button type="button" data-lang-button="ko">KO</button>
+          </div>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-stat">
+            <strong>95</strong
+            ><span lang="vi">câu định tính trong một báo cáo</span
+            ><span lang="ko">하나의 보고서에 포함된 정성 문항</span>
+          </div>
+          <div class="hero-stat">
+            <strong>70</strong><span lang="vi">câu có câu trả lời cuối</span
+            ><span lang="ko">최종 답변이 있는 문항</span>
+          </div>
+          <div class="hero-stat">
+            <strong>111 / 210</strong
+            ><span lang="vi">mục định lượng đã điền</span
+            ><span lang="ko">입력 완료된 정량 항목</span>
+          </div>
+          <div class="hero-stat">
+            <strong>14 / 56 / 25</strong
+            ><span lang="vi">xuất bản / xem lại / bị chặn</span
+            ><span lang="ko">게시 / 검토 필요 / 차단</span>
+          </div>
+        </div>
+      </div>
+    </header>
+    <nav>
+      <div class="wrap">
+        <button type="button" class="active" data-tab="overview">
+          <span lang="vi">Tổng quan</span><span lang="ko">개요</span></button
+        ><button type="button" class="" data-tab="flow">
+          <span lang="vi">Luồng xử lý</span
+          ><span lang="ko">처리 흐름</span></button
+        ><button type="button" class="" data-tab="results">
+          <span lang="vi">Kết quả run</span
+          ><span lang="ko">실행 결과</span></button
+        ><button type="button" class="" data-tab="quality">
+          <span lang="vi">QA và xuất bản</span
+          ><span lang="ko">QA 및 게시</span></button
+        ><button type="button" class="" data-tab="quantitative">
+          <span lang="vi">Định lượng</span><span lang="ko">정량</span></button
+        ><button type="button" class="" data-tab="weaknesses">
+          <span lang="vi">Điểm yếu</span><span lang="ko">한계</span></button
+        ><button type="button" class="" data-tab="glossary">
+          <span lang="vi">Chú thích</span><span lang="ko">용어</span></button
+        ><button type="button" class="" data-tab="conclusion">
+          <span lang="vi">Kết luận</span><span lang="ko">결론</span>
+        </button>
+      </div>
+    </nav>
+    <main class="wrap">
+      <section id="overview" class="tab-panel active">
+        <p class="section-kicker">
+          <span lang="vi">Toàn cảnh lần chạy</span
+          ><span lang="ko">실행 전체 개요</span>
+        </p>
+        <h2>
+          <span lang="vi">Tổng quan lần chạy Daewoong</span
+          ><span lang="ko">대웅제약 실행 개요</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Đây là báo cáo được dựng từ dữ liệu run
+            run_20260811T073243021490Z_5ebbd901. Nội dung phản ánh đúng kết quả
+            của công ty Daewoong cho năm 2025; không sử dụng số liệu của báo cáo
+            cũ.</span
+          ><span lang="ko"
+            >run_20260811T073243021490Z_5ebbd901 실행 데이터로 생성한
+            보고서입니다. 2025년 Daewoong의 실행 결과만 반영하며 이전 보고서의
+            수치는 사용하지 않습니다.</span
+          >
+        </p>
+        <div class="grid-4">
+          <article class="card tone-blue">
+            <div class="metric">95</div>
+            <p>
+              <span lang="vi">Tổng số câu định tính</span
+              ><span lang="ko">전체 정성 문항</span>
+            </p>
+          </article>
+          <article class="card tone-teal">
+            <div class="metric">70</div>
+            <p>
+              <span lang="vi">Câu có câu trả lời cuối</span
+              ><span lang="ko">최종 답변이 있는 문항</span>
+            </p>
+          </article>
+          <article class="card tone-green">
+            <div class="metric">111</div>
+            <p>
+              <span lang="vi">Mục định lượng đã điền</span
+              ><span lang="ko">입력 완료 정량 항목</span>
+            </p>
+          </article>
+          <article class="card tone-red">
+            <div class="metric">25</div>
+            <p>
+              <span lang="vi">Câu bị chặn trước xuất bản</span
+              ><span lang="ko">게시 전 차단 문항</span>
+            </p>
+          </article>
+        </div>
+        <div class="grid-2">
+          <article class="card tone-blue">
+            <h3>
+              <span lang="vi">Thông tin đầu vào</span
+              ><span lang="ko">입력 정보</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Công ty: Daewoong · Năm: 2025 · Ngành: HC · Quy mô:
+                large_enterprise · Ngôn ngữ đầu ra: Korean</span
+              ><span lang="ko"
+                >회사: Daewoong · 연도: 2025 · 산업: HC · 규모: large_enterprise
+                · 출력 언어: Korean</span
+              >
+            </p>
+          </article>
+          <article class="card tone-teal">
+            <h3>
+              <span lang="vi">Đầu ra của run</span
+              ><span lang="ko">실행 출력</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >JSON kết quả, coverage summary, Excel báo cáo và Excel tổng hợp
+                được ghi trong thư mục run.</span
+              ><span lang="ko"
+                >결과 JSON, coverage summary, 보고서 Excel 및 통합 Excel이 실행
+                폴더에 기록되었습니다.</span
+              >
+            </p>
+          </article>
+        </div>
+        <div class="callout">
+          <strong
+            ><span lang="vi">Báo cáo mới nhất trên Google Drive.</span
+            ><span lang="ko">Google Drive 최신 보고서.</span></strong
+          ><br /><a
+            class="latest-report-link"
+            href="https://docs.google.com/spreadsheets/d/1sW2mBt2z27rxZsIa4MrS3UtVUQNgbj0Y/edit?usp=sharing&amp;ouid=114916983520042353804&amp;rtpof=true&amp;sd=true"
+            target="_blank"
+            rel="noopener noreferrer"
+            >↗ <span lang="vi">Mở báo cáo mới nhất</span
+            ><span lang="ko">최신 보고서 열기</span></a
+          >
+        </div>
+      </section>
+      <section id="flow" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Sơ đồ xử lý</span><span lang="ko">처리 구성</span>
+        </p>
+        <h2>
+          <span lang="vi">Luồng xử lý của run mới</span
+          ><span lang="ko">새 실행 처리 흐름</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Luồng thực tế đi từ dữ liệu đầu vào đến quyết định xuất bản. Mỗi
+            câu được giữ riêng theo QID để không trộn evidence giữa 95
+            câu.</span
+          ><span lang="ko"
+            >실제 흐름은 입력 데이터에서 게시 결정까지 이어집니다. 95개 문항의
+            근거가 섞이지 않도록 문항 ID별로 분리 처리합니다.</span
+          >
+        </p>
+        <h3>
+          <span lang="vi">Luồng toàn báo cáo · 6 bước</span
+          ><span lang="ko">전체 보고서 흐름 · 6단계</span>
+        </h3>
+        <div class="flow-main">
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">01 · Khởi tạo</span
+              ><span lang="ko">01 · 실행 초기화</span></strong
+            ><span
+              ><span lang="vi"
+                >Đọc cấu hình, công ty, năm và tạo thư mục run.</span
+              ><span lang="ko"
+                >설정, 회사, 연도를 읽고 실행 폴더를 만듭니다.</span
+              ></span
+            >
+          </div>
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">02 · Nhận dữ liệu</span
+              ><span lang="ko">02 · 데이터 수신</span></strong
+            ><span
+              ><span lang="vi"
+                >Nạp evidence định tính và 210 mục định lượng.</span
+              ><span lang="ko"
+                >정성 근거와 210개 정량 항목을 불러옵니다.</span
+              ></span
+            >
+          </div>
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">03 · Chuẩn hóa</span
+              ><span lang="ko">03 · 정규화</span></strong
+            ><span
+              ><span lang="vi">Đưa dữ liệu về cấu trúc chung theo QID.</span
+              ><span lang="ko"
+                >문항 ID 기준으로 데이터를 공통 구조로 정규화합니다.</span
+              ></span
+            >
+          </div>
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">04 · Viết câu</span
+              ><span lang="ko">04 · 답변 작성</span></strong
+            ><span
+              ><span lang="vi"
+                >Tạo draft, kiểm tra dẫn chứng và sinh câu trả lời.</span
+              ><span lang="ko"
+                >초안을 만들고 근거를 검사해 답변을 생성합니다.</span
+              ></span
+            >
+          </div>
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">05 · Kiểm tra</span
+              ><span lang="ko">05 · 품질 검사</span></strong
+            ><span
+              ><span lang="vi">QA, quality grade và quyết định xuất bản.</span
+              ><span lang="ko"
+                >QA, 품질 등급 및 게시 결정을 수행합니다.</span
+              ></span
+            >
+          </div>
+          <div class="flow-box">
+            <strong
+              ><span lang="vi">06 · Xuất kết quả</span
+              ><span lang="ko">06 · 결과 출력</span></strong
+            ><span
+              ><span lang="vi">Ghi JSON, coverage summary và Excel.</span
+              ><span lang="ko"
+                >JSON, coverage summary 및 Excel을 기록합니다.</span
+              ></span
+            >
+          </div>
+        </div>
+        <div class="grid-3">
+          <article class="card tone-blue">
+            <h3>
+              <span lang="vi">Tách evidence theo QID</span
+              ><span lang="ko">문항별 근거 분리</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Mỗi QID nhận vùng evidence riêng, có nguồn và trạng thái
+                riêng.</span
+              ><span lang="ko"
+                >각 문항은 별도 근거 범위와 출처·상태를 갖습니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-amber">
+            <h3>
+              <span lang="vi">Kiểm tra hai lớp</span
+              ><span lang="ko">이중 검사</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Quy tắc cố định kiểm tra cấu trúc; QA và quality grade kiểm tra
+                khả năng dùng.</span
+              ><span lang="ko"
+                >고정 규칙은 구조를 검사하고 QA와 품질 등급은 사용 가능성을
+                검사합니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-teal">
+            <h3>
+              <span lang="vi">Có thể truy vết</span
+              ><span lang="ko">추적 가능</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Run ID, source digest, request trace và file output được ghi
+                trong metadata.</span
+              ><span lang="ko"
+                >실행 ID, source digest, 요청 추적 및 출력 파일이 메타데이터에
+                기록됩니다.</span
+              >
+            </p>
+          </article>
+        </div>
+      </section>
+      <section id="results" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Kết quả định tính</span
+          ><span lang="ko">정성 결과</span>
+        </p>
+        <h2>
+          <span lang="vi">Kết quả của run {date}</span
+          ><span lang="ko">2026/08/11 실행 결과</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Run ID: run_20260811T073243021490Z_5ebbd901. Tổng cộng 95 câu được
+            xử lý; 70 câu có final answer và 2 câu không có final answer.</span
+          ><span lang="ko"
+            >실행 ID: run_20260811T073243021490Z_5ebbd901. 총 95개 문항 중
+            70개에 최종 답변이 있고 2개는 최종 답변이 없습니다.</span
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <span lang="vi">Nhóm kết quả</span
+                  ><span lang="ko">결과 그룹</span>
+                </th>
+                <th>
+                  <span lang="vi">Số câu</span><span lang="ko">문항 수</span>
+                </th>
+                <th>
+                  <span lang="vi">Diễn giải</span><span lang="ko">설명</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span lang="vi">Answered</span><span lang="ko">Answered</span>
+                </td>
+                <td><span lang="vi">70</span><span lang="ko">70</span></td>
+                <td>Câu có kết quả cuối / 최종 결과 문항</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Empty</span><span lang="ko">Empty</span>
+                </td>
+                <td><span lang="vi">2</span><span lang="ko">2</span></td>
+                <td>Không có câu trả lời / 답변 없음</td>
+              </tr>
+              <tr>
+                <td><span lang="vi">Weak</span><span lang="ko">Weak</span></td>
+                <td><span lang="vi">5</span><span lang="ko">5</span></td>
+                <td>Có cảnh báo hoặc thiếu độ mạnh / 경고 또는 근거 부족</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Failed</span><span lang="ko">Failed</span>
+                </td>
+                <td><span lang="vi">18</span><span lang="ko">18</span></td>
+                <td>Không đạt xử lý cuối / 최종 처리 실패</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>
+          <span lang="vi">Phân bố kết quả</span><span lang="ko">결과 분포</span>
+        </h3>
+        <div class="bar-list">
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Answered</span><span lang="ko">Answered</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 73.7%"></div>
+            </div>
+            <div class="bar-value">70 <small>(73.7%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Weak</span><span lang="ko">Weak</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 5.3%"></div>
+            </div>
+            <div class="bar-value">5 <small>(5.3%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Empty</span><span lang="ko">Empty</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 2.1%"></div>
+            </div>
+            <div class="bar-value">2 <small>(2.1%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Failed</span><span lang="ko">Failed</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 18.9%"></div>
+            </div>
+            <div class="bar-value">18 <small>(18.9%)</small></div>
+          </div>
+        </div>
+        <div class="callout">
+          <strong
+            ><span lang="vi">Dữ liệu được giới hạn trong run mới.</span
+            ><span lang="ko"
+              >데이터 범위는 새 실행으로 제한됩니다.</span
+            ></strong
+          ><br /><span lang="vi"
+            >Báo cáo này không tính lại hoặc trộn số liệu từ các lần chạy
+            trước.</span
+          ><span lang="ko"
+            >이 보고서는 이전 실행 수치를 재사용하거나 혼합하지 않습니다.</span
+          >
+        </div>
+      </section>
+      <section id="quality" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Kiểm tra chất lượng</span
+          ><span lang="ko">품질 검사</span>
+        </p>
+        <h2>
+          <span lang="vi">QA, quality grade và trạng thái xuất bản</span
+          ><span lang="ko">QA, 품질 등급 및 게시 상태</span>
+        </h2>
+        <div class="grid-3">
+          <article class="card tone-green">
+            <div class="metric">70</div>
+            <p>
+              <span lang="vi">QA passed</span><span lang="ko">QA 통과</span>
+            </p>
+          </article>
+          <article class="card tone-red">
+            <div class="metric">18</div>
+            <p>
+              <span lang="vi">QA failed</span><span lang="ko">QA 실패</span>
+            </p>
+          </article>
+          <article class="card tone-amber">
+            <div class="metric">7</div>
+            <p>
+              <span lang="vi">QA empty</span><span lang="ko">QA 빈 결과</span>
+            </p>
+          </article>
+        </div>
+        <h3>
+          <span lang="vi">Quality grade</span><span lang="ko">품질 등급</span>
+        </h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><span lang="vi">Mức</span><span lang="ko">등급</span></th>
+                <th>
+                  <span lang="vi">Số câu</span><span lang="ko">문항 수</span>
+                </th>
+                <th>
+                  <span lang="vi">Ý nghĩa</span><span lang="ko">의미</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span lang="vi">Full</span><span lang="ko">Full</span></td>
+                <td><span lang="vi">16</span><span lang="ko">16</span></td>
+                <td>Đủ điều kiện tốt nhất / 가장 높은 품질</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Partial</span><span lang="ko">Partial</span>
+                </td>
+                <td><span lang="vi">30</span><span lang="ko">30</span></td>
+                <td>Còn thiếu một phần / 일부 부족</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Cautious</span><span lang="ko">Cautious</span>
+                </td>
+                <td><span lang="vi">24</span><span lang="ko">24</span></td>
+                <td>Cần thận trọng / 주의 필요</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Failed</span><span lang="ko">Failed</span>
+                </td>
+                <td><span lang="vi">25</span><span lang="ko">25</span></td>
+                <td>Không đạt / 실패</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>
+          <span lang="vi">Trạng thái xuất bản</span
+          ><span lang="ko">게시 상태</span>
+        </h3>
+        <div class="bar-list">
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Published</span><span lang="ko">게시</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 14.7%"></div>
+            </div>
+            <div class="bar-value">14 <small>(14.7%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Review required</span
+              ><span lang="ko">검토 필요</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 58.9%"></div>
+            </div>
+            <div class="bar-value">56 <small>(58.9%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Blocked</span><span lang="ko">차단</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 26.3%"></div>
+            </div>
+            <div class="bar-value">25 <small>(26.3%)</small></div>
+          </div>
+        </div>
+        <div class="grid-3">
+          <article class="card tone-green">
+            <h3><span lang="vi">Published</span><span lang="ko">게시</span></h3>
+            <p>
+              <span lang="vi"
+                >14 câu đủ điều kiện xuất bản theo kết quả run.</span
+              ><span lang="ko"
+                >실행 결과 기준 14개 문항이 게시 가능 상태입니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-amber">
+            <h3>
+              <span lang="vi">Review required</span
+              ><span lang="ko">검토 필요</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >56 câu cần người kiểm tra trước khi phát hành.</span
+              ><span lang="ko"
+                >56개 문항은 공개 전 사람의 검토가 필요합니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-red">
+            <h3><span lang="vi">Blocked</span><span lang="ko">차단</span></h3>
+            <p>
+              <span lang="vi"
+                >25 câu bị chặn do QA hoặc trạng thái upstream.</span
+              ><span lang="ko"
+                >25개 문항은 QA 또는 upstream 상태로 차단되었습니다.</span
+              >
+            </p>
+          </article>
+        </div>
+      </section>
+      <section id="quantitative" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Dữ liệu định lượng</span
+          ><span lang="ko">정량 데이터</span>
+        </p>
+        <h2>
+          <span lang="vi">Kết quả 210 mục định lượng</span
+          ><span lang="ko">210개 정량 항목 결과</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Giá trị định lượng được map trực tiếp từ dữ liệu nguồn; AI không tự
+            suy đoán số liệu. Các chỉ số dưới đây lấy từ quantitative_stats của
+            run mới.</span
+          ><span lang="ko"
+            >정량 값은 원천 데이터에서 직접 매핑하며 AI가 수치를 추정하지
+            않습니다. 아래 지표는 새 실행의 quantitative_stats에서
+            가져왔습니다.</span
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <span lang="vi">Chỉ số</span><span lang="ko">지표</span>
+                </th>
+                <th><span lang="vi">Giá trị</span><span lang="ko">값</span></th>
+                <th>
+                  <span lang="vi">Ghi chú</span><span lang="ko">비고</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span lang="vi">Tổng mục</span
+                  ><span lang="ko">전체 항목</span>
+                </td>
+                <td><span lang="vi">210</span><span lang="ko">210</span></td>
+                <td>Theo template quant_210 / quant_210 템플릿</td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Đã điền</span><span lang="ko">입력 완료</span>
+                </td>
+                <td><span lang="vi">111</span><span lang="ko">111</span></td>
+                <td>
+                  <span lang="vi">52.9%</span><span lang="ko">52.9%</span>
+                </td>
+              </tr>
+              <tr>
+                <td><span lang="vi">Thiếu</span><span lang="ko">누락</span></td>
+                <td><span lang="vi">97</span><span lang="ko">97</span></td>
+                <td>
+                  <span lang="vi">46.2%</span><span lang="ko">46.2%</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Cần xác nhận</span
+                  ><span lang="ko">확인 필요</span>
+                </td>
+                <td><span lang="vi">2</span><span lang="ko">2</span></td>
+                <td>
+                  <span lang="vi">Kiểm tra thủ công / 수동 확인</span
+                  ><span lang="ko">Kiểm tra thủ công / 수동 확인</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bar-list">
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Filled</span><span lang="ko">입력 완료</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 52.9%"></div>
+            </div>
+            <div class="bar-value">111 <small>(52.9%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Missing</span><span lang="ko">누락</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 46.2%"></div>
+            </div>
+            <div class="bar-value">97 <small>(46.2%)</small></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">
+              <span lang="vi">Needs confirmation</span
+              ><span lang="ko">확인 필요</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: 1%"></div>
+            </div>
+            <div class="bar-value">2 <small>(1.0%)</small></div>
+          </div>
+        </div>
+        <div class="callout good">
+          <strong
+            ><span lang="vi">Metric audit.</span
+            ><span lang="ko">Metric audit.</span></strong
+          ><br /><span lang="vi"
+            >118 dòng bảng được đọc, 607 fact được chấp nhận và không có xung
+            đột số liệu.</span
+          ><span lang="ko"
+            >표 118개 행을 읽었고 607개 fact를 수용했으며 수치 충돌은
+            없습니다.</span
+          >
+        </div>
+      </section>
+      <section id="weaknesses" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Điểm cần cải thiện</span
+          ><span lang="ko">개선 필요 지점</span>
+        </p>
+        <h2>
+          <span lang="vi">Các điểm yếu còn lại của run mới</span
+          ><span lang="ko">새 실행의 잔여 한계</span>
+        </h2>
+        <p class="section-lead">
+          <span lang="vi"
+            >Các cảnh báo dưới đây được tổng hợp từ coverage summary và danh
+            sách lỗi của chính run này.</span
+          ><span lang="ko"
+            >아래 경고는 이번 실행의 coverage summary와 오류 목록만으로
+            집계했습니다.</span
+          >
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <span lang="vi">Nguyên nhân nổi bật</span
+                  ><span lang="ko">주요 원인</span>
+                </th>
+                <th>
+                  <span lang="vi">Số lần</span><span lang="ko">횟수</span>
+                </th>
+                <th>
+                  <span lang="vi">Hướng xử lý</span
+                  ><span lang="ko">대응 방향</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span lang="vi">empty_output</span
+                  ><span lang="ko">empty_output</span>
+                </td>
+                <td><span lang="vi">16</span><span lang="ko">16</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">missing facet: oversight_cadence</span
+                  ><span lang="ko">missing facet: oversight_cadence</span>
+                </td>
+                <td><span lang="vi">15</span><span lang="ko">15</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">semantic review passed</span
+                  ><span lang="ko">semantic review passed</span>
+                </td>
+                <td><span lang="vi">10</span><span lang="ko">10</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">missing facet: target</span
+                  ><span lang="ko">missing facet: target</span>
+                </td>
+                <td><span lang="vi">9</span><span lang="ko">9</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">semantic misalignment</span
+                  ><span lang="ko">semantic misalignment</span>
+                </td>
+                <td><span lang="vi">8</span><span lang="ko">8</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">missing facet: monitoring_follow_up</span
+                  ><span lang="ko">missing facet: monitoring_follow_up</span>
+                </td>
+                <td><span lang="vi">7</span><span lang="ko">7</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">no safe supported claim remains</span
+                  ><span lang="ko">no safe supported claim remains</span>
+                </td>
+                <td><span lang="vi">7</span><span lang="ko">7</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">missing facet: role</span
+                  ><span lang="ko">missing facet: role</span>
+                </td>
+                <td><span lang="vi">6</span><span lang="ko">6</span></td>
+                <td>
+                  <span lang="vi"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  ><span lang="ko"
+                    >Cần xem nguyên nhân theo QID / 문항별 원인 확인 필요</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid-2">
+          <article class="card tone-red">
+            <h3>
+              <span lang="vi">Câu không có final answer</span
+              ><span lang="ko">최종 답변 없음</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >2 câu: Q010, Q011, Q015, Q019, Q023, Q027, Q031, Q037, Q043,
+                Q051, Q054, Q055, Q057, Q058, Q066, Q067, Q068, Q069, Q074,
+                Q079, Q080, Q083, Q084, Q092, Q094</span
+              ><span lang="ko"
+                >2개: Q010, Q011, Q015, Q019, Q023, Q027, Q031, Q037, Q043,
+                Q051, Q054, Q055, Q057, Q058, Q066, Q067, Q068, Q069, Q074,
+                Q079, Q080, Q083, Q084, Q092, Q094</span
+              >
+            </p>
+          </article>
+          <article class="card tone-amber">
+            <h3>
+              <span lang="vi">Không tìm thấy bảng metric</span
+              ><span lang="ko">Metric 표 미발견</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >8 câu: Q011, Q015, Q023, Q043, Q051, Q055, Q083, Q095</span
+              ><span lang="ko"
+                >8개: Q011, Q015, Q023, Q043, Q051, Q055, Q083, Q095</span
+              >
+            </p>
+          </article>
+        </div>
+        <div class="callout warn">
+          <strong
+            ><span lang="vi">Ưu tiên cải thiện.</span
+            ><span lang="ko">개선 우선순위.</span></strong
+          ><br /><span lang="vi"
+            >Ưu tiên bổ sung evidence còn thiếu, xử lý các QID bị chặn và kiểm
+            tra thủ công các câu review_required trước khi phát hành.</span
+          ><span lang="ko"
+            >부족한 근거를 보강하고 차단된 문항을 처리하며 review_required
+            문항을 게시 전에 수동 검토해야 합니다.</span
+          >
+        </div>
+      </section>
+      <section id="glossary" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Chú thích kỹ thuật</span
+          ><span lang="ko">기술 용어</span>
+        </p>
+        <h2>
+          <span lang="vi">Chú thích thuật ngữ và mã kỹ thuật</span
+          ><span lang="ko">기술 용어와 코드 설명</span>
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  <span lang="vi">Thuật ngữ</span><span lang="ko">용어</span>
+                </th>
+                <th>
+                  <span lang="vi">Giải thích</span><span lang="ko">설명</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span lang="vi">Run ID</span><span lang="ko">Run ID</span>
+                </td>
+                <td>
+                  <span lang="vi"
+                    >Mã định danh duy nhất của lần chạy, dùng để truy vết JSON,
+                    Excel và log.</span
+                  ><span lang="ko"
+                    >JSON, Excel 및 로그를 추적하는 실행 고유
+                    식별자입니다.</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td><span lang="vi">QA</span><span lang="ko">QA</span></td>
+                <td>
+                  <span lang="vi"
+                    >Kiểm tra chất lượng cuối; PASS/failed/empty phản ánh trạng
+                    thái kiểm tra của câu.</span
+                  ><span lang="ko"
+                    >최종 품질 검사이며 PASS/failed/empty가 문항 검사 상태를
+                    나타냅니다.</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Quality grade</span
+                  ><span lang="ko">Quality grade</span>
+                </td>
+                <td>
+                  <span lang="vi"
+                    >full, partial, cautious hoặc failed; mức độ tin cậy để xem
+                    xét trước xuất bản.</span
+                  ><span lang="ko"
+                    >full, partial, cautious, failed로 게시 전 신뢰 수준을
+                    나타냅니다.</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Evidence</span><span lang="ko">Evidence</span>
+                </td>
+                <td>
+                  <span lang="vi"
+                    >Dẫn chứng được truy hồi từ nguồn, giữ kèm source ID và
+                    metadata để audit.</span
+                  ><span lang="ko"
+                    >출처에서 검색된 근거이며 audit을 위해 source ID와
+                    메타데이터를 유지합니다.</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span lang="vi">Review required</span
+                  ><span lang="ko">Review required</span>
+                </td>
+                <td>
+                  <span lang="vi"
+                    >Câu chưa nên phát hành tự động và cần người kiểm tra.</span
+                  ><span lang="ko"
+                    >자동 게시하지 않고 사람의 검토가 필요한 문항입니다.</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="conclusion" class="tab-panel">
+        <p class="section-kicker">
+          <span lang="vi">Đánh giá cuối</span><span lang="ko">최종 평가</span>
+        </p>
+        <h2><span lang="vi">Kết luận</span><span lang="ko">결론</span></h2>
+        <div class="decision">
+          <strong
+            ><span lang="vi"
+              >Run đã hoàn thành xử lý dữ liệu nhưng chưa phù hợp để tự động
+              phát hành toàn bộ.</span
+            ><span lang="ko"
+              >실행은 데이터 처리를 완료했지만 전체 자동 게시에는 적합하지
+              않습니다.</span
+            ></strong
+          ><span lang="vi"
+            >Run có 70/95 câu có final answer, 14 câu published, 56 câu cần xem
+            lại và 25 câu bị chặn. Với định lượng, 111/210 mục đã được điền. Kết
+            luận vận hành: có thể dùng kết quả làm bản nháp có kiểm soát, nhưng
+            cần review các câu chưa đạt trước khi phát hành.</span
+          ><span lang="ko"
+            >실행 결과 95개 중 70개에 최종 답변이 있고, 14개는 게시, 56개는 검토
+            필요, 25개는 차단 상태입니다. 정량 항목은 111/210개가
+            입력되었습니다. 운영 결론은 통제된 초안으로 사용할 수 있으나 미달
+            문항은 게시 전에 검토해야 한다는 것입니다.</span
+          >
+        </div>
+        <h3>
+          <span lang="vi">Ba ưu tiên tiếp theo</span
+          ><span lang="ko">다음 세 가지 우선순위</span>
+        </h3>
+        <div class="grid-3">
+          <article class="card tone-blue">
+            <h3>
+              <span lang="vi">1 · Bổ sung evidence</span
+              ><span lang="ko">1 · 근거 보강</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Xử lý các QID missing_expected_facets và draft_evidence.</span
+              ><span lang="ko"
+                >missing_expected_facets와 draft_evidence 문항을
+                보강합니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-amber">
+            <h3>
+              <span lang="vi">2 · Gỡ câu bị chặn</span
+              ><span lang="ko">2 · 차단 문항 해소</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Kiểm tra 25 câu blocked theo QA và upstream status.</span
+              ><span lang="ko"
+                >QA와 upstream 상태를 기준으로 25개 blocked 문항을
+                점검합니다.</span
+              >
+            </p>
+          </article>
+          <article class="card tone-red">
+            <h3>
+              <span lang="vi">3 · Review trước phát hành</span
+              ><span lang="ko">3 · 게시 전 검토</span>
+            </h3>
+            <p>
+              <span lang="vi"
+                >Ưu tiên 56 câu review_required và các metric cần xác
+                nhận.</span
+              ><span lang="ko"
+                >56개 review_required와 확인 필요한 metric을 우선
+                검토합니다.</span
+              >
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <div class="wrap">
+        <span lang="vi"
+          >Nguồn dữ liệu:
+          data/outputs/daewoong/2025/run_20260811T073243021490Z_5ebbd901 · Run
+          ID: run_20260811T073243021490Z_5ebbd901 · Template: report.md</span
+        ><span lang="ko"
+          >데이터 출처:
+          data/outputs/daewoong/2025/run_20260811T073243021490Z_5ebbd901 · 실행
+          ID: run_20260811T073243021490Z_5ebbd901 · 템플릿: report.md</span
+        >
+      </div>
+    </footer>
+    <script>
+      const body = document.body;
+      document.querySelectorAll("[data-lang-button]").forEach((button) =>
+        button.addEventListener("click", () => {
+          const lang = button.dataset.langButton;
+          body.dataset.lang = lang;
+          document
+            .querySelectorAll("[data-lang-button]")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.langButton === lang),
+            );
+        }),
+      );
+      document.querySelectorAll("nav button").forEach((button) =>
+        button.addEventListener("click", () => {
+          const id = button.dataset.tab;
+          document
+            .querySelectorAll("nav button")
+            .forEach((b) => b.classList.toggle("active", b === button));
+          document
+            .querySelectorAll(".tab-panel")
+            .forEach((panel) =>
+              panel.classList.toggle("active", panel.id === id),
+            );
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }),
+      );
+    </script>
+  </body>
+</html>

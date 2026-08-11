@@ -96,42 +96,67 @@ def test_metrics_with_result_or_explicit_zero_and_period_passes(answer):
 
 
 @pytest.mark.parametrize(
-    ("answer", "missing_note"),
+    ("answer", "missing_note", "expected_status"),
     [
-        ("For the 2025 reporting period, performance was below target.", "missing required facet: metric_result"),
-        ("Waste generation was 120 tonnes.", "missing required facet: reporting_period"),
+        (
+            "For the 2025 reporting period, performance was below target.",
+            "missing required facet: metric_result",
+            "failed",
+        ),
+        (
+            "Waste generation was 120 tonnes.",
+            "missing required facet: reporting_period",
+            "passed",
+        ),
     ],
 )
-def test_metrics_require_both_result_and_reporting_period(answer, missing_note):
+def test_metrics_keep_a_direct_supported_result_as_partial(answer, missing_note, expected_status):
     planned = _planned()
     state = _semantic_state(planned, answer)
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
-    assert missing_note in result["qa_results"][planned.id].notes
+    assert result["qa_results"][planned.id].status == expected_status
+    assert bool(result["final_answers"][planned.id]) is (expected_status == "passed")
+    expected_note = (
+        missing_note
+        if expected_status == "failed"
+        else missing_note.replace("missing required facet:", "missing facet:")
+    )
+    assert expected_note in result["qa_results"][planned.id].notes
 
 
 @pytest.mark.parametrize(
-    "answer",
+    ("answer", "expected_status"),
     [
-        "The company operates waste tracking. For the 2025 reporting period, the metric value was not disclosed.",
-        "Waste generation was 120 tonnes, but the reporting period was not disclosed.",
-        "회사는 윤리 신고 채널을 운영합니다. 2025년 신고 건수는 공개되지 않았습니다.",
+        (
+            "The company operates waste tracking. For the 2025 reporting period, the metric value was not disclosed.",
+            "failed",
+        ),
+        (
+            "Waste generation was 120 tonnes, but the reporting period was not disclosed.",
+            "passed",
+        ),
+        (
+            "회사는 윤리 신고 채널을 운영합니다. 2025년 신고 건수는 공개되지 않았습니다.",
+            "failed",
+        ),
     ],
 )
-def test_metrics_missing_one_facet_can_pass_as_disclosed_data_gap(answer):
+def test_disclosed_gap_only_passes_when_a_direct_metric_result_remains(answer, expected_status):
     planned = _planned()
     state = _semantic_state(planned, answer)
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "passed"
-    assert result["final_answers"][planned.id] == answer
-    assert "partial_answer" in result["quality_flags"][planned.id]
-    assert "disclosed_data_gap" in result["quality_flags"][planned.id]
-    assert "missing data disclosed" in result["qa_results"][planned.id].notes
+    assert result["qa_results"][planned.id].status == expected_status
+    if expected_status == "passed":
+        assert result["final_answers"][planned.id] == answer
+        assert "partial_answer" in result["quality_flags"][planned.id]
+        assert "disclosed_data_gap" in result["quality_flags"][planned.id]
+        assert "missing data disclosed" in result["qa_results"][planned.id].notes
+    else:
+        assert result["final_answers"][planned.id] == ""
 
 
 def test_metrics_gap_only_answer_is_not_usable():
@@ -224,7 +249,7 @@ def test_q011_metric_not_found_removes_unsupported_number_and_blocks_gap_only_an
     assert result["final_answers"][planned.id] == ""
 
 
-def test_q023_metric_not_found_keeps_qualitative_claim_but_marks_all_dimensions_missing():
+def test_q023_metric_not_found_blocks_process_only_claim_after_numeric_salvage():
     planned = _planned(
         qid="Q023",
         item="Environmental performance and incidents",
@@ -242,14 +267,13 @@ def test_q023_metric_not_found_keeps_qualitative_claim_but_marks_all_dimensions_
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "passed"
-    assert "9.34%" not in result["final_answers"][planned.id]
-    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
     assert "facet_metric_environmental_accident_count: missing" in result["skill_checks"][planned.id]
     assert "facet_metric_environmental_violation_count: missing" in result["skill_checks"][planned.id]
 
 
-def test_q051_metric_not_found_cannot_be_full_from_packaging_roadmap():
+def test_q051_metric_not_found_blocks_packaging_roadmap_without_requested_dimensions():
     planned = _planned(
         qid="Q051",
         item="Eco-friendly product and certification counts",
@@ -266,10 +290,51 @@ def test_q051_metric_not_found_cannot_be_full_from_packaging_roadmap():
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert result["qa_results"][planned.id].status == "passed"
-    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
     assert "facet_metric_eco_friendly_product_count: missing" in result["skill_checks"][planned.id]
     assert "facet_metric_environmental_certification_count: missing" in result["skill_checks"][planned.id]
+
+
+def test_q095_metric_not_found_keeps_grounded_stakeholder_activity_as_partial():
+    planned = _planned(
+        qid="Q095",
+        item="Stakeholder communication activities",
+        description="Describe stakeholder channels and communication activities",
+    )
+    answer = "회사는 내부 및 외부 이해관계자 FGI와 임직원 설문조사를 운영하고 있습니다."
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert (
+        "metric_stakeholder_communication_activity"
+        in result["semantic_reviews"][planned.id].covered_facets
+    )
+
+
+def test_q015_metric_not_found_blocks_product_safety_process_without_incident_metrics():
+    planned = _planned(
+        qid="Q015",
+        item="Product safety and quality incidents",
+        description="Disclose recall, safety incident, and quality complaint counts",
+    )
+    answer = "회사는 제품 전 생애주기 약물감시와 품질 담당자 교육을 운영하고 있습니다."
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
 
 
 def test_q021_board_only_answer_is_partial_without_operating_and_site_facets():
@@ -723,6 +788,29 @@ def test_assessment_only_source_cannot_prove_operating_policy_without_attributio
     assert result["qa_results"][planned.id].status == "failed"
     assert result["final_answers"][planned.id] == ""
     assert "source usage overstated" in result["qa_results"][planned.id].notes
+
+
+def test_natural_assessment_attribution_is_accepted_for_assessed_content():
+    planned = _planned(
+        pillar="Strategy",
+        item="Safety assessment",
+        description="Assessment result",
+    )
+    answer = "The external assessment records: safety policy items were partially met."
+
+    result = SemanticCompletenessCriticAgent(
+        {"semantic_qa_enabled": True}, None
+    ).run(
+        _semantic_state(
+            planned,
+            answer,
+            tier="tier_3_assessment",
+            evidence_text="The assessment records that safety policy items were partially met.",
+        )
+    )
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
 
 
 def test_q080_style_draft_does_not_hide_definitive_commitment_behind_unrelated_plan_word():

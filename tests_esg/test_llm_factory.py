@@ -37,7 +37,11 @@ def test_hallmdr_client_uses_default_chat_completions_base_and_key(monkeypatch):
     assert client.kwargs["api_key"] == "hall-key"
     assert client.kwargs["base_url"] == "https://api.hallmdr.com/v1"
     assert client.kwargs["default_headers"]["User-Agent"] == "Mozilla/5.0"
-    assert client.metadata == {"esg_llm_provider": "hallmdr"}
+    assert client.metadata == {
+        "esg_llm_provider": "hallmdr",
+        "esg_json_repair_retry": False,
+        "esg_structured_failure_limit": 3,
+    }
     assert "model_kwargs" not in client.kwargs
 
 
@@ -111,6 +115,16 @@ class FakeHallMDRLLM:
         return SimpleNamespace(content='```json\n{"answer": "ok"}\n```')
 
 
+class FakeJSONModeHallMDRLLM(FakeHallMDRLLM):
+    def __init__(self):
+        super().__init__()
+        self.bound_kwargs = None
+
+    def bind(self, **kwargs):
+        self.bound_kwargs = kwargs
+        return self
+
+
 def test_hallmdr_structured_output_uses_prompt_json_adapter():
     llm = FakeHallMDRLLM()
     structured = bind_structured(llm, StructuredResult, "test")
@@ -119,6 +133,17 @@ def test_hallmdr_structured_output_uses_prompt_json_adapter():
 
     assert isinstance(structured, PromptStructuredLLM)
     assert result == StructuredResult(answer="ok")
+    assert "Return exactly one valid JSON object" in llm.messages[0].content
+
+
+def test_hallmdr_structured_output_prefers_native_json_mode():
+    llm = FakeJSONModeHallMDRLLM()
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    result = structured.invoke("return an answer")
+
+    assert result == StructuredResult(answer="ok")
+    assert llm.bound_kwargs == {"response_format": {"type": "json_object"}}
     assert "Return exactly one valid JSON object" in llm.messages[0].content
 
 
@@ -140,6 +165,10 @@ def test_hallmdr_structured_output_repairs_same_line_missing_field_comma():
 
 def test_hallmdr_structured_output_retries_unescaped_quote_response():
     llm = FakeHallMDRLLM()
+    llm.metadata = {
+        "esg_llm_provider": "hallmdr",
+        "esg_json_repair_retry": True,
+    }
     responses = iter(
         [
             '{"answer": "Use "recycled" water."}',
@@ -159,3 +188,63 @@ def test_hallmdr_structured_output_retries_unescaped_quote_response():
     assert len(calls) == 2
     assert "JSON syntax repairer" in calls[1][0].content
     assert calls[1][1].content == '{"answer": "Use "recycled" water."}'
+
+
+def test_hallmdr_invalid_json_fails_fast_without_second_llm_request():
+    llm = FakeHallMDRLLM()
+    calls = []
+
+    def invoke(messages):
+        calls.append(messages)
+        return SimpleNamespace(content='{"answer": "Use "recycled" water."}')
+
+    llm.invoke = invoke
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    with pytest.raises(ValueError):
+        structured.invoke("return an answer")
+
+    assert len(calls) == 1
+
+
+def test_hallmdr_structured_circuit_opens_after_consecutive_invalid_json():
+    llm = FakeHallMDRLLM()
+    llm.metadata = {
+        "esg_llm_provider": "hallmdr",
+        "esg_structured_failure_limit": 2,
+    }
+    calls = []
+
+    def invoke(messages):
+        calls.append(messages)
+        return SimpleNamespace(content="not-json")
+
+    llm.invoke = invoke
+    structured = bind_structured(llm, StructuredResult, "test")
+
+    with pytest.raises(ValueError):
+        structured.invoke("first")
+    with pytest.raises(ValueError):
+        structured.invoke("second")
+    with pytest.raises(RuntimeError, match="circuit open"):
+        structured.invoke("third")
+
+    assert len(calls) == 2
+
+
+def test_hallmdr_structured_output_repairs_missing_array_item_comma_locally():
+    llm = FakeHallMDRLLM()
+    llm.invoke = lambda messages: SimpleNamespace(
+        content='{"answer": "ok", "items": ["first"\n"second"]}'
+    )
+
+    class ResultWithItems(BaseModel):
+        answer: str
+        items: list[str]
+
+    structured = bind_structured(llm, ResultWithItems, "test")
+
+    assert structured.invoke("return an answer") == ResultWithItems(
+        answer="ok",
+        items=["first", "second"],
+    )

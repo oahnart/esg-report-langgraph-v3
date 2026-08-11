@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from esgagents.agents import ESGAgents
 from esgagents.agents.evidence.evidence_gate import EvidenceGateAgent
 from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
@@ -557,6 +559,74 @@ def test_v3_unanswerable_and_contract_violations_never_reach_writer():
         assert gate == {"accepted": False, "reason": expected_reason}
 
 
+def test_v3_missing_required_facets_with_relevant_local_coverage_is_admitted():
+    config = load_config({"agent_mode": "offline"})
+    planned = SimpleNamespace(
+        id="Q009",
+        pillar="Governance",
+        item_ko="Human-rights management system",
+        description_ko="Describe the accountable body and its role.",
+    )
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="insufficient",
+        coverage_status="insufficient",
+        answerable=False,
+        failure_code="MISSING_REQUIRED_FACETS",
+        covered_facets=["accountable_body"],
+        missing_facets=["role"],
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="The Human Rights Committee is the accountable body.",
+                source_path="ESG/human-rights.pdf",
+                semantic_label="useful",
+                source_tier="tier_1_governing",
+                document_status="approved",
+            )
+        ],
+    )
+
+    gate = EvidenceGateAgent(config).run(
+        {"planned_questions": [planned], "rag_results": {planned.id: rag}}
+    )["evidence_gate"][planned.id]
+
+    assert gate == {"accepted": True, "reason": "accepted_v3_local_partial"}
+
+
+@pytest.mark.parametrize("failure_code", ["NO_EVIDENCE", "WRONG_TOPIC"])
+def test_v3_locally_blocking_failure_codes_remain_blocked(failure_code):
+    config = load_config({"agent_mode": "offline"})
+    planned = SimpleNamespace(
+        id="Q009",
+        pillar="Governance",
+        item_ko="Human-rights management system",
+        description_ko="Describe the accountable body and its role.",
+    )
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        coverage_status="complete",
+        answerable=True,
+        failure_code=failure_code,
+        covered_facets=["accountable_body", "role"],
+        items=[
+            EvidenceItem(
+                raw_evidence_ko="Traceable but unusable evidence.",
+                source_path="ESG/source.pdf",
+                semantic_label="useful",
+                source_tier="tier_1_governing",
+                document_status="approved",
+            )
+        ],
+    )
+
+    gate = EvidenceGateAgent(config).run(
+        {"planned_questions": [planned], "rag_results": {planned.id: rag}}
+    )["evidence_gate"][planned.id]
+
+    assert gate == {"accepted": False, "reason": f"rag_v3:{failure_code}"}
+
+
 def test_v3_draft_only_current_state_question_enters_attributed_cautious_path():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(
@@ -588,7 +658,7 @@ def test_v3_draft_only_current_state_question_enters_attributed_cautious_path():
     assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
 
 
-def test_v3_draft_only_failure_code_cannot_override_insufficient_status():
+def test_v3_draft_only_failure_code_enters_attributed_local_path():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q080", item_ko="ESG strategy", description_ko="Current system")
     rag = RagQuestionResult(
@@ -612,10 +682,10 @@ def test_v3_draft_only_failure_code_cannot_override_insufficient_status():
         {"planned_questions": [planned], "rag_results": {planned.id: rag}}
     )["evidence_gate"][planned.id]
 
-    assert gate == {"accepted": False, "reason": "answer_status=insufficient"}
+    assert gate == {"accepted": True, "reason": "accepted_draft_evidence"}
 
 
-def test_v3_assessment_only_failure_code_cannot_override_insufficient_status():
+def test_v3_assessment_only_failure_code_enters_attributed_local_path():
     config = load_config({"agent_mode": "offline"})
     planned = SimpleNamespace(id="Q008", item_ko="Human rights assessment", description_ko="Result")
     rag = RagQuestionResult(
@@ -639,7 +709,7 @@ def test_v3_assessment_only_failure_code_cannot_override_insufficient_status():
         {"planned_questions": [planned], "rag_results": {planned.id: rag}}
     )["evidence_gate"][planned.id]
 
-    assert gate == {"accepted": False, "reason": "answer_status=insufficient"}
+    assert gate == {"accepted": True, "reason": "accepted_assessment_evidence"}
 
 
 def test_non_path_source_reference_cannot_pass_evidence_gate():

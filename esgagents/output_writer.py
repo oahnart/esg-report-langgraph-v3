@@ -4,13 +4,14 @@ import json
 import os
 import re
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from esgagents.default_config import DEFAULT_CONFIG
@@ -45,6 +46,8 @@ AUDIT_COLUMNS = [
     "Consumer Decision",
     "Upstream Hints",
     "Upstream Coverage Mismatch",
+    "Local Evidence Accepted",
+    "Local Acceptance Reason",
     "Metric Audit",
     "QA Grade",
     "Publication Status",
@@ -150,6 +153,40 @@ def clean_excel_text(value: Any) -> Any:
     if cleaned.lstrip().startswith(("=", "+", "-", "@")):
         cleaned = "'" + cleaned
     return cleaned[:EXCEL_MAX_CELL_LENGTH]
+
+
+def _metric_excel_value(value: Any) -> Any:
+    raw = str(value or "").strip().replace(",", "").removesuffix("%")
+    if not raw:
+        return None
+    try:
+        number = Decimal(raw)
+    except InvalidOperation:
+        return value
+    if abs(number) < Decimal("1e-12"):
+        return 0
+    if number == number.to_integral_value():
+        return int(number)
+    return float(number)
+
+
+def _metric_period_sort_key(value: Any) -> tuple[tuple[int, Any], ...]:
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.casefold())
+        for part in re.split(r"(\d+)", str(value or "").strip())
+        if part
+    )
+
+
+def _metric_block_rank(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 10**9
+
+
+def _is_total_metric(value: Any) -> bool:
+    return bool(re.search(r"(?:합계|총계|소계|grand\s+total|sub\s*total|total)", str(value or ""), re.I))
 
 
 class OutputWriter:
@@ -323,6 +360,8 @@ class OutputWriter:
                 answer.consumer_decision,
                 json.dumps(answer.upstream_hints, ensure_ascii=False, sort_keys=True),
                 answer.upstream_coverage_mismatch,
+                answer.local_evidence_accepted,
+                answer.local_acceptance_reason,
                 json.dumps(answer.metric_audit, ensure_ascii=False, sort_keys=True),
                 quality.grade,
                 resolved_publication_decision(answer).status,
@@ -356,7 +395,7 @@ class OutputWriter:
                 "; ".join(answer.sanitizer_actions),
             ])
 
-        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
+        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 22, 30, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
         for idx, width in enumerate(widths, start=1):
             ws.column_dimensions[get_column_letter(idx)].width = width
         ws.freeze_panes = "A2"
@@ -390,6 +429,7 @@ class OutputWriter:
             widths=[16, 22, 36, 52, 38, 52, 44, 64],
             wrap_columns=set(range(1, 9)),
         )
+        self._write_qualitative_table_metrics_sheet(workbook, artifacts)
         if artifacts.quantitative_results:
             quantitative = workbook.create_sheet("Quantitative")
             self._append_excel_row(quantitative, QUANTITATIVE_COLUMNS)
@@ -419,6 +459,280 @@ class OutputWriter:
                 wrap_columns={3, 6, 9},
             )
         workbook.save(path)
+
+    def _write_qualitative_table_metrics_sheet(
+        self,
+        workbook: Workbook,
+        artifacts: RunArtifacts,
+    ) -> None:
+        worksheet = workbook.create_sheet("Qualitative Table Metrics")
+        sections: list[dict[str, Any]] = []
+        for answer in artifacts.answers:
+            if answer.rag_metric_expected is not True:
+                continue
+            status = str(answer.rag_metric_status or "")
+            audit = answer.metric_audit or {}
+            absence = answer.rag_metric_absence or {}
+            numeric_withheld = bool(audit.get("numeric_withheld"))
+            facts = [
+                fact
+                for fact in (
+                    audit.get("withheld_facts", [])
+                    if numeric_withheld
+                    else audit.get("accepted_facts", [])
+                )
+                if isinstance(fact, dict)
+                and fact.get("block_role") == "primary"
+                and bool(fact.get("entity_class") or fact.get("entity"))
+            ]
+            reason = str(absence.get("reason") or "")
+            numeric_status = (
+                "withheld_low_confidence"
+                if numeric_withheld
+                else "not_found"
+                if status == "not_found"
+                else "found_table_no_accepted_primary_fact"
+            )
+            if status != "found_table":
+                facts = []
+
+            grouped: dict[tuple[str, int, str, str], list[dict[str, Any]]] = {}
+            for fact in facts:
+                key = (
+                    str(fact.get("table_block") or ""),
+                    _metric_block_rank(fact.get("block_rank")),
+                    str(fact.get("entity_class") or ""),
+                    str(fact.get("entity") or ""),
+                )
+                grouped.setdefault(key, []).append(fact)
+
+            if grouped:
+                for key in sorted(grouped, key=lambda item: (item[1], item[2], item[3], item[0])):
+                    table_block, block_rank, entity_class, entity = key
+                    sections.append(
+                        {
+                            "answer": answer,
+                            "table_block": table_block,
+                            "block_rank": block_rank,
+                            "entity_class": entity_class,
+                            "entity": entity,
+                            "facts": grouped[key],
+                            "numeric_status": numeric_status if numeric_withheld else "accepted_primary",
+                            "absence_reason": reason,
+                            "withhold_values": numeric_withheld,
+                        }
+                    )
+                continue
+
+            sections.append(
+                {
+                    "answer": answer,
+                    "table_block": "",
+                    "block_rank": None,
+                    "entity_class": "",
+                    "entity": "",
+                    "facts": [],
+                    "numeric_status": numeric_status,
+                    "absence_reason": reason,
+                    "withhold_values": True,
+                }
+            )
+
+        max_period_count = max(
+            (
+                len(
+                    {
+                        str(fact.get("period") or "").strip()
+                        for fact in section["facts"]
+                        if str(fact.get("period") or "").strip()
+                    }
+                )
+                for section in sections
+            ),
+            default=1,
+        )
+        table_width = max(3, max_period_count + 2)
+        section_counts: dict[str, int] = {}
+        for section in sections:
+            answer = section["answer"]
+            section_counts[answer.qid] = section_counts.get(answer.qid, 0) + 1
+            table_id = f"{answer.qid}-T{section_counts[answer.qid]:02d}"
+            self._write_qualitative_metric_section(
+                worksheet,
+                section=section,
+                table_id=table_id,
+            )
+
+        if not sections:
+            worksheet["A1"] = "No qualitative table metrics are available."
+            worksheet["A1"].font = Font(name="Carlito", size=11, italic=True, color="666666")
+
+        worksheet.sheet_view.showGridLines = False
+        worksheet.sheet_properties.tabColor = "174A5A"
+        worksheet.column_dimensions["A"].width = 46
+        worksheet.column_dimensions["B"].width = 14
+        for column in range(3, table_width + 1):
+            worksheet.column_dimensions[get_column_letter(column)].width = 14
+        worksheet.page_setup.orientation = "landscape"
+        worksheet.page_setup.fitToWidth = 1
+        worksheet.sheet_properties.pageSetUpPr.fitToPage = True
+
+    def _write_qualitative_metric_section(
+        self,
+        worksheet,
+        *,
+        section: dict[str, Any],
+        table_id: str,
+    ) -> None:
+        answer = section["answer"]
+        facts = section["facts"]
+        periods = sorted(
+            {
+                str(fact.get("period") or "").strip()
+                for fact in facts
+                if str(fact.get("period") or "").strip()
+            },
+            key=_metric_period_sort_key,
+        )
+        section_width = max(3, len(periods) + 2)
+        last_column = get_column_letter(section_width)
+        title_row = worksheet.max_row + 1
+        if title_row == 2 and worksheet["A1"].value is None:
+            title_row = 1
+        title = " | ".join(
+            part
+            for part in (
+                table_id,
+                answer.qid,
+                answer.source_id,
+                answer.question or answer.category,
+            )
+            if str(part or "").strip()
+        )
+        self._append_excel_row(worksheet, [title])
+        worksheet.merge_cells(
+            start_row=title_row,
+            start_column=1,
+            end_row=title_row,
+            end_column=section_width,
+        )
+        title_range = worksheet[f"A{title_row}:{last_column}{title_row}"]
+        for cell in title_range[0]:
+            cell.fill = PatternFill("solid", fgColor="174A5A")
+            cell.font = Font(name="Carlito", size=11, bold=True, color="FFFFFF")
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+        worksheet.row_dimensions[title_row].height = 27
+
+        metadata_parts = []
+        if section["table_block"]:
+            metadata_parts.append(f"Table block: {section['table_block']}")
+        if section["entity"]:
+            metadata_parts.append(f"Entity: {section['entity']}")
+        if section["entity_class"]:
+            metadata_parts.append(f"Entity class: {section['entity_class']}")
+        if section["block_rank"] is not None:
+            metadata_parts.append(f"Block rank: {section['block_rank']}")
+        metadata_parts.append(f"Numeric status: {section['numeric_status']}")
+        if answer.rag_metric_confidence:
+            metadata_parts.append(f"Metric confidence: {answer.rag_metric_confidence}")
+        if section["absence_reason"]:
+            metadata_parts.append(f"Absence reason: {section['absence_reason']}")
+        metadata_row = worksheet.max_row + 1
+        self._append_excel_row(
+            worksheet,
+            [" | ".join(metadata_parts)],
+        )
+        worksheet.merge_cells(
+            start_row=metadata_row,
+            start_column=1,
+            end_row=metadata_row,
+            end_column=section_width,
+        )
+        metadata_cell = worksheet.cell(metadata_row, 1)
+        metadata_cell.font = Font(name="Carlito", size=10, bold=True, color="17313A")
+        metadata_cell.fill = PatternFill("solid", fgColor="EAF1F4")
+        metadata_cell.alignment = Alignment(vertical="center", wrap_text=True)
+        worksheet.row_dimensions[metadata_row].height = 34
+
+        header_row = worksheet.max_row + 1
+        headers = ["Metric", "Unit", *(periods or ["Status"])]
+        self._append_excel_row(worksheet, headers)
+        header_range = worksheet[f"A{header_row}:{get_column_letter(len(headers))}{header_row}"]
+        for cell in header_range[0]:
+            cell.fill = PatternFill("solid", fgColor="174A5A")
+            cell.font = Font(name="Carlito", size=11, bold=True, color="FFFFFF")
+            cell.alignment = Alignment(vertical="center")
+        worksheet.row_dimensions[header_row].height = 23
+
+        metric_rows: dict[tuple[str, str], dict[str, Any]] = {}
+        metric_order: dict[tuple[str, str], int] = {}
+        for fact in facts:
+            metric_key = (str(fact.get("metric") or ""), str(fact.get("unit") or ""))
+            metric_order.setdefault(metric_key, len(metric_order))
+            period = str(fact.get("period") or "").strip()
+            if period:
+                metric_rows.setdefault(metric_key, {})[period] = fact
+
+        body_rows: list[list[Any]] = []
+        for metric_key in sorted(
+            metric_rows,
+            key=lambda item: (0 if _is_total_metric(item[0]) else 1, metric_order[item]),
+        ):
+            metric, unit = metric_key
+            period_facts = metric_rows[metric_key]
+            values = []
+            for period in periods:
+                fact = period_facts.get(period)
+                if fact is None or section["withhold_values"]:
+                    values.append(None)
+                    continue
+                raw_value = fact.get("normalized_value")
+                if raw_value in (None, ""):
+                    raw_value = fact.get("value")
+                values.append(_metric_excel_value(raw_value))
+            body_rows.append([metric, unit, *values])
+
+        if not body_rows:
+            label = (
+                "Numeric values withheld because metric confidence is low."
+                if section["numeric_status"] == "withheld_low_confidence"
+                else "No accepted primary metric was found."
+            )
+            body_rows = [[label, "", section["numeric_status"]]]
+
+        body_start = worksheet.max_row + 1
+        for values in body_rows:
+            self._append_excel_row(worksheet, values)
+        body_end = worksheet.max_row
+        used_width = max(len(headers), max(len(row) for row in body_rows))
+        border = Border(
+            left=Side(style="thin", color="D2DDE2"),
+            right=Side(style="thin", color="D2DDE2"),
+            top=Side(style="thin", color="D2DDE2"),
+            bottom=Side(style="thin", color="D2DDE2"),
+        )
+        for row in worksheet.iter_rows(
+            min_row=body_start,
+            max_row=body_end,
+            min_col=1,
+            max_col=used_width,
+        ):
+            for cell in row:
+                cell.font = Font(name="Carlito", size=11)
+                cell.border = border
+                cell.alignment = Alignment(
+                    horizontal="right" if cell.column >= 3 else "left",
+                    vertical="center",
+                    wrap_text=cell.column <= 2,
+                )
+                if cell.column >= 3 and isinstance(cell.value, (int, float)):
+                    cell.number_format = "#,##0.########"
+            worksheet.row_dimensions[row[0].row].height = 24
+
+        worksheet.append([" "])
+        spacer_row = worksheet.max_row
+        worksheet.cell(spacer_row, 1).font = Font(color="FFFFFF")
+        worksheet.row_dimensions[spacer_row].height = 12
 
     def _write_rag_metric_evidence_sheet(
         self,
@@ -628,6 +942,7 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
     consumer_funnel = {
         "total": len(artifacts.answers),
         "api_status_eligible": 0,
+        "local_evidence_eligible": 0,
         "draft_non_empty": 0,
         "qa_passed": 0,
         "final_non_empty": 0,
@@ -644,6 +959,8 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
         "status_qids": {},
         "absence_reason_qids": {},
         "low_confidence_qids": [],
+        "summary_mismatch_qids": [],
+        "summary_mismatch_fields": {},
         "contract_qids": {},
     }
     provenance_fallback_qids: list[str] = []
@@ -655,6 +972,8 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
     review_exported_qids: list[str] = []
     rejected_candidate_qids: list[str] = []
     parity_mismatch_qids: list[str] = []
+    local_admission_qids: dict[str, list[str]] = {}
+    writer_fallback_qids: dict[str, list[str]] = {}
     for answer in artifacts.answers:
         qid = answer.qid
         decision = str(getattr(answer, "consumer_decision", "") or "blocked_evidence")
@@ -666,6 +985,12 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             "thin_but_usable",
         }:
             consumer_funnel["api_status_eligible"] += 1
+        if getattr(answer, "local_evidence_accepted", False):
+            consumer_funnel["local_evidence_eligible"] += 1
+            reason = str(
+                getattr(answer, "local_acceptance_reason", "") or "unknown"
+            )
+            local_admission_qids.setdefault(reason, []).append(qid)
         if answer.draft_answer:
             consumer_funnel["draft_non_empty"] += 1
         if str(getattr(answer.qa, "status", "") or "") == "passed":
@@ -739,6 +1064,11 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             metric_summary["absence_reason_qids"].setdefault(absence_reason, []).append(qid)
         if str(getattr(answer, "rag_metric_confidence", "") or "").casefold() == "low":
             metric_summary["low_confidence_qids"].append(qid)
+        summary_mismatches = metric_audit.get("metric_summary_mismatches", {}) or {}
+        if summary_mismatches:
+            metric_summary["summary_mismatch_qids"].append(qid)
+            for field in summary_mismatches:
+                metric_summary["summary_mismatch_fields"].setdefault(field, []).append(qid)
         metric_contract = str(metric_audit.get("metric_contract") or "legacy")
         metric_summary["contract_qids"].setdefault(metric_contract, []).append(qid)
         metric_rows = int(metric_audit.get("metric_row_count", 0) or 0)
@@ -769,6 +1099,13 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             salvaged_claim_count += len(salvage_actions)
         notes = list(getattr(answer.qa, "notes", []) or [])
         flags = list(answer.quality_flags or [])
+        for fallback_flag in (
+            "non_substantive_llm_output",
+            "structured_metric_fallback",
+            "unsupported_metric_llm_output",
+        ):
+            if fallback_flag in flags:
+                writer_fallback_qids.setdefault(fallback_flag, []).append(qid)
         checks = list(answer.skill_checks or [])
         combined = " | ".join([*notes, *flags, *checks]).casefold()
         for note in notes:
@@ -903,6 +1240,32 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
             decision: sorted(qids)
             for decision, qids in sorted(consumer_decision_qids.items())
         },
+        "local_admission": {
+            "count": len(
+                {
+                    qid
+                    for qids in local_admission_qids.values()
+                    for qid in qids
+                }
+            ),
+            "reason_qids": {
+                reason: sorted(set(qids))
+                for reason, qids in sorted(local_admission_qids.items())
+            },
+        },
+        "writer_fallback": {
+            "count": len(
+                {
+                    qid
+                    for qids in writer_fallback_qids.values()
+                    for qid in qids
+                }
+            ),
+            "reason_qids": {
+                reason: sorted(set(qids))
+                for reason, qids in sorted(writer_fallback_qids.items())
+            },
+        },
         "metric_facts": {
             **metric_summary,
             "qids_with_metric_rows": sorted(set(metric_summary["qids_with_metric_rows"])),
@@ -919,6 +1282,18 @@ def build_coverage_summary(artifacts: RunArtifacts) -> dict[str, Any]:
                 for reason, qids in sorted(metric_summary["absence_reason_qids"].items())
             },
             "low_confidence_qids": sorted(set(metric_summary["low_confidence_qids"])),
+            "summary_mismatch_count": len(
+                set(metric_summary["summary_mismatch_qids"])
+            ),
+            "summary_mismatch_qids": sorted(
+                set(metric_summary["summary_mismatch_qids"])
+            ),
+            "summary_mismatch_fields": {
+                field: sorted(set(qids))
+                for field, qids in sorted(
+                    metric_summary["summary_mismatch_fields"].items()
+                )
+            },
             "contract_qids": {
                 contract: sorted(set(qids))
                 for contract, qids in sorted(metric_summary["contract_qids"].items())

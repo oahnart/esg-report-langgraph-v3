@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from time import perf_counter
 from typing import Any, Callable
 
 from langgraph.graph import END, START, StateGraph
@@ -9,6 +11,9 @@ from esgagents.agents import ESGAgents
 from .conditional_logic import ESGConditionalLogic
 from .node_names import ESGGraphNodes
 from .state import ESGState
+
+
+logger = logging.getLogger(__name__)
 
 
 class ESGGraphSetup:
@@ -117,17 +122,28 @@ class ESGGraphSetup:
         return workflow
 
     def _observe(self, node_name: str, node: Callable[[Any], Any]) -> Callable[[Any], Any]:
-        if self.progress_observer is None:
-            return node
-
         def observed(state: Any) -> Any:
-            self.progress_observer(node_name, "started")
+            started = perf_counter()
+            if self.progress_observer:
+                self.progress_observer(node_name, "started")
             try:
                 result = node(state)
             except BaseException:
-                self.progress_observer(node_name, "failed")
+                logger.exception(
+                    "graph_node node=%r status=failed elapsed_ms=%s",
+                    node_name,
+                    round((perf_counter() - started) * 1000),
+                )
+                if self.progress_observer:
+                    self.progress_observer(node_name, "failed")
                 raise
-            self.progress_observer(node_name, "completed")
+            logger.info(
+                "graph_node node=%r status=completed elapsed_ms=%s",
+                node_name,
+                round((perf_counter() - started) * 1000),
+            )
+            if self.progress_observer:
+                self.progress_observer(node_name, "completed")
             return result
 
         return observed

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
+from time import perf_counter
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -28,6 +31,7 @@ from .attribution import (
 from .question_contracts import QuestionContract, build_question_contract
 
 logger = logging.getLogger(__name__)
+SEMANTIC_REVIEW_CACHE_VERSION = "semantic-review-v1"
 
 
 def _answer_from_state(state: dict[str, Any], qid: str) -> str:
@@ -211,6 +215,7 @@ class SemanticCompletenessCriticAgent:
         self.config = config or {}
         self.enabled = bool(self.config.get("semantic_qa_enabled", True))
         self.concurrency = max(1, int(self.config.get("semantic_qa_concurrency", 4)))
+        self.incremental = bool(self.config.get("semantic_qa_incremental", True))
         self.llm_timeout_seconds = max(1.0, float(self.config.get("llm_timeout_seconds", 120)))
         self.llm = llm
         self.structured_llm = bind_structured(llm, SemanticReview, "Semantic Completeness Critic")
@@ -219,6 +224,7 @@ class SemanticCompletenessCriticAgent:
         if not self.enabled:
             return {"semantic_reviews": {}}
 
+        started = perf_counter()
         qa_results = dict(state.get("qa_results", {}))
         final_answers = dict(state.get("final_answers", {}))
         last_rejected_answers = dict(state.get("last_rejected_answers", {}))
@@ -252,16 +258,28 @@ class SemanticCompletenessCriticAgent:
                     set(quality_flags.get(qid, []) + ["coherence_normalized"])
                 )
             metric_support_actions: list[str] = []
-            if str(getattr(rag, "metric_status", "") or "") == "not_found":
+            metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
+            if metric_status in {"found_table", "not_found"}:
+                numeric_metric_audit = (
+                    {**normalized.get("metric_audit", {}), "accepted_facts": []}
+                    if metric_status == "found_table"
+                    else normalized.get("metric_audit", {})
+                )
                 answer, metric_support_actions = salvage_unsupported_numeric_metric_claims(
                     answer,
-                    normalized.get("metric_audit", {}),
+                    numeric_metric_audit,
                 )
             if (
                 evidence_items
                 and "metric_audit" in normalized
                 and bool(getattr(rag, "is_v3", False))
             ):
+                final_answer_metric_audit = (
+                    {}
+                    if str(getattr(rag, "metric_status", "") or "").casefold()
+                    == "found_table"
+                    else normalized.get("metric_audit", {})
+                )
                 answer, conflict_actions = salvage_conflicting_metric_claims(
                     answer,
                     normalized.get("metric_audit", {}),
@@ -269,7 +287,7 @@ class SemanticCompletenessCriticAgent:
                 answer, support_actions = salvage_supported_claims(
                     answer,
                     evidence_items,
-                    normalized.get("metric_audit", {}),
+                    final_answer_metric_audit,
                 )
             else:
                 conflict_actions, support_actions = [], []
@@ -334,18 +352,52 @@ class SemanticCompletenessCriticAgent:
         ]
 
         reviews: dict[str, SemanticReview] = {}
+        cached_llm_reviews = {
+            qid: SemanticReview.model_validate(review)
+            for qid, review in state.get("semantic_llm_reviews", {}).items()
+        }
+        llm_reviews = dict(cached_llm_reviews)
+        fingerprints = dict(state.get("semantic_review_fingerprints", {}))
+        next_fingerprints = dict(fingerprints)
         fallback_qids: set[str] = set()
+        cache_hit_qids: set[str] = set()
         review_state = dict(state)
         review_state["final_answers"] = final_answers
         deterministic = {item.id: self._deterministic_review(review_state, item) for item in planned}
-        llm_candidates = [
+        eligible_llm_candidates = [
             item for item in planned
             if self.structured_llm is not None
             and getattr(state.get("rag_results", {}).get(item.id), "metric_status", None)
             != "not_found"
             and not self._hard_failure(deterministic[item.id], build_question_contract(item))
         ]
+        llm_candidates = []
+        for item in eligible_llm_candidates:
+            qid = item.id
+            fingerprint = self._review_fingerprint(review_state, item)
+            next_fingerprints[qid] = fingerprint
+            if (
+                self.incremental
+                and fingerprints.get(qid) == fingerprint
+                and qid in cached_llm_reviews
+            ):
+                reviews[qid] = self._merge_reviews(
+                    deterministic[qid],
+                    cached_llm_reviews[qid],
+                    build_question_contract(item),
+                )
+                cache_hit_qids.add(qid)
+            else:
+                llm_candidates.append(item)
+                llm_reviews.pop(qid, None)
         reviews.update(deterministic)
+        for qid in cache_hit_qids:
+            item = next(item for item in planned if item.id == qid)
+            reviews[qid] = self._merge_reviews(
+                deterministic[qid],
+                cached_llm_reviews[qid],
+                build_question_contract(item),
+            )
         if llm_candidates:
             executor = ThreadPoolExecutor(max_workers=min(self.concurrency, len(llm_candidates)))
             futures = {executor.submit(self._llm_review, review_state, item): item.id for item in llm_candidates}
@@ -353,9 +405,11 @@ class SemanticCompletenessCriticAgent:
                 for future in as_completed(futures, timeout=self.llm_timeout_seconds):
                     qid = futures[future]
                     try:
+                        llm_review = future.result()
+                        llm_reviews[qid] = llm_review
                         reviews[qid] = self._merge_reviews(
                             deterministic[qid],
-                            future.result(),
+                            llm_review,
                             build_question_contract(next(item for item in planned if item.id == qid)),
                         )
                     except Exception as exc:
@@ -396,13 +450,15 @@ class SemanticCompletenessCriticAgent:
                 "metric_audit",
                 {},
             )
+            metric_status = str(metric_audit.get("metric_status") or "").casefold()
+            final_answer_metric_audit = {} if metric_status == "found_table" else metric_audit
             supports = [
-                self._with_metric_fact_support(support, metric_audit).model_copy(
+                self._with_metric_fact_support(support, final_answer_metric_audit).model_copy(
                     update={
                         "facets": self._claim_facets(
                             support.claim_text,
                             contract,
-                            metric_audit,
+                            final_answer_metric_audit,
                             require_structured=bool(
                                 getattr(
                                     state.get("rag_results", {}).get(qid),
@@ -415,7 +471,10 @@ class SemanticCompletenessCriticAgent:
                 )
                 if (
                     support.support_status in {"grounded", "partial"}
-                    or metric_facts_supporting_claim(support.claim_text, metric_audit)
+                    or metric_facts_supporting_claim(
+                        support.claim_text,
+                        final_answer_metric_audit,
+                    )
                 )
                 else support
                 for support in supports
@@ -496,8 +555,22 @@ class SemanticCompletenessCriticAgent:
                 qa_results[qid] = QAResult(status="passed", notes=review.notes or ["semantic review passed"])
             quality_flags[qid] = sorted(set(flags))
 
+        elapsed_ms = round((perf_counter() - started) * 1000)
+        logger.info(
+            "semantic_phase elapsed_ms=%s planned=%s llm_eligible=%s "
+            "llm_calls=%s cache_hits=%s max_workers=%s incremental=%s",
+            elapsed_ms,
+            len(planned),
+            len(eligible_llm_candidates),
+            len(llm_candidates),
+            len(cache_hit_qids),
+            min(self.concurrency, len(llm_candidates)) if llm_candidates else 0,
+            self.incremental,
+        )
         return {
             "semantic_reviews": reviews,
+            "semantic_llm_reviews": llm_reviews,
+            "semantic_review_fingerprints": next_fingerprints,
             "claim_support": claim_support,
             "qa_results": qa_results,
             "final_answers": final_answers,
@@ -527,6 +600,7 @@ class SemanticCompletenessCriticAgent:
                     for term in (
                         "평가에 따르면",
                         "평가 자료에 따르면",
+                        "평가 자료상",
                         "평가 결과",
                         "assessment",
                         "assessed",
@@ -566,9 +640,27 @@ class SemanticCompletenessCriticAgent:
             else:
                 missing.append("qualitative_narrative")
             missing.extend(("metric_result", "reporting_period"))
-            advisory_missing_dimensions = [
-                f"metric_{dimension}" for dimension in contract.metric_dimensions
+            advisory_missing_dimensions = []
+            for dimension in contract.metric_dimensions:
+                facet = f"metric_{dimension}"
+                if self._has_metric_dimension(answer, dimension):
+                    covered.append(facet)
+                else:
+                    advisory_missing_dimensions.append(facet)
+        elif contract.pillar == "metrics" and metric_status == "found_table":
+            if self._has_non_gap_statement(answer):
+                covered.append("qualitative_narrative")
+            else:
+                missing.append("qualitative_narrative")
+            table_facts = [
+                *metric_audit.get("accepted_facts", []),
+                *metric_audit.get("withheld_facts", []),
             ]
+            if table_facts:
+                covered.extend(("metric_result", "reporting_period"))
+            else:
+                missing.extend(("metric_result", "reporting_period"))
+            advisory_missing_dimensions = []
         elif contract.pillar == "metrics":
             if self._has_metric_result(answer):
                 covered.append("metric_result")
@@ -603,20 +695,12 @@ class SemanticCompletenessCriticAgent:
         covered_dimensions = {
             f"metric_{dimension}" for dimension in contract.metric_dimensions
         }.intersection(covered)
-        supported_metric_answer = self._has_non_gap_statement(answer) if metric_status == "not_found" else (
+        supported_metric_answer = (
             bool(covered_dimensions)
             if contract.metric_dimensions
-            else self._has_metric_result(answer) or self._has_non_gap_statement(answer)
+            else self._has_metric_result(answer)
         )
-        if (
-            contract.pillar == "metrics"
-            and metric_status == "not_found"
-            and missing
-            and data_gap_disclosed
-            and supported_metric_answer
-        ):
-            alignment = "partial"
-        elif contract.pillar == "metrics" and missing and data_gap_disclosed and supported_metric_answer:
+        if contract.pillar == "metrics" and missing and supported_metric_answer:
             alignment = "partial"
         elif contract.pillar == "metrics" and missing:
             alignment = "insufficient"
@@ -696,6 +780,29 @@ class SemanticCompletenessCriticAgent:
         )
 
     def _llm_review(self, state: dict[str, Any], planned: Any) -> SemanticReview:
+        result = self.structured_llm.invoke(self._review_messages(state, planned))
+        if not isinstance(result, SemanticReview):
+            raise RuntimeError("semantic critic returned an invalid structured response")
+        return result
+
+    def _review_fingerprint(self, state: dict[str, Any], planned: Any) -> str:
+        messages = self._review_messages(state, planned)
+        payload = {
+            "version": SEMANTIC_REVIEW_CACHE_VERSION,
+            "schema": SemanticReview.model_json_schema(),
+            "messages": [str(message.content) for message in messages],
+        }
+        serialized = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    def _review_messages(
+        self, state: dict[str, Any], planned: Any
+    ) -> list[SystemMessage | HumanMessage]:
         contract = build_question_contract(planned)
         qid = planned.id
         answer = _answer_from_state(state, qid)
@@ -714,6 +821,7 @@ class SemanticCompletenessCriticAgent:
         ))
         human = HumanMessage(content="\n".join([
             f"Pillar: {contract.pillar}",
+            f"Metric status: {getattr(rag, 'metric_status', '')}",
             f"Required facets: {', '.join(contract.required_facets)}",
             f"Expected facets: {', '.join(contract.expected_facets) or 'none'}",
             f"Metric dimensions (advisory only): {', '.join(contract.metric_dimensions) or 'none'}",
@@ -725,10 +833,7 @@ class SemanticCompletenessCriticAgent:
             "Evidence:",
             *evidence_lines,
         ]))
-        result = self.structured_llm.invoke([system, human])
-        if not isinstance(result, SemanticReview):
-            raise RuntimeError("semantic critic returned an invalid structured response")
-        return result
+        return [system, human]
 
     @staticmethod
     def _apply_rag_constraints(
@@ -737,6 +842,12 @@ class SemanticCompletenessCriticAgent:
         review: SemanticReview,
         deterministic: SemanticReview,
     ) -> SemanticReview:
+        rag = state.get("rag_results", {}).get(planned.id)
+        if str(getattr(rag, "metric_status", "") or "").casefold() in {
+            "found_table",
+            "not_found",
+        }:
+            return deterministic
         return review
 
     def _source_usage(self, state: dict[str, Any], qid: str, answer: str) -> str:
@@ -1083,6 +1194,12 @@ class SemanticCompletenessCriticAgent:
             alignment = "insufficient"
         elif deterministic.alignment == "misaligned":
             alignment = "misaligned"
+        elif (
+            deterministic.alignment == "partial"
+            and alignment == "insufficient"
+            and not SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(notes)
+        ):
+            alignment = "partial"
         elif missing and alignment == "aligned":
             alignment = "partial"
         elif not missing and alignment == "partial" and deterministic.alignment == "aligned":
@@ -1105,11 +1222,9 @@ class SemanticCompletenessCriticAgent:
 
     @staticmethod
     def _hard_failure(review: SemanticReview, contract: QuestionContract) -> bool:
-        disclosed_gap = "missing data disclosed" in review.notes
         return (
             review.alignment in {"misaligned", "insufficient"}
             or review.source_usage == "overstated"
-            or (contract.pillar == "metrics" and bool(review.missing_facets) and not disclosed_gap)
             or SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(review.notes)
         )
 
