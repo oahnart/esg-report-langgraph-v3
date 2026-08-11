@@ -1,0 +1,18 @@
+# Development override: use the already-built image, but run the current
+# working-tree code. Docker Compose loads this file automatically.
+services:
+  api:
+    environment:
+      ESG_PROVENANCE_MODE: off
+    volumes:
+      - ./esgagents:/app/esgagents:ro
+      - ./skills:/app/skills:ro
+      - ./template_v1:/app/template_v1:ro
+
+  worker:
+    environment:
+      ESG_PROVENANCE_MODE: off
+    volumes:
+      - ./esgagents:/app/esgagents:ro
+      - ./skills:/app/skills:ro
+      - ./template_v1:/app/template_v1:ro
