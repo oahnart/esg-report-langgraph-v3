@@ -6,7 +6,11 @@ from typing import Any, Literal
 import unicodedata
 
 from esgagents.default_config import DEFAULT_CONFIG
-from esgagents.quality import answer_invariant_issues, resolved_answer_quality
+from esgagents.quality import (
+    answer_invariant_issues,
+    apply_answer_quality_contract,
+    resolved_answer_quality,
+)
 from esgagents.customer_text import strip_customer_meta_limitations
 
 
@@ -419,6 +423,7 @@ def apply_customer_answer_contract(answer: Any) -> PublicationDecision:
     setattr(answer, "publication_issues", list(decision.issues))
     setattr(answer, "consumer_decision", _consumer_decision(decision, answer))
     setattr(answer, "result_bucket", _result_bucket(decision, answer))
+    apply_answer_quality_contract(answer)
     return decision
 
 
@@ -473,7 +478,19 @@ def _result_bucket(decision: PublicationDecision, answer: Any) -> str:
     if decision.status in {"published", "review_required"}:
         return "answered"
     qa_status = str(getattr(getattr(answer, "qa", None), "status", "") or "").casefold()
+    failed_reasons = {
+        "hard_failure",
+        "non_narrative_output",
+        "qa_not_passed",
+        "source_usage_overstated",
+        "thematic_mismatch",
+        "unsupported_claim",
+    }
     if qa_status == "failed" or getattr(answer, "hard_failures", None):
+        return "failed"
+    if decision.reason in failed_reasons or any(
+        issue in failed_reasons for issue in decision.issues
+    ):
         return "failed"
     answer_status = str(getattr(answer, "answer_status", "") or "").casefold()
     if answer_status not in {"high_confidence", "medium_confidence", "thin_but_usable"}:

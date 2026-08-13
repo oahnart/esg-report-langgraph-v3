@@ -35,6 +35,58 @@ def _audit_value(worksheet, column_name, row=2):
     return worksheet.cell(row=row, column=column).value
 
 
+def _audit_json_value(payload, column_name, row=0):
+    return payload["rows"][row][column_name]
+
+
+def test_output_writer_persists_resolved_quality_contract(tmp_path):
+    artifacts = RunArtifacts(
+        run_id="run_quality_contract",
+        company={"company_id": "c", "company_name": "C", "year": 2025},
+        template_selection={"template_version": "template_v1", "question_count": 1},
+        stats={"answered": 1, "empty": 0, "weak": 0, "failed": 0},
+        answers=[
+            AnswerRecord(
+                qid="Q019",
+                source_id="EBX-Q-019",
+                category="정보보호",
+                question="개인정보 침해 및 정보보안 사고 현황",
+                answer_status="high_confidence",
+                rag_coverage_status="complete",
+                rag_answerable=True,
+                final_answer="대웅제약은 정보보안 체계를 지속 강화하고 있습니다.",
+                evidence_summary="evidence",
+                sources=[
+                    {
+                        "source_name": "metric.xlsx",
+                        "source_path": "ESG/metric.xlsx",
+                        "source_tier": "tier_2_operational",
+                    }
+                ],
+                qa=QAResult(status="passed", notes=["semantic review passed"]),
+                quality_flags=["metric_low_confidence"],
+                qa_grade="full",
+                coverage_reason="complete_grounded_answer",
+                coverage_issues=[],
+            )
+        ],
+    )
+
+    written = OutputWriter(tmp_path).write(artifacts)
+    payload = json.loads(Path(written.output_paths["json"]).read_text(encoding="utf-8"))
+    audit = json.loads(Path(written.output_paths["audit_json"]).read_text(encoding="utf-8"))
+    summary = json.loads(Path(written.output_paths["coverage_summary"]).read_text(encoding="utf-8"))
+
+    answer = payload["answers"][0]
+    assert answer["qa_grade"] == "partial"
+    assert answer["coverage_reason"] == "qa_invariant_violation"
+    assert "qa_invariant_violation" in answer["coverage_issues"]
+    assert answer["publication_status"] == "review_required"
+    assert _audit_json_value(audit, "QA Grade") == "partial"
+    assert summary["quality_grade_stats"]["partial"] == 1
+    assert summary["quality_grade_qids"]["partial"] == ["Q019"]
+
+
 def test_metric_excel_value_rounds_display_precision_without_decimal_artifacts():
     assert _metric_excel_value("0.000000000000000000") == 0
     assert _metric_excel_value("12771.822287491") == 12771.822287
@@ -111,26 +163,25 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
     )
 
     written = OutputWriter(tmp_path).write(artifacts)
-    wb = load_workbook(written.output_paths["excel"])
-    ws = wb["Qualitative Audit"]
+    audit = json.loads(Path(written.output_paths["audit_json"]).read_text(encoding="utf-8"))
 
-    assert [cell.value for cell in ws[1]] == AUDIT_COLUMNS
-    assert ws.max_row == 2
-    assert ws["A2"].value == "Q001"
-    assert _audit_value(ws, "QA Grade") == "full"
-    assert _audit_value(ws, "Result Bucket") == "answered"
-    assert _audit_value(ws, "Coverage Reason") == "complete_grounded_answer"
-    assert "empty evidence" in _audit_value(ws, "Retrieval Attempts")
-    assert _audit_value(ws, "Draft Answer") == "draft answer"
-    assert _audit_value(ws, "Last Rejected Answer") == "rejected answer"
-    assert _audit_value(ws, "QA Failure Stage") == "skill_policy_critic"
-    assert _audit_value(ws, "Sanitizer Actions") == "removed_unsupported_numeric_claim:30%"
-    assert "source_tier=tier_1_governing" in _audit_value(ws, "Sources")
-    assert "classification_reason=inferred_keyword:policy" in _audit_value(ws, "Sources")
-    assert _audit_value(ws, "RAG Coverage") == "complete"
-    assert _audit_value(ws, "RAG Answerable") is True
-    assert '"direct_answer": true' in _audit_value(ws, "RAG Structured Coverage")
-    assert "locator(page=3,section=Governance)" in _audit_value(ws, "Sources")
+    assert audit["columns"] == AUDIT_COLUMNS
+    assert len(audit["rows"]) == 1
+    assert audit["rows"][0]["QID"] == "Q001"
+    assert _audit_json_value(audit, "QA Grade") == "full"
+    assert _audit_json_value(audit, "Result Bucket") == "answered"
+    assert _audit_json_value(audit, "Coverage Reason") == "complete_grounded_answer"
+    assert "empty evidence" in _audit_json_value(audit, "Retrieval Attempts")
+    assert _audit_json_value(audit, "Draft Answer") == "draft answer"
+    assert _audit_json_value(audit, "Last Rejected Answer") == "rejected answer"
+    assert _audit_json_value(audit, "QA Failure Stage") == "skill_policy_critic"
+    assert _audit_json_value(audit, "Sanitizer Actions") == "removed_unsupported_numeric_claim:30%"
+    assert "source_tier=tier_1_governing" in _audit_json_value(audit, "Sources")
+    assert "classification_reason=inferred_keyword:policy" in _audit_json_value(audit, "Sources")
+    assert _audit_json_value(audit, "RAG Coverage") == "complete"
+    assert _audit_json_value(audit, "RAG Answerable") is True
+    assert '"direct_answer": true' in _audit_json_value(audit, "RAG Structured Coverage")
+    assert "locator(page=3,section=Governance)" in _audit_json_value(audit, "Sources")
     combined = load_workbook(written.output_paths["combined_excel"])["Qualitative"]
     assert "source_type=policy_procedure" in combined["E2"].value
     payload = json.loads(open(written.output_paths["json"], encoding="utf-8").read())
@@ -228,17 +279,11 @@ def test_output_writer_adds_full_rag_metric_evidence_sheet(tmp_path):
     )
 
     written = OutputWriter(tmp_path).write(artifacts)
-    audit_book = load_workbook(written.output_paths["excel"])
     combined_book = load_workbook(written.output_paths["combined_excel"])
 
-    assert "RAG Metric Evidence" in audit_book.sheetnames
     assert combined_book.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
-    metric_sheet = audit_book["RAG Metric Evidence"]
-    assert metric_sheet.max_row == 3
-    assert metric_sheet["A2"].value == "Q039"
-    assert metric_sheet["F2"].value == "primary"
-    assert metric_sheet["F3"].value == "denominator"
-    assert "Water use" in metric_sheet["K2"].value
+    audit = json.loads(Path(written.output_paths["audit_json"]).read_text(encoding="utf-8"))
+    assert "Water use" in _audit_json_value(audit, "Metric Audit")
     customer_metric_sheet = combined_book["Qualitative Table Metrics"]
     assert customer_metric_sheet["A1"].value.startswith("Q039-T01 | Q039")
     assert "Table block: Water > Pharm" in customer_metric_sheet["A2"].value
@@ -502,12 +547,11 @@ def test_output_writer_cleans_illegal_excel_characters(tmp_path):
     )
 
     written = OutputWriter(tmp_path).write(artifacts)
-    wb = load_workbook(written.output_paths["excel"])
-    ws = wb["Qualitative Audit"]
+    audit = json.loads(Path(written.output_paths["audit_json"]).read_text(encoding="utf-8"))
 
-    assert _audit_value(ws, "Evidence Summary") == "감사실소개"
-    assert _audit_value(ws, "Sources") == "doc.docx | ESG/doc.docx"
-    assert _audit_value(ws, "QA Notes") == "groundednote"
+    assert _audit_json_value(audit, "Evidence Summary") == artifacts.answers[0].evidence_summary
+    assert "ESG/doc.docx" in _audit_json_value(audit, "Sources")
+    assert _audit_json_value(audit, "QA Notes") == artifacts.answers[0].qa.notes[0]
 
 
 def test_clean_excel_text_removes_invalid_xml_characters_and_truncates():
@@ -557,14 +601,11 @@ def test_excel_formula_neutralization_does_not_change_json(tmp_path):
     )
 
     written = OutputWriter(tmp_path).write(artifacts)
-    workbook = load_workbook(written.output_paths["excel"], data_only=False)
-    worksheet = workbook["Qualitative Audit"]
+    audit = json.loads(Path(written.output_paths["audit_json"]).read_text(encoding="utf-8"))
     payload = json.loads(Path(written.output_paths["json"]).read_text(encoding="utf-8"))
 
-    final_answer_cell = worksheet.cell(row=2, column=AUDIT_COLUMNS.index("Final Answer") + 1)
-    assert final_answer_cell.value == "'=1+1"
-    assert final_answer_cell.data_type == "s"
-    assert _audit_value(worksheet, "Evidence Summary") == "'@SUM(A1:A2)"
+    assert _audit_json_value(audit, "Final Answer") == "=1+1"
+    assert _audit_json_value(audit, "Evidence Summary") == "@SUM(A1:A2)"
     assert payload["answers"][0]["final_answer"] == "=1+1"
     assert payload["answers"][0]["evidence_summary"] == "@SUM(A1:A2)"
 

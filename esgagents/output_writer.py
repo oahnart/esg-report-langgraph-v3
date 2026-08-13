@@ -273,7 +273,7 @@ class OutputWriter:
             artifacts.stats[bucket if bucket in artifacts.stats else "empty"] += 1
         json_path = run_dir / "qualitative_run.json"
         coverage_path = run_dir / "coverage_summary.json"
-        xlsx_path = run_dir / "qualitative_audit.xlsx"
+        audit_json_path = run_dir / "qualitative_audit.json"
         existing_combined = next(
             (
                 path
@@ -297,13 +297,13 @@ class OutputWriter:
         token = uuid4().hex
         json_temp = run_dir / f".qualitative_run.{token}.tmp"
         coverage_temp = run_dir / f".coverage_summary.{token}.tmp"
-        xlsx_temp = run_dir / f".qualitative_audit.{token}.tmp.xlsx"
+        audit_json_temp = run_dir / f".qualitative_audit.{token}.tmp"
         combined_temp = run_dir / f".combined_report.{token}.tmp.xlsx"
         try:
             artifacts.output_paths = {
                 "json": str(json_path),
                 "coverage_summary": str(coverage_path),
-                "excel": str(xlsx_path),
+                "audit_json": str(audit_json_path),
                 "combined_excel": str(combined_path),
             }
             with json_temp.open("w", encoding="utf-8") as handle:
@@ -314,9 +314,12 @@ class OutputWriter:
                 json.dump(build_coverage_summary(artifacts), handle, ensure_ascii=False, indent=2)
                 handle.flush()
                 os.fsync(handle.fileno())
-            self._write_excel(artifacts, xlsx_temp)
+            with audit_json_temp.open("w", encoding="utf-8") as handle:
+                json.dump(self._build_audit_json(artifacts), handle, ensure_ascii=False, indent=2)
+                handle.flush()
+                os.fsync(handle.fileno())
             self._write_combined_excel(artifacts, combined_temp)
-            os.replace(xlsx_temp, xlsx_path)
+            os.replace(audit_json_temp, audit_json_path)
             os.replace(combined_temp, combined_path)
             os.replace(coverage_temp, coverage_path)
             os.replace(json_temp, json_path)
@@ -324,7 +327,7 @@ class OutputWriter:
         finally:
             json_temp.unlink(missing_ok=True)
             coverage_temp.unlink(missing_ok=True)
-            xlsx_temp.unlink(missing_ok=True)
+            audit_json_temp.unlink(missing_ok=True)
             combined_temp.unlink(missing_ok=True)
             if reservation_path is not None:
                 reservation_path.unlink(missing_ok=True)
@@ -351,6 +354,70 @@ class OutputWriter:
             raise OutputPathError("output run path must remain inside output_dir") from exc
         return output_root, run_dir
 
+    def _build_audit_json(self, artifacts: RunArtifacts) -> dict[str, Any]:
+        return {
+            "columns": list(AUDIT_COLUMNS),
+            "rows": [
+                dict(zip(AUDIT_COLUMNS, self._audit_row(answer), strict=True))
+                for answer in artifacts.answers
+            ],
+        }
+
+    def _audit_row(self, answer: Any) -> list[Any]:
+        quality = resolved_answer_quality(answer)
+        return [
+            answer.qid,
+            answer.source_id,
+            answer.category,
+            answer.question,
+            answer.answer_status,
+            answer.rag_pillar,
+            answer.rag_retrieval_confidence,
+            answer.rag_coverage_status,
+            answer.rag_answerable,
+            "; ".join(answer.rag_covered_facets),
+            "; ".join(answer.rag_missing_facets),
+            json.dumps(answer.rag_coverage, ensure_ascii=False, sort_keys=True),
+            answer.rag_failure_code,
+            answer.rag_failure_reason,
+            "; ".join(answer.rag_retrieval_notes),
+            "; ".join(answer.rag_contract_violations),
+            "; ".join(answer.rag_contract_warnings),
+            answer.consumer_decision,
+            json.dumps(answer.upstream_hints, ensure_ascii=False, sort_keys=True),
+            answer.upstream_coverage_mismatch,
+            answer.local_evidence_accepted,
+            answer.local_acceptance_reason,
+            json.dumps(answer.metric_audit, ensure_ascii=False, sort_keys=True),
+            quality.grade,
+            resolved_publication_decision(answer).status,
+            resolved_publication_decision(answer).reason,
+            "; ".join(resolved_publication_decision(answer).issues),
+            _audit_display_answer(answer),
+            answer.evidence_summary,
+            "; ".join(_format_source(src) for src in answer.sources),
+            "; ".join(answer.qa.notes),
+            answer.agent_profile,
+            "; ".join(answer.quality_flags),
+            answer.revision_count,
+            json.dumps(answer.retrieval_attempts, ensure_ascii=False, sort_keys=True),
+            answer.skill_key,
+            answer.skill_name,
+            answer.skill_version,
+            answer.skill_source_path,
+            answer.skill_selection_reason,
+            "; ".join(answer.skill_checks),
+            "; ".join(answer.disclosure_flags),
+            "; ".join(answer.hard_failures),
+            _answer_result_bucket(answer),
+            quality.reason,
+            "; ".join(quality.issues),
+            answer.draft_answer,
+            answer.last_rejected_answer,
+            answer.qa_failure_stage,
+            "; ".join(answer.sanitizer_actions),
+        ]
+
     def _write_excel(self, artifacts: RunArtifacts, path: Path) -> None:
         wb = Workbook()
         ws = wb.active
@@ -361,62 +428,7 @@ class OutputWriter:
             cell.fill = PatternFill("solid", fgColor="1F4E78")
 
         for answer in artifacts.answers:
-            quality = resolved_answer_quality(answer)
-            self._append_excel_row(ws, [
-                answer.qid,
-                answer.source_id,
-                answer.category,
-                answer.question,
-                answer.answer_status,
-                answer.rag_pillar,
-                answer.rag_retrieval_confidence,
-                answer.rag_coverage_status,
-                answer.rag_answerable,
-                "; ".join(answer.rag_covered_facets),
-                "; ".join(answer.rag_missing_facets),
-                json.dumps(answer.rag_coverage, ensure_ascii=False, sort_keys=True),
-                answer.rag_failure_code,
-                answer.rag_failure_reason,
-                "; ".join(answer.rag_retrieval_notes),
-                "; ".join(answer.rag_contract_violations),
-                "; ".join(answer.rag_contract_warnings),
-                answer.consumer_decision,
-                json.dumps(answer.upstream_hints, ensure_ascii=False, sort_keys=True),
-                answer.upstream_coverage_mismatch,
-                answer.local_evidence_accepted,
-                answer.local_acceptance_reason,
-                json.dumps(answer.metric_audit, ensure_ascii=False, sort_keys=True),
-                quality.grade,
-                resolved_publication_decision(answer).status,
-                resolved_publication_decision(answer).reason,
-                "; ".join(resolved_publication_decision(answer).issues),
-                _audit_display_answer(answer),
-                answer.evidence_summary,
-                "; ".join(
-                    _format_source(src)
-                    for src in answer.sources
-                ),
-                "; ".join(answer.qa.notes),
-                answer.agent_profile,
-                "; ".join(answer.quality_flags),
-                answer.revision_count,
-                json.dumps(answer.retrieval_attempts, ensure_ascii=False, sort_keys=True),
-                answer.skill_key,
-                answer.skill_name,
-                answer.skill_version,
-                answer.skill_source_path,
-                answer.skill_selection_reason,
-                "; ".join(answer.skill_checks),
-                "; ".join(answer.disclosure_flags),
-                "; ".join(answer.hard_failures),
-                _answer_result_bucket(answer),
-                quality.reason,
-                "; ".join(quality.issues),
-                answer.draft_answer,
-                answer.last_rejected_answer,
-                answer.qa_failure_stage,
-                "; ".join(answer.sanitizer_actions),
-            ])
+            self._append_excel_row(ws, self._audit_row(answer))
 
         widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 22, 30, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
         for idx, width in enumerate(widths, start=1):

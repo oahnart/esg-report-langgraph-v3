@@ -276,7 +276,9 @@ def test_found_table_writer_cleans_editorial_boilerplate_from_narrative_fallback
 
     answer, flags = SkillWriterAgent({}, LLM())._draft_answer(context, rag)
 
-    assert answer.startswith("디지털 전환이 빠르게 진행됨에 따라")
+    assert answer.startswith("디지털 전환이 빠르게 진행되면서")
+    assert "중요성이 증가함에 따라" not in answer
+    assert "중요성이 커짐에 따라" in answer
     assert question not in answer
     assert "◀" not in answer
     assert "▶" not in answer
@@ -305,6 +307,30 @@ def test_evidence_fallback_prefers_question_relevant_claims():
 
     assert answer.startswith("The company conducted stakeholder communication")
     assert "Risk likelihood" not in answer
+
+
+def test_evidence_fallback_boosts_accountable_body_for_organization_questions():
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "question": "컴플라이언스 관리 조직 및 체계",
+            "description": "전담 조직과 역할을 설명합니다",
+            "evidence_items": [
+                _item(
+                    "국가핵심기술 보호와 해외 법인 보안 체계 구축으로 글로벌 성장의 기반을 다지고 있습니다. "
+                    "국제 표준 인증(ISO) 유지와 철저한 컴플라이언스 대응을 통해 신뢰를 확보하고 있습니다.",
+                    semantic_label="useful",
+                ),
+                _item(
+                    "대웅그룹 정보보호팀은 글로벌 사업과 영업·생산·연구 활동의 지속가능성을 "
+                    "뒷받침하는 핵심 경영 인프라 조직입니다.",
+                    semantic_label="useful",
+                ),
+            ],
+        }
+    )
+
+    assert answer.startswith("대웅그룹 정보보호팀은")
+    assert "컴플라이언스 대응" in answer
 
 
 def test_writer_replaces_q033_style_navigation_dump_with_relevant_evidence():

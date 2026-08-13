@@ -5,6 +5,10 @@ import pytest
 from esgagents.agents.answering.output_hygiene import OutputHygieneAgent, normalize_markdown
 from esgagents.agents.answering.question_contracts import METRIC_DIMENSIONS_BY_QID
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
+from esgagents.agents.answering.text_quality import (
+    non_narrative_reason,
+    normalize_answer_coherence,
+)
 from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
 from esgagents.agents.evidence.source_policy import classify_source
 from esgagents.quality_flags import CANONICAL_FLAGS
@@ -865,6 +869,253 @@ def test_output_hygiene_removes_markdown_and_person_names_but_keeps_roles():
     assert "redacted_person_name" in result["sanitizer_actions"][planned.id]
 
 
+def test_text_quality_removes_trailing_heading_fragment():
+    answer = (
+        "대웅제약은 정보보호 정책과 전담조직을 기반으로 보안 리스크를 관리합니다. "
+        "정보보호 목표 정보보호 전담조직 정보보안"
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final == "대웅제약은 정보보호 정책과 전담조직을 기반으로 보안 리스크를 관리합니다."
+    assert "removed_trailing_heading_fragment" in actions
+
+
+def test_text_quality_removes_report_title_prefix_before_answer_sentence():
+    answer = (
+        "Social-인권 및 노사소통 강화 대웅제약 지속가능경영보고서 "
+        "협력적 노사소통 활성화 2025년 내부 이해관계자 인권 관련 고충이 접수되었습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final == "2025년 내부 이해관계자 인권 관련 고충이 접수되었습니다."
+    assert "removed_report_title_prefix" in actions
+
+
+def test_text_quality_removes_leading_process_dump_before_quality_sentence():
+    answer = (
+        "의약품 안전품질 통합관리 임상시험 시판허가 첨부문서 설명서 "
+        "시판 후 안정성 정보수집 지속적 모니터링 안전성 평가 위해성 유익성 평가 "
+        "대웅제약은 품질경영(QM), 품질보증(QA) 부서와 품질관리(QC) 부서 간 "
+        "유기적인 협업을 통해 안전하고 높은 품질의 제품을 생산하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("대웅제약은 품질경영")
+    assert "임상시험 시판허가" not in final
+    assert "removed_leading_process_dump" in actions
+
+
+def test_text_quality_removes_leading_process_dump_before_pharmacovigilance_sentence():
+    answer = (
+        "의약품 안전품질 통합관리 임상시험 시판허가 (첨부문서,설명서) "
+        "시판 후 안정성 정보수집 (문헌,추가연구 등) 지속적 모니터링 "
+        "첨부문서, 설명서 보완 안전성 평가 위해성 • 유익성 평가 "
+        "대웅제약의 약물감시는 대웅제약에서 생산하는 모든 제품에 대하여 "
+        "전 생애주기의 이상사례 안전성 문제를 과학적으로 탐지 평가하는 활동으로, "
+        "RMP 재평가 보고 재심사 사용권고 등 제도를 통해 체계를 강화하며 "
+        "글로벌 규제 보고 의무를 준수합니다. "
+        "품질 부문 조직 대웅제약은 품질경영(QM), 품질보증(QA) 부서와 "
+        "품질관리(QC) 부서 간 유기적인 협업을 통해 안전하고 높은 품질의 제품을 생산하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("대웅제약의 약물감시는")
+    assert "의약품 안전품질 통합관리" not in final
+    assert "품질 부문 조직" not in final
+    assert "이상사례와 안전성 문제" in final
+    assert "탐지·평가" in final
+    assert "RMP, 재평가, 보고, 재심사, 사용권고" in final
+    assert "removed_leading_process_dump" in actions
+    assert "removed_inline_heading_fragment" in actions
+    assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_text_quality_removes_known_heading_when_it_starts_answer():
+    answer = (
+        "품질 부문 조직 대웅제약은 품질경영(QM), 품질보증(QA) 부서와 "
+        "품질관리(QC) 부서 간 유기적인 협업을 통해 제품 품질을 관리하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("대웅제약은 품질경영")
+    assert "품질 부문 조직" not in final
+    assert "removed_inline_heading_fragment" in actions
+
+
+def test_text_quality_removes_stray_leading_contrast_and_colloquial_policy_phrase():
+    answer = (
+        "하지만 소액 주주 의견을 수렴하고 반대 주주 권리 보호를 위해 "
+        "전자투표 도입, 주주총회 질의 및 답변 시간 부여, IR팀을 통한 "
+        "의견 수렴과 같은 보완 정책을 마련해 놓고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("소액 주주 의견을")
+    assert not final.startswith("하지만")
+    assert "마련해 놓고 있습니다" not in final
+    assert "운영하고 있습니다" in final
+    assert "removed_leading_connector" in actions
+    assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_text_quality_removes_connector_after_source_attribution():
+    answer = (
+        "생명과학연구소에서는 공기조화기 필터를 리필형으로 교체하여 프레임을 재사용하고 있습니다. "
+        "검토 중인 제안 자료상 또한, 향남공장의 수처리설비 농축수 재활용 확대를 추진하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert "검토 중인 제안 자료상 향남공장" in final
+    assert "검토 중인 제안 자료상 또한" not in final
+    assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_text_quality_repairs_redundant_board_system_phrase():
+    answer = (
+        "대웅그룹의 이사회는 대표이사를 포함한 이사회 체계를 운영하며, "
+        "매년 그룹사의 환경안전 경영방침을 검토하고 승인합니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("대웅그룹은 대표이사를 포함한 이사회를 운영하며")
+    assert "이사회는 대표이사를 포함한 이사회 체계" not in final
+    assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_text_quality_repairs_missing_open_parenthesis_for_spin_off_phrase():
+    answer = "대웅제약은 합병, 영업 양수도, 분할물적 분할 포함), 주식의 이전이 발생하지 않았습니다."
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert "분할(물적 분할 포함)" in final
+    assert "분할물적 분할 포함)" not in final
+    assert "repaired_parenthetical_fragment" in actions
+
+
+def test_text_quality_rejects_metric_label_dump_as_non_narrative():
+    answer = (
+        "2024년 오송공장 직접에너지 사용량 LNG 등 직접에너지사용량: "
+        "25년 하반기 ~ 26년 상반기 외부 스팀 도입 투자 진행 "
+        "간접에너지사용량: 공조기 인버터설치, 건물옥상 태양광 설치, CTTS가동을 통한 전력피크 제어 "
+        "휘발유 간접에너지 사용량 에너지 사용량 계 매출(생산액) 에너지 사용량 원단위 GJ/억원"
+    )
+
+    assert non_narrative_reason(answer) in {
+        "metric_label_dump_output",
+        "header_dump_output",
+    }
+
+
+def test_text_quality_removes_draft_heading_fragments_before_subject():
+    answer = (
+        "검토 중인 제안 자료상 다양성 제고를 위한 차별금지 원칙 "
+        "장애인 고용 창출과 다양성 제고를 위한 목표 대웅제약은 포용적 고용 환경 조성에 노력하고 있습니다. "
+        "업계최초 직무급 제도와 여성인재 육성 대웅제약은 성별 구분 없이 동등한 기회를 제공합니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("검토 중인 제안 자료상 대웅제약은")
+    assert "차별금지 원칙 장애인 고용" not in final
+    assert "업계최초 직무급 제도" not in final
+    assert "removed_leading_heading_fragment" in actions
+    assert "removed_inline_heading_fragment" in actions
+
+
+def test_text_quality_removes_leading_purpose_connector():
+    final, actions = normalize_answer_coherence("이를 위해 국가핵심기술 보호 체계를 구축하고 있습니다.")
+
+    assert final == "국가핵심기술 보호 체계를 구축하고 있습니다."
+    assert "removed_leading_connector" in actions
+
+
+def test_text_quality_repairs_common_korean_answer_phrases():
+    answer = (
+        "디지털 전환이 빠르게 진행됨에 따라 정보보안 및 정보보호의 중요성이 증가함에 따라 "
+        "대웅제약은 보안 체계를 강화하고 있습니다. "
+        "평가는 운영, 환경, 인권 노동 영역으로 구성됩니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert "진행됨에 따라 정보보안 및 정보보호의 중요성이 증가함에 따라" not in final
+    assert "정보보안 및 정보보호의 중요성이 커짐에 따라" in final
+    assert "인권·노동" in final
+    assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_q062_generic_external_assessment_criteria_is_thematic_mismatch():
+    planned = _planned(
+        qid="Q062",
+        pillar="Risk Management",
+        item="차별 및 형평성 관련 리스크 관리",
+        description="회사 차원의 리스크 식별 및 대응 활동을 설명합니다",
+    )
+    answer = (
+        "외부 평가 자료상 차별 철폐 및 소외 계층의 역량 강화를 위한 멘토링, "
+        "기술 교육 등에 후원 또는 참여한다. 차별 철폐에 대해 구체적이고, "
+        "측정 가능하며 달성 가능한 정책 및 목표를 수립하고 모니터링한다."
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+    assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
+
+
+def test_q087_security_training_is_thematic_mismatch_for_compliance_incident_status():
+    planned = _planned(
+        qid="Q087",
+        pillar="Metrics",
+        item="법규 위반 및 준법 관련 현황",
+        description="법규 위반, 준법 사건, 제재 현황을 설명합니다",
+    )
+    answer = (
+        "대웅제약은 임직원의 정보보호 인식 제고를 위해 매 분기 신규 경력 입사자 대상 "
+        "온보딩 교육과 반기별 신입사원 및 인턴 대상 교육을 실시하고 있습니다."
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+    assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
+
+
+def test_q093_human_rights_proxy_is_thematic_mismatch_for_stakeholder_communication():
+    planned = _planned(
+        qid="Q093",
+        pillar="Governance",
+        item="이해관계자 소통 관리 체계",
+        description="이해관계자 소통 채널과 관리 체계를 설명합니다",
+    )
+    answer = (
+        "대웅제약은 임직원과 이해관계자의 인권 존중을 위해 인권경영 체계를 운영하고 "
+        "인권영향평가를 통해 인권 리스크를 점검합니다."
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer)
+    )
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+    assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
+
+
 def test_output_hygiene_preserves_names_when_question_requests_identity():
     planned = _planned(qid="Q093", pillar="Governance", item="담당자 성명", description="이름을 공개합니다")
     answer = "홍길동 부장이 담당합니다."
@@ -993,7 +1244,9 @@ def test_output_hygiene_cleans_q019_editorial_final_answer():
     )
 
     final = result["final_answers"][qid]
-    assert final.startswith("디지털 전환이 빠르게 진행됨에 따라")
+    assert final.startswith("디지털 전환이 빠르게 진행되면서")
+    assert "중요성이 증가함에 따라" not in final
+    assert "중요성이 커짐에 따라" in final
     assert "개인정보 침해 및 정보보안 사고 현황" not in final
     assert "◀" not in final
     assert "▶" not in final

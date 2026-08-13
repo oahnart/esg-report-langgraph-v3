@@ -672,3 +672,74 @@ def test_not_found_writer_uses_items_and_ignores_narrative_evidence():
     assert result["final_answers"][qid] == item_evidence.raw_evidence_ko
     assert "37" not in result["final_answers"][qid]
     assert "metric_not_found" in result["quality_flags"][qid]
+
+
+def test_metric_narrative_drops_redaction_artifacts_but_keeps_qualitative_context():
+    answer = (
+        "대웅그룹은 ISO 14001 환경경영시스템 인증을 취득하여 표준 절차에 따라 환경보호를 추진하고 있습니다. "
+        "용수 재사용률은 2024년 7.23%, 2025년 9.34%를 달성하였습니다. "
+        "매년 재사용률 향상과 대기 및 수질오염 물질 원단위 감소를 목표로 관리하고 있습니다."
+    )
+
+    result, actions = salvage_metric_narrative_without_values(answer, {"accepted_facts": []})
+
+    assert "ISO 14001" in result
+    assert "해당 비율" not in result
+    assert "7.23" not in result
+    assert "9.34" not in result
+    assert "용수 재사용률" not in result
+    assert any(action.startswith("removed_claim:unsupported_metric") for action in actions)
+
+
+def test_metric_narrative_drops_related_cases_redaction_artifact():
+    answer = (
+        "2025년 내부 이해관계자로부터 접수된 인권 관련 고충처리는 63건이며, "
+        "해당 건 모두 처리가 완료되었습니다."
+    )
+
+    result, actions = salvage_metric_narrative_without_values(answer, {"accepted_facts": []})
+
+    assert "관련 건" not in result
+    assert "63" not in result
+    assert result == ""
+    assert actions == ["removed_claim:unsupported_metric:c1"]
+
+
+def test_metric_narrative_rewrites_grievance_case_count_as_qualitative_completion():
+    answer = (
+        "2025년 내부 이해관계자 인권 관련 접수된 고충처리는 "
+        "63건으로 확인되었으며 63건 모두 처리가 완료되었습니다."
+    )
+
+    result, actions = salvage_metric_narrative_without_values(answer, {"accepted_facts": []})
+
+    assert result == "2025년 내부 이해관계자 인권 관련 고충이 접수되었으며 접수된 고충은 모두 처리 완료되었습니다."
+    assert "63" not in result
+    assert "접수 건" not in result
+    assert actions == ["redacted_claim:unsupported_metric:c1"]
+
+
+def test_metric_narrative_rewrites_board_count_placeholders_naturally():
+    answer = (
+        "대웅그룹의 이사회는 대표이사를 포함하여 6인으로 구성되어 있으며, "
+        "정관에 따라 이사회는 3명 이상 9명 이내로 구성하며, "
+        "독립이사는 이사 총수의 3분의 1 이상으로 유지하도록 규정하고 있습니다."
+    )
+
+    result, _ = salvage_metric_narrative_without_values(answer, {"accepted_facts": []})
+
+    assert "복수의 인원으로 구성" not in result
+    assert "복수의 인원 이상 복수의 인원 이내" not in result
+    assert "일정 비율" not in result
+    assert "대웅그룹은 대표이사를 포함한 이사회를 운영" in result
+    assert "정관상 정해진 범위" in result
+    assert "정관상 최소 비율 이상" in result
+
+
+def test_metric_narrative_rewrites_repeated_area_placeholder():
+    answer = "평가는 운영, 환경, 인권 노동의 3개 영역, 총 26개 세부 항목으로 구성됩니다."
+
+    result, _ = salvage_metric_narrative_without_values(answer, {"accepted_facts": []})
+
+    assert "여러 영역 여러 세부 항목" not in result
+    assert "운영, 환경, 인권·노동의 여러 영역의 세부 항목" in result

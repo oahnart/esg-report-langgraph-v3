@@ -43,7 +43,7 @@ def test_review_answer_is_identical_in_json_audit_and_customer_workbook(tmp_path
     payload = json.loads(
         open(written.output_paths["json"], encoding="utf-8").read()
     )
-    audit = load_workbook(written.output_paths["excel"])
+    audit = json.loads(open(written.output_paths["audit_json"], encoding="utf-8").read())
     customer = load_workbook(written.output_paths["combined_excel"])
 
     customer_answer = payload["answers"][0]["final_answer"]
@@ -51,10 +51,8 @@ def test_review_answer_is_identical_in_json_audit_and_customer_workbook(tmp_path
     assert "required metric or reporting period" not in customer_answer
     assert payload["answers"][0]["publication_status"] == "review_required"
     assert "missing_metric_or_period" in payload["answers"][0]["publication_issues"]
-    assert "RAG Metric Evidence" in audit.sheetnames
-    audit_sheet = audit["Qualitative Audit"]
-    final_answer_column = AUDIT_COLUMNS.index("Final Answer") + 1
-    assert audit_sheet.cell(2, final_answer_column).value == customer_answer
+    assert audit["columns"] == AUDIT_COLUMNS
+    assert audit["rows"][0]["Final Answer"] == customer_answer
     assert customer.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
     assert customer["Qualitative"]["H2"].value == customer_answer
     assert "Publication: review_required" in customer["Qualitative"]["B2"].value
@@ -176,7 +174,7 @@ def test_blocked_candidate_is_rejected_and_json_matches_customer_workbook(tmp_pa
     written = OutputWriter(tmp_path).write(artifacts)
     payload = json.loads(open(written.output_paths["json"], encoding="utf-8").read())
     customer = load_workbook(written.output_paths["combined_excel"])
-    audit = load_workbook(written.output_paths["excel"])
+    audit = json.loads(open(written.output_paths["audit_json"], encoding="utf-8").read())
 
     json_by_source = {answer["source_id"]: answer for answer in payload["answers"]}
     sheet = customer["Qualitative"]
@@ -191,8 +189,6 @@ def test_blocked_candidate_is_rejected_and_json_matches_customer_workbook(tmp_pa
     assert json_by_source["EBX-Q-011"]["final_answer"] == ""
     assert json_by_source["EBX-Q-011"]["last_rejected_answer"] == candidate
     assert json_by_source["EBX-Q-021"]["final_answer"]
-    audit_sheet = audit["Qualitative Audit"]
-    final_col = AUDIT_COLUMNS.index("Final Answer") + 1
-    rejected_col = AUDIT_COLUMNS.index("Last Rejected Answer") + 1
-    assert audit_sheet.cell(2, final_col).value == candidate
-    assert audit_sheet.cell(2, rejected_col).value == candidate
+    assert audit["columns"] == AUDIT_COLUMNS
+    assert audit["rows"][0]["Final Answer"] == candidate
+    assert audit["rows"][0]["Last Rejected Answer"] == candidate

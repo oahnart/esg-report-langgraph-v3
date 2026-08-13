@@ -1013,6 +1013,87 @@ class SemanticCompletenessCriticAgent:
             )
             if privacy_or_security and not esg_progress:
                 return True
+        if qid == "Q087":
+            security_training_content = any(
+                term in answer_text
+                for term in (
+                    "정보보호",
+                    "개인정보",
+                    "보안 교육",
+                    "보안 솔루션",
+                    "생성형 ai",
+                    "information security",
+                    "privacy",
+                    "security training",
+                )
+            )
+            legal_or_compliance_status = any(
+                term in answer_text
+                for term in (
+                    "법규",
+                    "준법",
+                    "윤리",
+                    "징계",
+                    "벌금",
+                    "과징금",
+                    "행정처분",
+                    "사건",
+                    "공정거래",
+                    "부패",
+                    "리베이트",
+                    "legal violation",
+                    "compliance violation",
+                    "disciplinary",
+                    "fine",
+                )
+            )
+            if security_training_content and not legal_or_compliance_status:
+                return True
+        if qid == "Q062":
+            generic_assessment_criteria = any(
+                term in answer_text
+                for term in (
+                    "외부 평가 자료상",
+                    "차별 철폐",
+                    "정책 및 목표를 수립하고 모니터링",
+                    "멘토링",
+                    "기술 교육",
+                )
+            )
+            company_named = any(term in answer_text for term in ("대웅", "당사", "회사"))
+            if generic_assessment_criteria and not company_named:
+                return True
+        if qid == "Q093":
+            human_rights_proxy = any(
+                term in answer_text
+                for term in (
+                    "인권경영",
+                    "인권영향평가",
+                    "인권 리스크",
+                    "human rights impact",
+                    "human rights management",
+                )
+            )
+            stakeholder_channel = any(
+                term in answer_text
+                for term in (
+                    "소통",
+                    "커뮤니케이션",
+                    "채널",
+                    "설문",
+                    "fgi",
+                    "focus group",
+                    "홈페이지",
+                    "뉴스룸",
+                    "보도자료",
+                    "주주총회",
+                    "ir",
+                    "engagement",
+                    "communication channel",
+                )
+            )
+            if human_rights_proxy and not stakeholder_channel:
+                return True
         asks_shareholders = any(
             term in question_text
             for term in ("shareholder", "ownership", "dividend", "소유", "주주", "배당")

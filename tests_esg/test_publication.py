@@ -61,6 +61,35 @@ def test_unsafe_answers_are_blocked(updates, reason):
     assert decision.reason == reason
 
 
+def test_table_shaped_narrative_fallback_is_blocked():
+    answer = _answer(
+        final_answer=(
+            "CP팀 지대웅 법규 및 규제 위반 벌금 또는 처벌을 받은 사건 "
+            "위반 건수 법무실 정은정 억 원 기타 규정 위반 위반 건수"
+        ),
+        qa=QAResult(status="passed", notes=["table_shaped_narrative_fallback"]),
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "blocked"
+    assert decision.reason == "non_narrative_output"
+    assert "non_narrative_output" in decision.issues
+
+
+def test_table_shaped_narrative_fallback_bucket_is_failed():
+    answer = _answer(
+        final_answer="CP팀 지대웅 법규 및 규제 위반 벌금 또는 처벌을 받은 사건 위반 건수",
+        qa=QAResult(status="passed", notes=["table_shaped_narrative_fallback"]),
+    )
+
+    apply_customer_answer_contract(answer)
+
+    assert answer.final_answer == ""
+    assert answer.result_bucket == "failed"
+    assert answer.qa_grade == "failed"
+
+
 def test_locally_admitted_insufficient_answer_requires_review_and_is_exported():
     answer = _answer(
         answer_status="insufficient",

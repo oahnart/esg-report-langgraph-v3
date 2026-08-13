@@ -546,13 +546,13 @@ Sau khi generate thanh cong, output duoc ghi vao:
 ```text
 data/outputs/{company_id}/YYYY_MM_DD/{run_id}/
   qualitative_run.json
-  qualitative_audit.xlsx
+  qualitative_audit.json
   [langgraph][company_name]report-YYYY.MM.DD_N.xlsx
 ```
 
 `qualitative_run.json` la payload day du theo schema `RunArtifacts`, bao gom
-`quantitative_results` va `quantitative_stats`. `qualitative_audit.xlsx` van
-giu nguyen sheet `Qualitative Audit` voi cac cot:
+`quantitative_results` va `quantitative_stats`. `qualitative_audit.json` luu
+cac cot audit chi tiet theo tung answer:
 
 - QID, Source ID, Category, Question
 - Answer Status, QA Grade, Publication Status/Reason/Issues, Final Answer, Evidence Summary, Sources
@@ -575,7 +575,7 @@ Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co cac sheet:
 Workbook giao khach hang chi co `Qualitative` va, neu co du lieu, `Quantitative`.
 `Final Answer` chi duoc ghi khi `publication_status=published` va `qa_grade=full`;
 cac candidate `partial`/`cautious` van duoc giu trong JSON va audit. Sheet
-`RAG Metric Evidence` chi nam trong `qualitative_audit.xlsx`, gom metric rows theo
+`RAG Metric Evidence` chi nam trong combined workbook, gom metric rows theo
 QID, table block, block role, phap nhan, raw evidence, parsed facts va locator.
 
 `N` tang theo cung `company_id`, nam va ngay, ke ca khi nhieu run chay dong thoi.

@@ -134,6 +134,7 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
         for term in (
             "raw_table_output",
             "table_delimited_output",
+            "table_shaped_narrative_fallback",
             "header_dump_output",
             "fragment_output",
             "unstructured_long_output",
@@ -301,6 +302,16 @@ def resolved_answer_quality(answer: Any) -> AnswerQuality:
             return classified
         return AnswerQuality(explicit_grade, explicit_reason, explicit_issues)  # type: ignore[arg-type]
     return classified
+
+
+def apply_answer_quality_contract(answer: Any) -> AnswerQuality:
+    """Persist the deterministic quality verdict on an answer record."""
+
+    quality = resolved_answer_quality(answer)
+    setattr(answer, "qa_grade", quality.grade)
+    setattr(answer, "coverage_reason", quality.reason)
+    setattr(answer, "coverage_issues", list(quality.issues))
+    return quality
 
 
 def _first_reason(issues: set[str], precedence: tuple[str, ...]) -> str:

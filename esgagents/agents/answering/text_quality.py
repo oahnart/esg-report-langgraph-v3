@@ -21,6 +21,12 @@ HEADER_TERMS = (
     "평가 결과",
     "metric status",
     "source path",
+    "직접에너지",
+    "간접에너지",
+    "에너지 사용량 계",
+    "에너지 사용량 원단위",
+    "매출(생산액)",
+    "GJ/억원",
 )
 DOCUMENT_NAV_TERMS = (
     "company overview",
@@ -45,7 +51,7 @@ EDITORIAL_CUE_TERMS = (
     "원본 sr",
     "참고 부탁드립니다",
 )
-START_CONNECTOR_RE = re.compile(r"^(?:또한|이에 따라|그리고|아울러)[,，]?\s*")
+START_CONNECTOR_RE = re.compile(r"^(?:또한|이에 따라|그리고|아울러|이를 위해|하지만)[,，]?\s*")
 ATTRIBUTION_PHRASES = (
     "제안/검토 자료에 따르면,",
     "평가 자료에 따르면,",
@@ -87,6 +93,25 @@ EDITORIAL_SENTENCE_RE = re.compile(
     r"업데이트\s*현재\s*그림|참고\s*부탁드립니다)",
     flags=re.IGNORECASE,
 )
+TRAILING_HEADING_FRAGMENT_RE = re.compile(
+    r"\s+(?:정보보호\s*)?(?:목표|전담조직|관리체계|운영체계|정책|전략)"
+    r"(?:\s+(?:정보보호|정보보안|목표|전담조직|관리체계|운영체계|정책|전략)){1,}\s*$"
+)
+REPORT_TITLE_PREFIX_RE = re.compile(
+    r"^(?:[A-Za-z]+-[^.!?。！？]{0,180}?)?[^.!?。！？]{0,180}?"
+    r"지속가능경영보고서[^.!?。！？]{0,180}?(?=(?:19|20)\d{2}\s*년\s+)"
+)
+LEADING_PROCESS_DUMP_RE = re.compile(
+    r"^(?=(?:[^.!?。！？]{0,420}(?:임상시험|시판허가|첨부문서|설명서|모니터링|위해성|유익성)){3,})"
+    r"[^.!?。！？]{40,520}?(?=대웅제약(?:의\s*약물감시는|은\s+품질경영))"
+)
+LEADING_DRAFT_HEADING_RE = re.compile(
+    r"^(검토\s*중인\s*제안\s*자료상\s+)(?!대웅|당사|회사)"
+    r"[^.!?。！？]{5,180}?(?=(?:대웅제약은|대웅은|당사는|회사는)\b)"
+)
+INLINE_KNOWN_HEADING_RE = re.compile(
+    r"(?:^|\s+)(?:업계최초\s*직무급\s*제도와\s*여성인재\s*육성|품질\s*부문\s*조직)\s+(?=대웅제약은\b)"
+)
 
 
 def non_narrative_reason(text: str) -> str:
@@ -108,6 +133,19 @@ def non_narrative_reason(text: str) -> str:
     header_count = sum(term.casefold() in lower for term in HEADER_TERMS)
     if header_count >= 4:
         return "header_dump_output"
+    metric_label_count = sum(
+        term.casefold() in lower
+        for term in (
+            "직접에너지",
+            "간접에너지",
+            "에너지 사용량 계",
+            "에너지 사용량 원단위",
+            "매출(생산액)",
+            "gj/억원",
+        )
+    )
+    if metric_label_count >= 3 and not re.search(r"[.!?。！？]", value):
+        return "metric_label_dump_output"
     # Navigation labels later in a long excerpt do not invalidate an otherwise
     # substantive opening. Header dumps place several labels near the front.
     opening = lower[:400]
@@ -150,6 +188,54 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
         value = without_connector
         actions.append("removed_leading_connector")
 
+    without_report_prefix = REPORT_TITLE_PREFIX_RE.sub("", value, count=1).strip()
+    if without_report_prefix != value:
+        value = without_report_prefix
+        actions.append("removed_report_title_prefix")
+
+    without_process_dump = LEADING_PROCESS_DUMP_RE.sub("", value, count=1).strip()
+    if without_process_dump != value:
+        value = without_process_dump
+        actions.append("removed_leading_process_dump")
+
+    without_draft_heading = LEADING_DRAFT_HEADING_RE.sub(r"\1", value, count=1).strip()
+    if without_draft_heading != value:
+        value = without_draft_heading
+        actions.append("removed_leading_heading_fragment")
+
+    without_inline_heading = INLINE_KNOWN_HEADING_RE.sub(" ", value)
+    if without_inline_heading != value:
+        value = without_inline_heading
+        actions.append("removed_inline_heading_fragment")
+
+    fixed_terms = re.sub(r"인권\s+노동", "인권·노동", value)
+    fixed_terms = re.sub(
+        r"디지털\s*전환이\s*빠르게\s*진행됨에\s*따라\s*정보보안\s*및\s*정보보호의\s*중요성이\s*증가함에\s*따라",
+        "디지털 전환이 빠르게 진행되면서 정보보안 및 정보보호의 중요성이 커짐에 따라",
+        fixed_terms,
+    )
+    fixed_terms = re.sub(r"이상사례\s+안전성\s+문제", "이상사례와 안전성 문제", fixed_terms)
+    fixed_terms = re.sub(r"과학적으로\s*탐지\s*평가하는", "과학적으로 탐지·평가하는", fixed_terms)
+    fixed_terms = re.sub(
+        r"RMP\s+재평가\s+보고\s+재심사\s+사용권고",
+        "RMP, 재평가, 보고, 재심사, 사용권고",
+        fixed_terms,
+    )
+    fixed_terms = re.sub(
+        r"대웅그룹의\s*이사회는\s*대표이사를\s*포함한\s*이사회\s*체계를\s*운영하며",
+        "대웅그룹은 대표이사를 포함한 이사회를 운영하며",
+        fixed_terms,
+    )
+    fixed_terms = re.sub(
+        r"((?:검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상|제안\s*자료에\s*따르면,|평가\s*자료에\s*따르면,)\s*)또한[,，]?\s*",
+        r"\1",
+        fixed_terms,
+    )
+    fixed_terms = re.sub(r"마련해\s*놓고\s*있습니다", "운영하고 있습니다", fixed_terms)
+    if fixed_terms != value:
+        value = fixed_terms
+        actions.append("repaired_awkward_korean_phrase")
+
     for phrase in ATTRIBUTION_PHRASES:
         seen = False
 
@@ -167,6 +253,18 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
 
     value = re.sub(r",\s*,", ",", value)
     value = re.sub(r"\.\s*,", ". ", value)
+    repaired_parenthetical = re.sub(
+        r"분할\s*물적\s*분할\s*포함\)",
+        "분할(물적 분할 포함)",
+        value,
+    )
+    if repaired_parenthetical != value:
+        value = repaired_parenthetical
+        actions.append("repaired_parenthetical_fragment")
+    trimmed = TRAILING_HEADING_FRAGMENT_RE.sub("", value).strip()
+    if trimmed != value:
+        value = trimmed
+        actions.append("removed_trailing_heading_fragment")
     value = re.sub(r"\s{2,}", " ", value).strip(" ,")
     return value, list(dict.fromkeys(actions))
 

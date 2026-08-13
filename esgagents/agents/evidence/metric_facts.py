@@ -121,7 +121,11 @@ def salvage_metric_narrative_without_values(
     for index, statement in enumerate(statements, start=1):
         had_numeric_claim = _has_substantive_numeric_claim(statement)
         redacted = _redact_metric_quantities(statement)
-        if _is_substantive_qualitative_text(redacted) and not _has_substantive_numeric_claim(redacted):
+        if (
+            _is_substantive_qualitative_text(redacted)
+            and not _has_substantive_numeric_claim(redacted)
+            and not _has_redaction_artifact(redacted)
+        ):
             kept.append(redacted)
             if had_numeric_claim:
                 actions.append(f"redacted_claim:unsupported_metric:c{index}")
@@ -151,7 +155,12 @@ def _redact_metric_quantities(statement: str) -> str:
     value = re.sub(
         r"\d+(?:,\d{3})*(?:\.\d+)?\s*건으로\s*확인되었으며\s*"
         r"\d+(?:,\d{3})*(?:\.\d+)?\s*건\s*모두\s*처리가\s*완료되었습니다",
-        "고충이 접수되었으며 접수 건 모두 처리가 완료되었습니다",
+        "고충이 접수되었으며 접수된 고충은 모두 처리 완료되었습니다",
+        value,
+    )
+    value = re.sub(
+        r"인권\s*관련\s*접수된\s*고충처리는\s*고충이\s*접수되었으며",
+        "인권 관련 고충이 접수되었으며",
         value,
     )
     value = re.sub(r"\d+(?:\.\d+)?\s*분의\s*\d+(?:\.\d+)?", "일정 비율", value)
@@ -181,6 +190,35 @@ def _redact_metric_quantities(statement: str) -> str:
     value = re.sub(r"\b총\s+(?=복수의|여러|관련)", "", value)
     value = re.sub(r"(?:연|반기)\s+(?=정기적으로)", "", value)
     value = re.sub(r"(?:정기적으로\s*){2,}", "정기적으로 ", value)
+    value = re.sub(
+        r"회사의\s*이사는\s*복수의\s*인원\s*이상\s*복수의\s*인원\s*이내로\s*하고",
+        "회사의 이사는 정관상 정해진 범위 내에서 구성하고",
+        value,
+    )
+    value = re.sub(
+        r"대표이사를\s*포함하여\s*복수의\s*인원으로\s*구성되어\s*있으며",
+        "대표이사를 포함한 이사회 체계를 운영하며",
+        value,
+    )
+    value = re.sub(
+        r"대표이사를\s*포함하여\s*구성되어\s*있으며",
+        "대표이사를 포함한 이사회 체계를 운영하며",
+        value,
+    )
+    value = re.sub(
+        r"대웅그룹의\s*이사회는\s*대표이사를\s*포함한\s*이사회\s*체계를\s*운영하며",
+        "대웅그룹은 대표이사를 포함한 이사회를 운영하며",
+        value,
+    )
+    value = re.sub(
+        r"이사회는\s*복수의\s*인원\s*이상\s*복수의\s*인원\s*이내로\s*구성",
+        "이사회는 정관상 정해진 범위 내에서 구성",
+        value,
+    )
+    value = re.sub(r"복수의\s*인원\s*이상\s*복수의\s*인원\s*이내", "정관상 정해진 범위", value)
+    value = re.sub(r"이사\s*총수의\s*일정\s*비율\s*이상", "이사 총수 대비 정관상 최소 비율 이상", value)
+    value = re.sub(r"여러\s*영역\s*,?\s*여러\s*세부\s*항목", "여러 영역의 세부 항목", value)
+    value = re.sub(r"인권\s+노동", "인권·노동", value)
     value = re.sub(r"\s+([,.;:!?])", r"\1", value)
     value = re.sub(r"([,;:])\s*\1+", r"\1", value)
     value = re.sub(r"\s{2,}", " ", value)
@@ -191,6 +229,31 @@ def _is_substantive_qualitative_text(value: str) -> bool:
     if len(value.strip()) < 20:
         return False
     return len(re.findall(r"[A-Za-z가-힣]", value)) >= 8
+
+
+def _has_redaction_artifact(value: str) -> bool:
+    """Detect placeholders that would make redacted metric prose misleading."""
+
+    normalized = unicodedata.normalize("NFKC", value or "")
+    lower = normalized.casefold()
+    artifact_terms = (
+        "해당 비율",
+        "해당 수치",
+        "관련 건",
+        "% 감소",
+        "% 증가",
+        "% 향상",
+        "certain ratio",
+        "related cases",
+        "metric value",
+    )
+    if any(term in lower for term in artifact_terms):
+        return True
+    return bool(
+        re.search(r"(?:19|20)\d{2}\s*년?\s*해당\s*(?:비율|수치)", normalized)
+        or re.search(r"관련\s*건(?:이며|으로|을| 모두|입니다|였습니다)", normalized)
+        or re.search(r"%\s*(?:감소|증가|향상|절감)", normalized)
+    )
 
 
 def _metric_statements(answer: str) -> list[str]:

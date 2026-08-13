@@ -253,6 +253,23 @@ class SkillWriterAgent:
                 for key in ("question", "description")
             )
         )
+        question_text = " ".join(
+            str(context.get(key) or "") for key in ("question", "description")
+        ).casefold()
+        organization_question = any(
+            term in question_text
+            for term in (
+                "조직",
+                "체계",
+                "책임",
+                "전담",
+                "관리 조직",
+                "organization",
+                "governance",
+                "accountable",
+                "responsib",
+            )
+        )
         sequence = 0
         for item in context.get("evidence_items", []):
             if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
@@ -262,7 +279,7 @@ class SkillWriterAgent:
             )
             text = SkillWriterAgent._strip_leading_question_context(text, context)
             text = text.strip()
-            for part in re.split(r"(?<=[.!?。！？])\s+|\n+|\s*[•·]\s*", text):
+            for part in re.split(r"(?<=[.!?。！？])\s+|\n+|(?:^|\s)[•·]\s+", text):
                 claim = compact(part).strip(" •·")
                 if len(claim) < 20 or "|" in claim:
                     continue
@@ -273,6 +290,12 @@ class SkillWriterAgent:
                 relevance = sum(
                     1 for term in question_terms if term in normalized_claim
                 )
+                if organization_question and re.search(
+                    r"(?:팀|부서|본부|위원회|협의체|전담|조직|담당|책임|committee|department|team|unit|function)",
+                    normalized_claim,
+                    flags=re.IGNORECASE,
+                ):
+                    relevance += 3
                 ranked_claims.append((relevance, sequence, safe_claim))
                 sequence += 1
 
