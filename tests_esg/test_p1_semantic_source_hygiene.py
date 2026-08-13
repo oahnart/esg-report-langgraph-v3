@@ -972,9 +972,10 @@ def test_text_quality_removes_connector_after_source_attribution():
 
     final, actions = normalize_answer_coherence(answer)
 
-    assert "검토 중인 제안 자료상 향남공장" in final
-    assert "검토 중인 제안 자료상 또한" not in final
+    assert "향남공장의 수처리설비 농축수 재활용 확대" in final
+    assert "검토 중인 제안 자료상" not in final
     assert "repaired_awkward_korean_phrase" in actions
+    assert "removed_source_attribution" in actions
 
 
 def test_text_quality_repairs_redundant_board_system_phrase():
@@ -1023,11 +1024,13 @@ def test_text_quality_removes_draft_heading_fragments_before_subject():
 
     final, actions = normalize_answer_coherence(answer)
 
-    assert final.startswith("검토 중인 제안 자료상 대웅제약은")
+    assert final.startswith("대웅제약은")
+    assert "검토 중인 제안 자료상" not in final
     assert "차별금지 원칙 장애인 고용" not in final
     assert "업계최초 직무급 제도" not in final
     assert "removed_leading_heading_fragment" in actions
     assert "removed_inline_heading_fragment" in actions
+    assert "removed_source_attribution" in actions
 
 
 def test_text_quality_removes_leading_purpose_connector():
@@ -1270,7 +1273,7 @@ def test_output_hygiene_removes_redundant_leading_connector(qid):
     assert "removed_leading_connector" in result["sanitizer_actions"][qid]
 
 
-def test_output_hygiene_deduplicates_same_source_attribution():
+def test_output_hygiene_removes_source_attribution_from_customer_answer():
     qid = "Q075"
     planned = _planned(qid=qid, pillar="Metrics", item="위원회 활동", description="활동 현황")
     phrase = "평가 자료에 따르면,"
@@ -1282,8 +1285,9 @@ def test_output_hygiene_deduplicates_same_source_attribution():
         }
     )
 
-    assert result["final_answers"][qid].count(phrase) == 1
-    assert "deduplicated_source_attribution" in result["sanitizer_actions"][qid]
+    assert phrase not in result["final_answers"][qid]
+    assert result["final_answers"][qid] == "위원회가 운영되며, 연 4회 개최됩니다."
+    assert "removed_source_attribution" in result["sanitizer_actions"][qid]
 
 
 def test_markdown_normalization_does_not_add_claims():

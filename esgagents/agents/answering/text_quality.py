@@ -55,8 +55,13 @@ START_CONNECTOR_RE = re.compile(r"^(?:또한|이에 따라|그리고|아울러|�
 ATTRIBUTION_PHRASES = (
     "제안/검토 자료에 따르면,",
     "평가 자료에 따르면,",
+    "제안 자료에 따르면,",
     "검토 중인 제안 자료상",
     "외부 평가 자료상",
+)
+SOURCE_ATTRIBUTION_RE = re.compile(
+    r"(?:제안/검토\s*자료에\s*따르면,?|평가\s*자료에\s*따르면,?|제안\s*자료에\s*따르면,?|"
+    r"검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상)\s*"
 )
 YEAR_EQUALS_RE = re.compile(r"\b(?:19|20)\d{2}\s*=")
 LEADING_FRAGMENT_RE = re.compile(
@@ -236,23 +241,14 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
         value = fixed_terms
         actions.append("repaired_awkward_korean_phrase")
 
-    for phrase in ATTRIBUTION_PHRASES:
-        seen = False
-
-        def replace(match: re.Match[str]) -> str:
-            nonlocal seen
-            if not seen:
-                seen = True
-                return match.group(0)
-            return ""
-
-        deduplicated = re.sub(re.escape(phrase), replace, value)
-        if deduplicated != value:
-            value = deduplicated
-            actions.append("deduplicated_source_attribution")
+    without_source_attribution = SOURCE_ATTRIBUTION_RE.sub("", value).strip()
+    if without_source_attribution != value:
+        value = without_source_attribution
+        actions.append("removed_source_attribution")
 
     value = re.sub(r",\s*,", ",", value)
     value = re.sub(r"\.\s*,", ". ", value)
+    value = re.sub(r"(^|\s)[,，]\s*", r"\1", value)
     repaired_parenthetical = re.sub(
         r"분할\s*물적\s*분할\s*포함\)",
         "분할(물적 분할 포함)",

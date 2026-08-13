@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>[langgraph][v3]daily_report_2026.08.13</title>
+  <style>
+    :root {
+      --bg: #f5f7f8;
+      --paper: #ffffff;
+      --ink: #17212b;
+      --muted: #5f6f78;
+      --line: #dbe4e7;
+      --navy: #1f3a4a;
+      --teal: #0a8177;
+      --blue: #355f9f;
+      --green: #18724f;
+      --amber: #a86700;
+      --red: #ad3e49;
+      --soft-blue: #edf4ff;
+      --soft-green: #e9f7f0;
+      --soft-amber: #fff4dc;
+      --soft-red: #fff0f1;
+      --soft-teal: #e7f6f4;
+      --shadow: 0 12px 26px rgba(31, 58, 74, .08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.58 "Segoe UI", Arial, "Malgun Gothic", sans-serif;
+    }
+    body[data-lang="vi"] .ko,
+    body[data-lang="ko"] .vi { display: none !important; }
+    button, a { font: inherit; }
+    a { color: inherit; }
+    code { font-family: Consolas, "SFMono-Regular", monospace; }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 0 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .mark {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #fff;
+      font-weight: 850;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(20px, 2.6vw, 30px);
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    .meta {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 750;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn.primary {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #fff;
+    }
+    .lang-switch {
+      display: flex;
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .lang-switch button {
+      min-width: 40px;
+      border: 0;
+      border-radius: 5px;
+      padding: 6px 8px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 850;
+      cursor: pointer;
+    }
+    body[data-lang="vi"] [data-lang-button="vi"],
+    body[data-lang="ko"] [data-lang-button="ko"] {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4, 1fr);
+      gap: 10px;
+      padding: 0 0 16px;
+    }
+    .summary-box {
+      min-height: 92px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .summary-box.main {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+    .summary-box strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .summary-box span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .summary-box.main span { color: #dbe8ed; }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255,255,255,.97);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 4px 16px rgba(31,58,74,.06);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 9px 0;
+    }
+    .tab {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 760;
+      cursor: pointer;
+    }
+    .tab.active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    main { padding: 20px 0 42px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .section {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    .section + .section { margin-top: 14px; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .kicker {
+      margin: 0 0 4px;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    h2 { margin: 0; font-size: 23px; line-height: 1.25; }
+    h3 { margin: 18px 0 8px; font-size: 17px; line-height: 1.32; }
+    p { margin: 7px 0; }
+    .muted { color: var(--muted); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .badge.ok { color: var(--green); background: var(--soft-green); }
+    .badge.warn { color: var(--amber); background: var(--soft-amber); }
+    .badge.bad { color: var(--red); background: var(--soft-red); }
+    .badge.info { color: var(--blue); background: var(--soft-blue); }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .card h3 { margin-top: 0; }
+    .card p { color: var(--muted); }
+    .card.blue { border-top: 4px solid var(--blue); }
+    .card.green { border-top: 4px solid var(--green); }
+    .card.amber { border-top: 4px solid var(--amber); }
+    .card.red { border-top: 4px solid var(--red); }
+    .card.teal { border-top: 4px solid var(--teal); }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #edf3f5;
+      color: #344956;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .note {
+      margin-top: 12px;
+      padding: 12px 13px;
+      border-left: 4px solid var(--teal);
+      border-radius: 6px;
+      background: var(--soft-teal);
+    }
+    .note.warn { border-left-color: var(--amber); background: var(--soft-amber); }
+    .note.red { border-left-color: var(--red); background: var(--soft-red); }
+
+    .flow-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(320px, .9fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .flow-node {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid #ccdadd;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+    }
+    .flow-node:hover {
+      border-color: #8dbab4;
+      box-shadow: 0 8px 18px rgba(31,58,74,.08);
+    }
+    .flow-node.active {
+      border-color: var(--teal);
+      background: var(--soft-teal);
+      box-shadow: 0 0 0 2px rgba(10,129,119,.12);
+    }
+    .num {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      margin-bottom: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .flow-node strong { display: block; line-height: 1.32; }
+    .flow-node small { display: block; margin-top: 5px; color: var(--muted); }
+    .detail {
+      position: sticky;
+      top: 74px;
+      border: 1px solid #cbdde2;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .detail-head {
+      padding: 13px 14px;
+      background: var(--navy);
+      color: #fff;
+    }
+    .detail-head span {
+      display: block;
+      color: #cfe0e6;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .detail-head strong { display: block; margin-top: 3px; font-size: 18px; }
+    .detail-body { padding: 14px; }
+    .detail-row {
+      padding-top: 10px;
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .detail-row strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+    .detail-row p { color: var(--muted); margin: 0; }
+    .list { margin: 8px 0 0; padding-left: 18px; }
+    .list li { margin: 5px 0; }
+    footer {
+      padding: 0 0 26px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .summary-strip { grid-template-columns: repeat(2, 1fr); }
+      .summary-box.main { grid-column: span 2; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr 1fr; }
+      .flow-layout { grid-template-columns: 1fr; }
+      .detail { position: static; }
+      .flow-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .wrap { width: min(100% - 24px, 1180px); }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .summary-strip, .grid-3, .grid-2, .flow-grid { grid-template-columns: 1fr; }
+      .summary-box.main { grid-column: auto; }
+      .section { padding: 16px; }
+      .section-head { flex-direction: column; }
+    }
+    @media print {
+      nav, .lang-switch { display: none; }
+      body { background: #fff; }
+      .panel { display: block !important; page-break-before: always; }
+      .panel:first-child { page-break-before: auto; }
+      .section { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body data-lang="vi">
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="mark">ESG</div>
+          <div>
+            <h1><span class="vi">Daily Report - REPORT ESG LangGraph V3</span><span class="ko">Daily Report - REPORT ESG LangGraph V3</span></h1>
+            <p class="meta">
+              <span class="vi">Ngày báo cáo: 13/08/2026 | Dự án: Daewoong ESG 2025 | Người nhận: quản lý dự án</span>
+              <span class="ko">보고일: 2026년 8월 13일 | 프로젝트: Daewoong ESG 2025 | 수신: 프로젝트 관리자</span>
+            </p>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="https://docs.google.com/spreadsheets/d/1EVlKedBTGT0LWq2_6Efx7dozT5hpJyoc/edit?usp=sharing&amp;ouid=114916983520042353804&amp;rtpof=true&amp;sd=true" target="_blank" rel="noreferrer">
+            <span>↗</span><span class="vi">Output mới nhất</span><span class="ko">최신 output</span>
+          </a>
+          <div class="lang-switch" aria-label="Language">
+            <button type="button" data-lang-button="vi" aria-pressed="true">VI</button>
+            <button type="button" data-lang-button="ko" aria-pressed="false">KO</button>
+          </div>
+        </div>
+      </div>
+      <div class="summary-strip">
+        <div class="summary-box main">
+          <strong><span class="vi">Đang ở bước review nội bộ</span><span class="ko">내부 검토 단계</span></strong>
+          <span class="vi">Output đã có đủ file để kiểm tra. Chưa đề xuất gửi khách hàng trước khi xử lý nhóm blocked và review_required.</span>
+          <span class="ko">검토용 output 파일은 준비되었습니다. blocked 및 review_required 처리 전 고객 전달은 보류합니다.</span>
+        </div>
+        <div class="summary-box"><strong>95</strong><span class="vi">câu hỏi định tính</span><span class="ko">정성 질문</span></div>
+        <div class="summary-box"><strong>74</strong><span class="vi">câu có final answer</span><span class="ko">final answer 생성</span></div>
+        <div class="summary-box"><strong>13</strong><span class="vi">câu published</span><span class="ko">published 답변</span></div>
+        <div class="summary-box"><strong>21</strong><span class="vi">câu blocked</span><span class="ko">blocked 답변</span></div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="wrap tabs" aria-label="Report sections">
+      <button class="tab active" type="button" data-tab="overview"><span class="vi">Tổng quan - Kết luận</span><span class="ko">개요 - 결론</span></button>
+      <button class="tab" type="button" data-tab="today"><span class="vi">Update hôm nay</span><span class="ko">오늘 업데이트</span></button>
+      <button class="tab" type="button" data-tab="latest"><span class="vi">Kết quả mới nhất</span><span class="ko">최신 결과</span></button>
+      <button class="tab" type="button" data-tab="system"><span class="vi">Cấu trúc hệ thống</span><span class="ko">시스템 구조</span></button>
+      <button class="tab" type="button" data-tab="plan"><span class="vi">Tồn đọng - Kế hoạch</span><span class="ko">이슈 - 계획</span></button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section class="panel active" data-panel="overview">
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Tổng quan - Kết luận</span><span class="ko">개요 - 결론</span></p>
+            <h2><span class="vi">Tình trạng dự án trong ngày</span><span class="ko">금일 프로젝트 상태</span></h2>
+          </div>
+          <span class="badge warn"><span class="vi">Review nội bộ</span><span class="ko">내부 검토</span></span>
+        </div>
+        <div class="grid-3">
+          <article class="card green">
+            <h3><span class="vi">Đã có output chạy mới</span><span class="ko">최신 실행 output 확보</span></h3>
+            <p><span class="vi">Run mới nhất đã tạo workbook Excel, file audit và file tổng hợp coverage cho Daewoong ESG 2025.</span><span class="ko">최신 run은 Daewoong ESG 2025용 Excel workbook, audit 파일, coverage summary를 생성했습니다.</span></p>
+          </article>
+          <article class="card amber">
+            <h3><span class="vi">Chưa chốt bản gửi ngoài</span><span class="ko">외부 전달본 미확정</span></h3>
+            <p><span class="vi">Có 61 câu cần review và 21 câu blocked. Cần xử lý hai nhóm này trước khi gửi bản chính thức.</span><span class="ko">review_required 61개와 blocked 21개가 있어 공식 전달 전 처리가 필요합니다.</span></p>
+          </article>
+          <article class="card blue">
+            <h3><span class="vi">Việc cần sếp nắm</span><span class="ko">관리자가 알아야 할 사항</span></h3>
+            <p><span class="vi">Hôm nay đã có dữ liệu để review. Trọng tâm tiếp theo là giảm blocked và xác nhận các câu review_required.</span><span class="ko">오늘은 검토 가능한 데이터가 준비되었습니다. 다음 초점은 blocked 감소와 review_required 확인입니다.</span></p>
+          </article>
+        </div>
+
+        <h3><span class="vi">Kết luận báo cáo ngày 13/08/2026</span><span class="ko">2026년 8월 13일 보고 결론</span></h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="vi">Nội dung</span><span class="ko">내용</span></th>
+                <th><span class="vi">Kết luận</span><span class="ko">결론</span></th>
+                <th><span class="vi">Hành động tiếp theo</span><span class="ko">다음 조치</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="vi">Output báo cáo</span><span class="ko">보고 output</span></td>
+                <td><span class="vi">Đã có bản mới để review nội bộ.</span><span class="ko">내부 검토용 최신본이 있습니다.</span></td>
+                <td><span class="vi">Dùng link Google Sheet ở đầu báo cáo để review.</span><span class="ko">상단 Google Sheet 링크로 검토합니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="vi">Chất lượng định tính</span><span class="ko">정성 품질</span></td>
+                <td><span class="vi">Có 74/95 câu đã có nội dung; 21 câu chưa đủ điều kiện.</span><span class="ko">95개 중 74개는 내용이 있고 21개는 조건 미충족입니다.</span></td>
+                <td><span class="vi">Ưu tiên xử lý 21 câu blocked.</span><span class="ko">blocked 21개를 우선 처리합니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="vi">Chất lượng định lượng</span><span class="ko">정량 품질</span></td>
+                <td><span class="vi">110/210 mục đã publish; còn 98 mục thiếu và 2 mục cần xác nhận.</span><span class="ko">210개 중 110개 publish, 98개 누락, 2개 확인 필요입니다.</span></td>
+                <td><span class="vi">Đối chiếu nguồn input cho các mục còn thiếu.</span><span class="ko">누락 항목의 input 출처를 대조합니다.</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn">
+          <strong><span class="vi">Ghi chú cho báo cáo sếp:</span><span class="ko">관리 보고 메모:</span></strong>
+          <span class="vi">Bản hiện tại là bản review nội bộ. Không ghi nhận là bản final cho khách hàng trong ngày 13/08/2026.</span>
+          <span class="ko">현재 본은 내부 검토본입니다. 2026년 8월 13일 기준 고객 최종본으로 기록하지 않습니다.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="today">
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Update hôm nay</span><span class="ko">오늘 업데이트</span></p>
+            <h2><span class="vi">Các việc đã cập nhật trong ngày</span><span class="ko">금일 업데이트 항목</span></h2>
+          </div>
+          <span class="badge info">13/08/2026</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="vi">Hạng mục</span><span class="ko">항목</span></th>
+                <th><span class="vi">Trạng thái</span><span class="ko">상태</span></th>
+                <th><span class="vi">Nội dung cập nhật</span><span class="ko">업데이트 내용</span></th>
+                <th><span class="vi">Ghi chú quản lý</span><span class="ko">관리 메모</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="vi">Output mới nhất</span><span class="ko">최신 output</span></td>
+                <td><span class="badge ok"><span class="vi">Có</span><span class="ko">있음</span></span></td>
+                <td><span class="vi">Workbook mới: <strong>[langgraph][v3][Daewoong]report-2026.08.13_9.xlsx</strong>.</span><span class="ko">신규 workbook: <strong>[langgraph][v3][Daewoong]report-2026.08.13_9.xlsx</strong>.</span></td>
+                <td><span class="vi">Đã gắn link Google Sheet ở đầu báo cáo.</span><span class="ko">보고서 상단에 Google Sheet 링크를 연결했습니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="vi">Run xử lý</span><span class="ko">처리 run</span></td>
+                <td><span class="badge ok"><span class="vi">Hoàn tất</span><span class="ko">완료</span></span></td>
+                <td><code>run_20260813T073524211525Z_ac0e02d1</code></td>
+                <td><span class="vi">Là nguồn số liệu của báo cáo hôm nay.</span><span class="ko">오늘 보고 수치의 기준입니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="vi">Báo cáo daily</span><span class="ko">daily report</span></td>
+                <td><span class="badge ok"><span class="vi">Đã cập nhật</span><span class="ko">업데이트 완료</span></span></td>
+                <td><span class="vi">Chuyển nội dung sang dạng báo cáo quản lý hằng ngày, có tab và số liệu tóm tắt.</span><span class="ko">탭과 요약 수치를 포함한 일일 관리 보고 형식으로 정리했습니다.</span></td>
+                <td><span class="vi">Giữ song ngữ Việt - Hàn.</span><span class="ko">베트남어 - 한국어 이중 언어 유지.</span></td>
+              </tr>
+              <tr>
+                <td><span class="vi">Vấn đề còn lại</span><span class="ko">잔여 이슈</span></td>
+                <td><span class="badge warn"><span class="vi">Cần xử lý</span><span class="ko">처리 필요</span></span></td>
+                <td><span class="vi">21 câu blocked, 61 câu review_required, 98 metric missing.</span><span class="ko">blocked 21개, review_required 61개, missing metric 98개.</span></td>
+                <td><span class="vi">Đưa vào kế hoạch ngày tiếp theo.</span><span class="ko">다음 작업 계획에 반영합니다.</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <strong><span class="vi">Trọng tâm hôm nay:</span><span class="ko">오늘 중점:</span></strong>
+          <span class="vi">Chốt trạng thái output mới nhất, đưa link truy cập, ghi rõ phần có thể review và phần chưa đủ điều kiện.</span>
+          <span class="ko">최신 output 상태를 확정하고 접근 링크를 제공하며, 검토 가능 항목과 미충족 항목을 명확히 구분했습니다.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="latest">
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Kết quả mới nhất</span><span class="ko">최신 결과</span></p>
+            <h2><span class="vi">Số liệu chính từ run mới nhất</span><span class="ko">최신 run 주요 수치</span></h2>
+          </div>
+          <a class="btn primary" href="https://docs.google.com/spreadsheets/d/1EVlKedBTGT0LWq2_6Efx7dozT5hpJyoc/edit?usp=sharing&amp;ouid=114916983520042353804&amp;rtpof=true&amp;sd=true" target="_blank" rel="noreferrer">
+            <span>↗</span><span class="vi">Mở Google Sheet</span><span class="ko">Google Sheet 열기</span>
+          </a>
+        </div>
+        <div class="grid-3">
+          <article class="card green">
+            <h3>74 / 95</h3>
+            <p><span class="vi">Câu định tính có final answer.</span><span class="ko">final answer가 있는 정성 질문.</span></p>
+          </article>
+          <article class="card amber">
+            <h3>61</h3>
+            <p><span class="vi">Câu cần người phụ trách review.</span><span class="ko">담당자 검토가 필요한 답변.</span></p>
+          </article>
+          <article class="card red">
+            <h3>21</h3>
+            <p><span class="vi">Câu blocked, chưa dùng cho báo cáo khách hàng.</span><span class="ko">blocked 상태로 고객 보고에 사용하지 않음.</span></p>
+          </article>
+        </div>
+
+        <h3><span class="vi">Bảng tổng hợp kết quả</span><span class="ko">결과 요약표</span></h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="vi">Nhóm</span><span class="ko">그룹</span></th>
+                <th><span class="vi">Số lượng</span><span class="ko">수량</span></th>
+                <th><span class="vi">Ý nghĩa</span><span class="ko">의미</span></th>
+                <th><span class="vi">Hành động</span><span class="ko">조치</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge ok">Published</span></td>
+                <td>13</td>
+                <td><span class="vi">Có thể dùng làm nhóm tham chiếu tốt nhất trong bản review.</span><span class="ko">검토본에서 가장 안정적인 참조 그룹입니다.</span></td>
+                <td><span class="vi">Đối chiếu nhanh nguồn trước khi đưa vào bản gửi ngoài.</span><span class="ko">외부 전달 전 근거를 빠르게 대조합니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge warn">Review required</span></td>
+                <td>61</td>
+                <td><span class="vi">Có nội dung nhưng cần xác nhận thêm.</span><span class="ko">내용은 있으나 추가 확인이 필요합니다.</span></td>
+                <td><span class="vi">Review theo nhóm ưu tiên: chiến lược, quản trị, môi trường, nhân sự, số liệu.</span><span class="ko">전략, 지배구조, 환경, 인사, 수치 순으로 검토합니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge bad">Blocked</span></td>
+                <td>21</td>
+                <td><span class="vi">Chưa đủ điều kiện để dùng.</span><span class="ko">사용 조건을 충족하지 못했습니다.</span></td>
+                <td><span class="vi">Bổ sung nguồn hoặc điều chỉnh truy xuất RAG rồi chạy lại.</span><span class="ko">근거 보강 또는 RAG 검색 조정 후 재실행합니다.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge info">Quantitative</span></td>
+                <td>110 / 210</td>
+                <td><span class="vi">110 mục định lượng đã publish; 98 mục thiếu, 2 mục cần xác nhận.</span><span class="ko">정량 110개 publish, 98개 누락, 2개 확인 필요.</span></td>
+                <td><span class="vi">Đối chiếu nguồn input và đơn vị dữ liệu.</span><span class="ko">input 출처와 데이터 단위를 대조합니다.</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="system" id="system">
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Cấu trúc hệ thống</span><span class="ko">시스템 구조</span></p>
+            <h2><span class="vi">Luồng xử lý chính</span><span class="ko">주요 처리 흐름</span></h2>
+          </div>
+          <span class="badge info">LangGraph V3</span>
+        </div>
+        <div class="flow-layout">
+          <div class="flow-grid" aria-label="Graph flow">
+            <button class="flow-node active" type="button" data-step="intake"><span class="num">1</span><strong><span class="vi">Nhận thông tin</span><span class="ko">정보 입력</span></strong><small>Company Intake</small></button>
+            <button class="flow-node" type="button" data-step="template"><span class="num">2</span><strong><span class="vi">Chọn template</span><span class="ko">template 선택</span></strong><small>Template Selector</small></button>
+            <button class="flow-node" type="button" data-step="plan"><span class="num">3</span><strong><span class="vi">Lập QID</span><span class="ko">QID 구성</span></strong><small>Question Planner</small></button>
+            <button class="flow-node" type="button" data-step="rag"><span class="num">4</span><strong><span class="vi">Lấy nguồn</span><span class="ko">근거 수집</span></strong><small>Team RAG</small></button>
+            <button class="flow-node" type="button" data-step="gate"><span class="num">5</span><strong><span class="vi">Kiểm tra nguồn</span><span class="ko">근거 검사</span></strong><small>Evidence Gate</small></button>
+            <button class="flow-node" type="button" data-step="normalize"><span class="num">6</span><strong><span class="vi">Chuẩn hóa nguồn</span><span class="ko">근거 정리</span></strong><small>Normalizer</small></button>
+            <button class="flow-node" type="button" data-step="quant"><span class="num">7</span><strong><span class="vi">Xử lý số liệu</span><span class="ko">정량 처리</span></strong><small>Quantitative</small></button>
+            <button class="flow-node" type="button" data-step="skill"><span class="num">8</span><strong><span class="vi">Chọn Skill</span><span class="ko">Skill 선택</span></strong><small>Skill Router</small></button>
+            <button class="flow-node" type="button" data-step="draft"><span class="num">9</span><strong><span class="vi">Viết draft</span><span class="ko">draft 작성</span></strong><small>Writer</small></button>
+            <button class="flow-node" type="button" data-step="review"><span class="num">10</span><strong><span class="vi">Review</span><span class="ko">검토</span></strong><small>QA Critic</small></button>
+            <button class="flow-node" type="button" data-step="revise"><span class="num">11</span><strong><span class="vi">Sửa nếu cần</span><span class="ko">필요 시 수정</span></strong><small>Revision</small></button>
+            <button class="flow-node" type="button" data-step="output"><span class="num">12</span><strong><span class="vi">Xuất file</span><span class="ko">파일 출력</span></strong><small>Report Manager</small></button>
+          </div>
+          <aside class="detail" aria-live="polite">
+            <div class="detail-head">
+              <span>Graph detail</span>
+              <strong id="detail-title">Nhận thông tin</strong>
+            </div>
+            <div class="detail-body">
+              <p id="detail-desc">Chuẩn hóa thông tin công ty, năm báo cáo, ngành, quy mô và ngôn ngữ output.</p>
+              <div class="detail-row"><strong><span class="vi">Agent</span><span class="ko">Agent</span></strong><p id="detail-agent">CompanyIntakeAgent</p></div>
+              <div class="detail-row"><strong><span class="vi">Đầu ra</span><span class="ko">출력</span></strong><p id="detail-output">Company profile dùng chung cho toàn bộ graph.</p></div>
+              <div class="detail-row"><strong><span class="vi">Cần kiểm tra</span><span class="ko">확인 항목</span></strong><p id="detail-check">Company ID, năm, ngành, quy mô.</p></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Agents & Skills</span><span class="ko">Agents & Skills</span></p>
+            <h2><span class="vi">Vai trò vận hành</span><span class="ko">운영 역할</span></h2>
+          </div>
+        </div>
+        <div class="grid-2">
+          <article class="card blue">
+            <h3><span class="vi">Nhóm Agents</span><span class="ko">Agents 그룹</span></h3>
+            <ul class="list">
+              <li><span class="vi">Planner: chọn template và danh sách câu hỏi.</span><span class="ko">Planner: template와 질문 목록 선택.</span></li>
+              <li><span class="vi">Evidence: lấy nguồn, lọc nguồn, ghi lý do pass/fail.</span><span class="ko">Evidence: 근거 수집, 필터링, pass/fail 기록.</span></li>
+              <li><span class="vi">Writer/Reviewer: viết, kiểm tra, sửa câu trả lời.</span><span class="ko">Writer/Reviewer: 작성, 검토, 수정.</span></li>
+              <li><span class="vi">Publisher: phân loại trạng thái và xuất workbook.</span><span class="ko">Publisher: 상태 분류 및 workbook 출력.</span></li>
+            </ul>
+          </article>
+          <article class="card teal">
+            <h3><span class="vi">4 Skills viết nội dung</span><span class="ko">4개 작성 Skills</span></h3>
+            <ul class="list">
+              <li><strong>General ESG:</strong> <span class="vi">câu ESG chung.</span><span class="ko">일반 ESG 답변.</span></li>
+              <li><strong>Carbon:</strong> <span class="vi">khí thải, carbon, Scope.</span><span class="ko">배출, 탄소, Scope.</span></li>
+              <li><strong>Materiality:</strong> <span class="vi">chủ đề trọng yếu.</span><span class="ko">중대성 항목.</span></li>
+              <li><strong>Commitment:</strong> <span class="vi">mục tiêu, cam kết, tiến độ.</span><span class="ko">목표, 약속, 진행률.</span></li>
+            </ul>
+          </article>
+        </div>
+        <div class="note">
+          <strong><span class="vi">Quy tắc vận hành:</span><span class="ko">운영 규칙:</span></strong>
+          <span class="vi">Một câu hỏi chỉ được viết khi có nguồn phù hợp. Nếu nguồn yếu, câu đó chuyển sang review hoặc blocked.</span>
+          <span class="ko">질문은 적합한 근거가 있을 때만 작성합니다. 근거가 약하면 review 또는 blocked로 분류합니다.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="plan">
+      <div class="section">
+        <div class="section-head">
+          <div>
+            <p class="kicker"><span class="vi">Tồn đọng - Kế hoạch</span><span class="ko">이슈 - 계획</span></p>
+            <h2><span class="vi">Việc cần xử lý tiếp</span><span class="ko">다음 처리 항목</span></h2>
+          </div>
+          <span class="badge warn"><span class="vi">Next action</span><span class="ko">Next action</span></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><span class="vi">Ưu tiên</span><span class="ko">우선순위</span></th>
+                <th><span class="vi">Việc cần làm</span><span class="ko">할 일</span></th>
+                <th><span class="vi">Kết quả cần đạt</span><span class="ko">목표 결과</span></th>
+                <th><span class="vi">Ghi chú</span><span class="ko">메모</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge bad">P0</span></td>
+                <td><span class="vi">Xử lý 21 câu blocked.</span><span class="ko">blocked 21개 처리.</span></td>
+                <td><span class="vi">Giảm blocked bằng cách bổ sung nguồn hoặc chạy lại retrieval.</span><span class="ko">근거 보강 또는 retrieval 재실행으로 blocked 감소.</span></td>
+                <td><span class="vi">Không dùng nhóm này trong bản gửi khách hàng.</span><span class="ko">고객 전달본에는 사용하지 않음.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge warn">P1</span></td>
+                <td><span class="vi">Review 61 câu review_required.</span><span class="ko">review_required 61개 검토.</span></td>
+                <td><span class="vi">Chốt từng câu: approve, sửa nội dung, hoặc bổ sung nguồn.</span><span class="ko">각 항목을 approve, 수정, 근거 보강으로 확정.</span></td>
+                <td><span class="vi">Ưu tiên câu chiến lược, quản trị, môi trường, nhân sự.</span><span class="ko">전략, 지배구조, 환경, 인사 우선.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge warn">P1</span></td>
+                <td><span class="vi">Bổ sung 98 metric missing.</span><span class="ko">missing metric 98개 보강.</span></td>
+                <td><span class="vi">Xác định thiếu do chưa có input, chưa map, hay cần xác nhận đơn vị.</span><span class="ko">input 부족, mapping 미완료, 단위 확인 필요 여부 확인.</span></td>
+                <td><span class="vi">2 metric needs_confirmation cần xử lý riêng.</span><span class="ko">needs_confirmation 2개는 별도 처리.</span></td>
+              </tr>
+              <tr>
+                <td><span class="badge info">P2</span></td>
+                <td><span class="vi">Chạy lại output sau khi sửa.</span><span class="ko">수정 후 output 재실행.</span></td>
+                <td><span class="vi">Tạo workbook mới và so sánh với bản 2026.08.13_9.</span><span class="ko">새 workbook 생성 후 2026.08.13_9와 비교.</span></td>
+                <td><span class="vi">Theo dõi published tăng, blocked giảm.</span><span class="ko">published 증가, blocked 감소 확인.</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn">
+          <strong><span class="vi">Kế hoạch ngày tiếp theo:</span><span class="ko">다음 일정:</span></strong>
+          <span class="vi">Ưu tiên P0 trước. Sau khi giảm blocked, chuyển sang review_required và cập nhật lại workbook.</span>
+          <span class="ko">P0를 먼저 처리합니다. blocked를 줄인 뒤 review_required를 검토하고 workbook을 갱신합니다.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <span class="vi">Nguồn số liệu: run local `run_20260813T073524211525Z_ac0e02d1` và Google Sheet output do dự án cung cấp.</span>
+    <span class="ko">수치 출처: 로컬 run `run_20260813T073524211525Z_ac0e02d1` 및 프로젝트 제공 Google Sheet output.</span>
+  </footer>
+
+  <script>
+    const details = {
+      intake: {
+        vi: ["Nhận thông tin", "Chuẩn hóa thông tin công ty, năm báo cáo, ngành, quy mô và ngôn ngữ output.", "CompanyIntakeAgent", "Company profile dùng chung cho toàn bộ graph.", "Company ID, năm, ngành, quy mô."],
+        ko: ["정보 입력", "회사 정보, 보고연도, 산업, 규모, output 언어를 정리합니다.", "CompanyIntakeAgent", "전체 graph가 사용하는 company profile.", "Company ID, 연도, 산업, 규모."]
+      },
+      template: {
+        vi: ["Chọn template", "Chọn bộ mẫu theo quy mô large_enterprise và ngành HC.", "TemplateSelectorAgent", "Template và bộ câu hỏi phù hợp.", "Quy mô, ngành, template version."],
+        ko: ["template 선택", "large_enterprise 규모와 HC 산업 기준 template를 선택합니다.", "TemplateSelectorAgent", "적합한 template와 질문 세트.", "규모, 산업, template version."]
+      },
+      plan: {
+        vi: ["Lập QID", "Tạo danh sách 95 câu hỏi cần chạy theo QID.", "QuestionPlannerAgent", "Danh sách QID có thứ tự.", "Tổng số QID và câu hỏi thiếu/trùng."],
+        ko: ["QID 구성", "실행할 95개 질문을 QID 기준으로 구성합니다.", "QuestionPlannerAgent", "순서 있는 QID 목록.", "QID 총수와 누락/중복."]
+      },
+      rag: {
+        vi: ["Lấy nguồn", "Gửi QID sang Team RAG để lấy tài liệu và bảng liên quan.", "RagBatchAgent + TeamRagClient", "Evidence, trạng thái answerable và missing facets.", "Nguồn có đúng câu hỏi hay không."],
+        ko: ["근거 수집", "QID를 Team RAG로 보내 관련 문서와 표를 가져옵니다.", "RagBatchAgent + TeamRagClient", "evidence, answerable 상태, missing facets.", "근거가 질문과 맞는지."]
+      },
+      gate: {
+        vi: ["Kiểm tra nguồn", "Chặn câu hỏi nếu nguồn yếu hoặc không đủ phần bắt buộc.", "EvidenceGateAgent", "accepted, blocked hoặc review signal.", "Lý do chặn và metadata nguồn."],
+        ko: ["근거 검사", "근거가 약하거나 필수 항목이 부족하면 차단합니다.", "EvidenceGateAgent", "accepted, blocked 또는 review signal.", "차단 사유와 근거 metadata."]
+      },
+      normalize: {
+        vi: ["Chuẩn hóa nguồn", "Làm sạch nguồn, bỏ trùng và chuẩn bị summary.", "EvidenceNormalizerAgent", "Nguồn sạch để Writer sử dụng.", "Nguồn trùng, source path, evidence summary."],
+        ko: ["근거 정리", "근거를 정리하고 중복을 제거하며 summary를 준비합니다.", "EvidenceNormalizerAgent", "Writer가 사용할 정리된 근거.", "중복 근거, source path, evidence summary."]
+      },
+      quant: {
+        vi: ["Xử lý số liệu", "Đưa dữ liệu định lượng vào workbook nếu có input.", "QuantitativeAgent", "Metric filled, missing, needs_confirmation.", "Đơn vị, năm dữ liệu, nguồn input."],
+        ko: ["정량 처리", "input이 있으면 정량 데이터를 workbook에 반영합니다.", "QuantitativeAgent", "filled, missing, needs_confirmation metric.", "단위, 데이터 연도, input 출처."]
+      },
+      skill: {
+        vi: ["Chọn Skill", "Chọn cách viết phù hợp cho từng loại câu hỏi.", "SkillRouterAgent", "Skill key cho từng QID.", "Carbon, materiality, commitment, general."],
+        ko: ["Skill 선택", "질문 유형별로 적합한 작성 방식을 선택합니다.", "SkillRouterAgent", "QID별 skill key.", "Carbon, materiality, commitment, general."]
+      },
+      draft: {
+        vi: ["Viết draft", "Viết câu trả lời dựa trên nguồn đã duyệt.", "SkillWriterAgent", "Draft answer.", "Không thêm số liệu hoặc cam kết ngoài nguồn."],
+        ko: ["draft 작성", "승인된 근거를 바탕으로 답변을 작성합니다.", "SkillWriterAgent", "Draft answer.", "근거 밖 숫자나 약속 추가 금지."]
+      },
+      review: {
+        vi: ["Review", "Kiểm tra câu trả lời có bám nguồn và đủ ý không.", "SkillPolicyCriticAgent + SemanticCompletenessCriticAgent", "QA status và quality flags.", "Pass/fail, thiếu ý, câu nói quá."],
+        ko: ["검토", "답변이 근거에 맞고 충분한지 확인합니다.", "SkillPolicyCriticAgent + SemanticCompletenessCriticAgent", "QA status와 quality flags.", "pass/fail, 누락 내용, 과장 표현."]
+      },
+      revise: {
+        vi: ["Sửa nếu cần", "Sửa các câu chưa đạt nếu còn vòng revision.", "RevisionAgent", "Final answer sau sửa hoặc câu bị chặn.", "Revision count và lỗi còn lại."],
+        ko: ["필요 시 수정", "revision 횟수가 남아 있으면 미통과 답변을 수정합니다.", "RevisionAgent", "수정 후 final answer 또는 blocked 답변.", "revision count와 잔여 오류."]
+      },
+      output: {
+        vi: ["Xuất file", "Gom kết quả, phân loại trạng thái và ghi JSON/Excel.", "OutputHygieneAgent + ReportManagerAgent + OutputWriter", "Workbook, audit JSON, coverage summary.", "publication_status, quality_grade, workbook link."],
+        ko: ["파일 출력", "결과를 모아 상태를 분류하고 JSON/Excel로 저장합니다.", "OutputHygieneAgent + ReportManagerAgent + OutputWriter", "workbook, audit JSON, coverage summary.", "publication_status, quality_grade, workbook link."]
+      }
+    };
+
+    const body = document.body;
+    const tabButtons = document.querySelectorAll("[data-tab]");
+    const panels = document.querySelectorAll("[data-panel]");
+    const flowNodes = document.querySelectorAll(".flow-node");
+
+    function lang() {
+      return body.dataset.lang || "vi";
+    }
+
+    function renderDetail(step) {
+      const item = details[step][lang()];
+      document.getElementById("detail-title").textContent = item[0];
+      document.getElementById("detail-desc").textContent = item[1];
+      document.getElementById("detail-agent").textContent = item[2];
+      document.getElementById("detail-output").textContent = item[3];
+      document.getElementById("detail-check").textContent = item[4];
+    }
+
+    document.querySelectorAll("[data-lang-button]").forEach((button) => {
+      button.addEventListener("click", () => {
+        body.dataset.lang = button.dataset.langButton;
+        document.documentElement.lang = button.dataset.langButton;
+        document.querySelectorAll("[data-lang-button]").forEach((item) => {
+          item.setAttribute("aria-pressed", item === button ? "true" : "false");
+        });
+        const active = document.querySelector(".flow-node.active");
+        if (active) renderDetail(active.dataset.step);
+      });
+    });
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.tab;
+        tabButtons.forEach((item) => item.classList.toggle("active", item === button));
+        panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === target));
+      });
+    });
+
+    flowNodes.forEach((node) => {
+      node.addEventListener("click", () => {
+        flowNodes.forEach((item) => item.classList.toggle("active", item === node));
+        renderDetail(node.dataset.step);
+      });
+    });
+  </script>
+</body>
+</html>
