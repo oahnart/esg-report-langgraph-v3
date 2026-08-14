@@ -1433,6 +1433,7 @@ def _combined_evidence_status(answer: Any) -> str:
     answer_status = str(getattr(answer, "answer_status", "") or "").casefold()
     rag_coverage = str(getattr(answer, "rag_coverage_status", "") or "").casefold()
     publication = resolved_publication_decision(answer)
+    has_final_answer = bool(str(getattr(answer, "final_answer", "") or "").strip())
 
     if (
         getattr(answer, "upstream_coverage_mismatch", False)
@@ -1470,7 +1471,7 @@ def _combined_evidence_status(answer: Any) -> str:
         or bool(getattr(answer, "rag_failure_code", "") or "")
         or bool(getattr(answer, "rag_contract_violations", []) or [])
     ):
-        return "ERROR"
+        return "PARTIAL" if has_final_answer else "ERROR"
     if (
         answer_status == "thin_but_usable"
         or rag_coverage == "partial"

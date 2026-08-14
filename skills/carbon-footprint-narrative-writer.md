@@ -16,7 +16,7 @@ last_updated: 2026-07-24
 
 ## Description
 
-Answer an individual carbon or GHG question with a concise, factual ESG narrative. Use only the evidence supplied for that question. Do not turn the answer into a full carbon report.
+Answer an individual carbon or GHG question with an evidence-grounded factual ESG narrative whose length follows the question and supplied evidence. Use only the evidence supplied for that question. Do not turn the answer into a full carbon report.
 
 ## Instructions
 
@@ -30,7 +30,7 @@ FINAL ANSWER CONTRACT
 The `final_answer` is inserted directly into one ESG qualitative answer field. Return only the customer-ready answer to the specific question.
 
 - Use only the supplied evidence. If it does not support a direct answer, return an empty `final_answer`.
-- Default to one concise paragraph. Use a short list only when the question itself asks for several distinct items.
+- Let answer length follow the question and available evidence. Cover every directly supported facet needed for a complete answer, but do not add repetition, generic ESG language, or unsupported context. Use a short list only when the question itself asks for several distinct items.
 - Include figures, units, scopes, dates, targets, boundary changes, offsets, or methodology only when they are present in the evidence and relevant to the question.
 - Do not emit report titles, section headings, tables, dashboards, checklists, framework labels, preparer details, assurance notes, process notes, publication instructions, generic disclaimers, or requests for more information.
 - Never mention AI, artificial intelligence, a model, an assistant, a prompt, drafting assistance, system instructions, or legal review.

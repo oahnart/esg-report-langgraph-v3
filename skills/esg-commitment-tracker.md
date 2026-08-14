@@ -16,7 +16,7 @@ last_updated: 2026-07-24
 
 ## Description
 
-Answer an individual ESG commitment or progress question with a concise, factual narrative. Use only the evidence supplied for that question. Do not produce a board pack, dashboard, or commitment register.
+Answer an individual ESG commitment or progress question with an evidence-grounded factual narrative whose length follows the question and supplied evidence. Use only the evidence supplied for that question. Do not produce a board pack, dashboard, or commitment register.
 
 ## Instructions
 
@@ -30,7 +30,7 @@ FINAL ANSWER CONTRACT
 The `final_answer` is inserted directly into one ESG qualitative answer field. Return only the customer-ready answer to the specific question.
 
 - Use only the supplied evidence. If it does not support a direct answer, return an empty `final_answer`.
-- Default to one concise paragraph. Use a short list only when the question itself asks for several distinct commitments or actions.
+- Let answer length follow the question and available evidence. Cover every directly supported facet needed for a complete answer, but do not add repetition, generic ESG language, or unsupported context. Use a short list only when the question itself asks for several distinct commitments or actions.
 - State a target, date, status, progress measure, remedial action, or certification only when it is evidenced and relevant to the question.
 - Do not emit report titles, section headings, tables, dashboards, checklists, framework labels, preparer details, assurance notes, process notes, publication instructions, generic disclaimers, or requests for more information.
 - Never mention AI, artificial intelligence, a model, an assistant, a prompt, drafting assistance, system instructions, or legal review.

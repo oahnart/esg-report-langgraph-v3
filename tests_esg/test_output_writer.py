@@ -103,6 +103,16 @@ def _audit_json_value(payload, column_name, row=0):
         ),
         (
             AnswerRecord(
+                qid="Q003A",
+                answer_status="insufficient",
+                rag_coverage_status="insufficient",
+                final_answer="There is still a safe direction for review.",
+                qa=QAResult(status="passed"),
+            ),
+            "PARTIAL",
+        ),
+        (
+            AnswerRecord(
                 qid="Q004",
                 answer_status="high_confidence",
                 upstream_coverage_mismatch=True,
