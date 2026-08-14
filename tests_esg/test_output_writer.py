@@ -16,13 +16,17 @@ from esgagents.output_writer import (
     OutputRunExistsError,
     OutputWriter,
     QUANTITATIVE_COLUMNS,
+    _combined_evidence_status,
     _metric_excel_value,
     build_coverage_summary,
     clean_excel_text,
 )
+from esgagents.agents.managers.report_manager import ReportManagerAgent
 from esgagents.schemas import (
     AnswerRecord,
     ClaimSupport,
+    EvidenceItem,
+    MetricEvidenceItem,
     QAResult,
     QuantitativeResult,
     RagRequestTrace,
@@ -35,8 +39,102 @@ def _audit_value(worksheet, column_name, row=2):
     return worksheet.cell(row=row, column=column).value
 
 
+def test_writer_original_evidence_uses_raw_accepted_writer_items():
+    metric_item = MetricEvidenceItem(
+        raw_evidence_ko="Metric row | tCO2e | 2025=10",
+        block_role="primary",
+        table_block="GHG",
+        entity_class="company",
+    )
+    narrative_item = EvidenceItem(
+        raw_evidence_ko="  Original narrative evidence.\nKeep this raw spacing.  "
+    )
+
+    result = ReportManagerAgent._writer_original_evidence(
+        {
+            "metric_items": [metric_item],
+            "narrative_items": [narrative_item],
+            "metric_audit": {"metric_status": "found_table"},
+        }
+    )
+
+    assert result == narrative_item.raw_evidence_ko
+
+
 def _audit_json_value(payload, column_name, row=0):
     return payload["rows"][row][column_name]
+
+
+@pytest.mark.parametrize(
+    ("answer", "expected"),
+    [
+        (
+            AnswerRecord(
+                qid="Q001",
+                answer_status="high_confidence",
+                rag_coverage_status="complete",
+                final_answer="answer",
+                qa=QAResult(status="passed"),
+                qa_grade="full",
+                publication_status="published",
+            ),
+            "SUFFICIENT",
+        ),
+        (
+            AnswerRecord(
+                qid="Q002",
+                answer_status="thin_but_usable",
+                rag_coverage_status="partial",
+                final_answer="answer",
+                qa=QAResult(status="passed"),
+                qa_grade="partial",
+                quality_flags=["partial_answer"],
+            ),
+            "PARTIAL",
+        ),
+        (
+            AnswerRecord(
+                qid="Q003",
+                answer_status="insufficient",
+                rag_coverage_status="insufficient",
+                qa=QAResult(status="failed"),
+            ),
+            "ERROR",
+        ),
+        (
+            AnswerRecord(
+                qid="Q004",
+                answer_status="high_confidence",
+                upstream_coverage_mismatch=True,
+                qa=QAResult(status="passed"),
+            ),
+            "MISMATCH",
+        ),
+        (
+            AnswerRecord(
+                qid="Q005",
+                answer_status="high_confidence",
+                rag_metric_confidence="low",
+                qa=QAResult(status="passed"),
+                quality_flags=["metric_low_confidence"],
+            ),
+            "METRIC_LOW_CONFIDENCE",
+        ),
+        (
+            AnswerRecord(
+                qid="Q006",
+                answer_status="high_confidence",
+                rag_metric_expected=True,
+                rag_metric_status="not_found",
+                qa=QAResult(status="passed"),
+                quality_flags=["metric_not_found"],
+            ),
+            "METRIC_REVIEW",
+        ),
+    ],
+)
+def test_combined_evidence_status_uses_review_categories(answer, expected):
+    assert _combined_evidence_status(answer) == expected
 
 
 def test_output_writer_persists_resolved_quality_contract(tmp_path):
@@ -103,6 +201,7 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
             AnswerRecord(
                 qid="Q001",
                 source_id="EBX-Q-001",
+                area="일반",
                 category="ESG",
                 question="question",
                 answer_status="high_confidence",
@@ -183,7 +282,7 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
     assert '"direct_answer": true' in _audit_json_value(audit, "RAG Structured Coverage")
     assert "locator(page=3,section=Governance)" in _audit_json_value(audit, "Sources")
     combined = load_workbook(written.output_paths["combined_excel"])["Qualitative"]
-    assert "source_type=policy_procedure" in combined["E2"].value
+    assert combined["E2"].value == "answer"
     payload = json.loads(open(written.output_paths["json"], encoding="utf-8").read())
     assert payload["answers"][0]["draft_answer"] == "draft answer"
     assert payload["answers"][0]["last_rejected_answer"] == "rejected answer"
@@ -686,6 +785,7 @@ def _combined_artifacts(run_id, company_name="C"):
             AnswerRecord(
                 qid="Q001",
                 source_id="EBX-Q-001",
+                area="일반",
                 category="ESG",
                 question="question",
                 answer_status="high_confidence",
@@ -697,6 +797,7 @@ def _combined_artifacts(run_id, company_name="C"):
                 final_answer="=unsafe",
                 qa_grade="full",
                 coverage_reason="complete_answer",
+                original_evidence="accepted original evidence",
                 evidence_summary="prompt evidence",
                 sources=[{
                     "source_name": "report.pdf",
@@ -719,7 +820,7 @@ def _combined_artifacts(run_id, company_name="C"):
                 skill_version="1",
                 skill_selection_reason="matched topic",
                 raw_rag_result={
-                    "items": [{"raw_evidence_ko": "original evidence"}],
+                    "items": [{"raw_evidence_ko": "raw rag evidence not used by writer"}],
                 },
             )
         ],
@@ -764,8 +865,10 @@ def test_output_writer_creates_two_sheet_combined_workbook_and_numbered_names(tm
     assert [cell.value for cell in qualitative[1]] == COMBINED_QUALITATIVE_COLUMNS
     assert [cell.value for cell in quantitative[1]] == QUANTITATIVE_COLUMNS
     assert qualitative["A2"].value == "EBX-Q-001"
-    assert qualitative["D2"].value == "original evidence"
-    assert qualitative["H2"].value == "'=unsafe"
+    assert qualitative["B2"].value == "Answer: PUBLISHED\nEvidence: SUFFICIENT"
+    assert qualitative["C2"].value == "일반 / 거버넌스 (Governance) / question"
+    assert qualitative["D2"].value == "accepted original evidence"
+    assert qualitative["E2"].value == "'=unsafe"
     assert quantitative.max_row == 252
     assert quantitative["A252"].value == "QUANT-0251"
     assert quantitative["D2"].value == 1

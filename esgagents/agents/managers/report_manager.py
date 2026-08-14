@@ -95,6 +95,7 @@ class ReportManagerAgent:
             record = AnswerRecord(
                 qid=planned.id,
                 source_id=planned.source_id,
+                area=planned.area_ko,
                 category=planned.category_ko,
                 question=planned.item_ko,
                 answer_status=rag.answer_status if rag else "missing",
@@ -133,6 +134,7 @@ class ReportManagerAgent:
                 last_rejected_answer=state.get("last_rejected_answers", {}).get(planned.id, ""),
                 qa_failure_stage=state.get("qa_failure_stages", {}).get(planned.id, ""),
                 sanitizer_actions=state.get("sanitizer_actions", {}).get(planned.id, []),
+                original_evidence=self._writer_original_evidence(normalized),
                 evidence_summary=normalized.get("evidence_summary", ""),
                 sources=normalized.get("sources", []),
                 claim_support=state.get("claim_support", {}).get(planned.id, []),
@@ -190,6 +192,31 @@ class ReportManagerAgent:
             rag_request_traces=list(state.get("rag_request_traces", [])),
         )
         return {"artifacts": artifacts}
+
+    @staticmethod
+    def _writer_original_evidence(normalized: dict[str, Any]) -> str:
+        metric_audit = normalized.get("metric_audit", {}) or {}
+        metric_status = str(metric_audit.get("metric_status") or "").casefold()
+        narrative_only = metric_status in {"found_table", "not_found"}
+        metric_items = [] if narrative_only else list(normalized.get("metric_items", []))
+        if metric_audit.get("numeric_withheld"):
+            metric_items = []
+        evidence_items = [
+            *metric_items[:5],
+            *list(normalized.get("narrative_items", []))[:5],
+        ]
+        raw_parts = [
+            ReportManagerAgent._raw_evidence_text(item)
+            for item in evidence_items
+            if ReportManagerAgent._raw_evidence_text(item).strip()
+        ]
+        return "\n\n".join(raw_parts)
+
+    @staticmethod
+    def _raw_evidence_text(item: Any) -> str:
+        if isinstance(item, dict):
+            return str(item.get("raw_evidence_ko") or "")
+        return str(getattr(item, "raw_evidence_ko", "") or "")
 
     @staticmethod
     def _consumer_decision(

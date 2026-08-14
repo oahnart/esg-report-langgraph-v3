@@ -130,6 +130,7 @@ def evaluate_publication(
     source_review = _source_review_issues(answer)
     qid_blocking, qid_review = _qid_contract_issues(answer)
     invariant_issues = set(answer_invariant_issues(answer))
+    final_answer_issue = _final_answer_contract_issue(final_answer)
 
     blocking_issues: set[str] = set()
     blocking_reason = ""
@@ -148,6 +149,10 @@ def evaluate_publication(
         if not blocking_reason:
             blocking_reason = "unsupported_claim"
         blocking_issues.update(claim_blocking)
+    if final_answer_issue:
+        if not blocking_reason:
+            blocking_reason = "non_narrative_output"
+        blocking_issues.update({"non_narrative_output", final_answer_issue})
     if qid_blocking:
         if not blocking_reason:
             blocking_reason = "thematic_mismatch"
@@ -386,6 +391,19 @@ def apply_customer_answer_contract(answer: Any) -> PublicationDecision:
         disclosure_flags.append("customer_meta_limitation_removed")
         setattr(answer, "disclosure_flags", list(dict.fromkeys(disclosure_flags)))
 
+    normalized_candidate, answer_issue, final_actions = _clean_final_answer_for_customer(
+        str(getattr(answer, "final_answer", "") or "")
+    )
+    if normalized_candidate != str(getattr(answer, "final_answer", "") or "").strip():
+        setattr(answer, "final_answer", normalized_candidate)
+    if final_actions:
+        sanitizer_actions = list(getattr(answer, "sanitizer_actions", []) or [])
+        sanitizer_actions.extend(final_actions)
+        setattr(answer, "sanitizer_actions", list(dict.fromkeys(sanitizer_actions)))
+        disclosure_flags = list(getattr(answer, "disclosure_flags", []) or [])
+        disclosure_flags.append("final_answer_normalized")
+        setattr(answer, "disclosure_flags", list(dict.fromkeys(disclosure_flags)))
+
     persisted = resolved_publication_decision(answer)
     current = evaluate_publication(answer)
     if (
@@ -401,6 +419,12 @@ def apply_customer_answer_contract(answer: Any) -> PublicationDecision:
             "blocked",
             "disclosure_only_answer",
             tuple(sorted({*decision.issues, "disclosure_only_answer"})),
+        )
+    if answer_issue:
+        decision = PublicationDecision(
+            "blocked",
+            "non_narrative_output",
+            tuple(sorted({*decision.issues, "non_narrative_output", answer_issue})),
         )
 
     candidate = str(getattr(answer, "final_answer", "") or "").strip()
@@ -444,6 +468,8 @@ def _stricter_decision(
 
 
 def _has_substantive_answer(text: str) -> bool:
+    if _final_answer_contract_issue(text):
+        return False
     segments = [
         segment.strip()
         for segment in re.split(r"(?<=[.!?。！？])\s+|\n+", str(text or ""))
@@ -456,6 +482,18 @@ def _has_substantive_answer(text: str) -> bool:
         and bool(re.search(r"[A-Za-z가-힣]", segment))
         for segment in segments
     )
+
+
+def _final_answer_contract_issue(text: str) -> str:
+    from esgagents.agents.answering.text_quality import final_answer_block_reason
+
+    return final_answer_block_reason(text)
+
+
+def _clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
+    from esgagents.agents.answering.text_quality import clean_final_answer_for_customer
+
+    return clean_final_answer_for_customer(text)
 
 
 def _consumer_decision(decision: PublicationDecision, answer: Any) -> str:

@@ -863,7 +863,7 @@ def test_output_hygiene_removes_markdown_and_person_names_but_keeps_roles():
 
     result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(state)
     final = result["final_answers"][planned.id]
-    assert final == "• Governance: ESG TFT includes 부장, 과장 and manages reporting."
+    assert final == "Governance: ESG TFT includes 부장, 과장 and manages reporting."
     assert "markdown_normalized" in result["quality_flags"][planned.id]
     assert "pii_redacted" in result["quality_flags"][planned.id]
     assert "redacted_person_name" in result["sanitizer_actions"][planned.id]
@@ -1288,6 +1288,97 @@ def test_output_hygiene_removes_source_attribution_from_customer_answer():
     assert phrase not in result["final_answers"][qid]
     assert result["final_answers"][qid] == "위원회가 운영되며, 연 4회 개최됩니다."
     assert "removed_source_attribution" in result["sanitizer_actions"][qid]
+
+
+@pytest.mark.parametrize(
+    ("qid", "answer", "reason"),
+    [
+        (
+            "Q014",
+            "자원선순환 재활용 원재료 관리 3. 물 관리 용수 사용량 저감 4. 생물다양성 보호",
+            "list_dump_output",
+        ),
+        (
+            "Q027",
+            "불공정거래 방지 투명경영 및 반부패 윤리경영시스템 구축 ※ 핵심지표란?",
+            "symbol_marker_output",
+        ),
+        (
+            "Q050",
+            "친환경 제품 개발 3. 물 관리 용수 재활용 4. 생물다양성 리스크 식별",
+            "list_dump_output",
+        ),
+        (
+            "Q063",
+            "기업이 구성원의 비윤리 행위를 관리 감독하고 있는지 확인 /.",
+            "question_context_output",
+        ),
+        (
+            "Q074",
+            "컴플라이언스 윤리경영 리스크 관리 체계 부장 19. 기업 소유권 정책 • 기업일반 재무 정보",
+            "list_fragment_output",
+        ),
+        (
+            "Q091",
+            "기업 소유권/운영 배당정책, 경영진의 자사주 매입 등 정책 경영지원실 경영관리팀 부장.",
+            "korean_fragment_output",
+        ),
+    ],
+)
+def test_output_hygiene_blocks_iljin_final_answer_leak_patterns(qid, answer, reason):
+    planned = _planned(qid=qid, pillar="Metrics", item="Final Answer", description="Disclose answer")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: answer},
+            "quality_flags": {qid: []},
+            "qa_results": {qid: QAResult(status="passed")},
+        }
+    )
+
+    assert result["final_answers"][qid] == ""
+    assert result["qa_results"][qid].status == "failed"
+    assert "non_narrative_output" in result["quality_flags"][qid]
+    assert reason in result["hard_failures"][qid]
+
+
+def test_output_hygiene_salvages_valid_answer_after_leading_toc_fragments():
+    qid = "Q019"
+    planned = _planned(qid=qid, pillar="Metrics", item="Final Answer", description="Disclose answer")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {qid: "1. 목차 2. 주요 내용 회사는 정보보안 정책을 운영합니다."},
+            "quality_flags": {qid: []},
+            "qa_results": {qid: QAResult(status="passed")},
+        }
+    )
+
+    assert result["final_answers"][qid] == "회사는 정보보안 정책을 운영합니다."
+    assert result["qa_results"][qid].status == "passed"
+    assert "non_narrative_output" not in result["quality_flags"][qid]
+    assert "salvaged_narrative_after_list_or_heading" in result["sanitizer_actions"][qid]
+
+
+def test_output_hygiene_salvages_valid_answer_after_parenthetical_heading():
+    qid = "Q019"
+    planned = _planned(qid=qid, pillar="Metrics", item="Final Answer", description="Disclose answer")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {
+                qid: "(이상행위 분석 및 모니터링) 산업기술보호관리자는 보안사고 예방 활동을 수행한다."
+            },
+            "quality_flags": {qid: []},
+            "qa_results": {qid: QAResult(status="passed")},
+        }
+    )
+
+    assert result["final_answers"][qid].endswith("보안사고 예방 활동을 수행한다.")
+    assert not result["final_answers"][qid].startswith("(")
+    assert result["qa_results"][qid].status == "passed"
+    assert "non_narrative_output" not in result["quality_flags"][qid]
+    assert "salvaged_narrative_after_list_or_heading" in result["sanitizer_actions"][qid]
 
 
 def test_markdown_normalization_does_not_add_claims():

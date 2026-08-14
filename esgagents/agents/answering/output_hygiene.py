@@ -8,8 +8,8 @@ from esgagents.schemas import QAResult
 from esgagents.customer_text import strip_customer_meta_limitations
 
 from .text_quality import (
+    clean_final_answer_for_customer,
     clean_customer_evidence_text,
-    non_narrative_reason,
     normalize_answer_coherence,
 )
 
@@ -108,7 +108,11 @@ class OutputHygieneAgent:
 
             if normalized and redacted != normalized:
                 flags.append("pii_redacted")
-            structural_reason = non_narrative_reason(redacted)
+            cleaned_answer, structural_reason, final_cleanup_actions = clean_final_answer_for_customer(redacted)
+            if final_cleanup_actions:
+                actions.extend(final_cleanup_actions)
+                flags.append("final_answer_normalized")
+            redacted = cleaned_answer
             if structural_reason:
                 redacted = ""
                 flags.append("non_narrative_output")

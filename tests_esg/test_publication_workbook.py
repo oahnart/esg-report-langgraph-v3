@@ -54,8 +54,8 @@ def test_review_answer_is_identical_in_json_audit_and_customer_workbook(tmp_path
     assert audit["columns"] == AUDIT_COLUMNS
     assert audit["rows"][0]["Final Answer"] == customer_answer
     assert customer.sheetnames == ["Qualitative", "Qualitative Table Metrics"]
-    assert customer["Qualitative"]["H2"].value == customer_answer
-    assert "Publication: review_required" in customer["Qualitative"]["B2"].value
+    assert customer["Qualitative"]["E2"].value == customer_answer
+    assert customer["Qualitative"]["B2"].value == "Answer: REVIEW\nEvidence: METRIC_REVIEW"
 
 
 def test_coverage_summary_contains_all_publication_buckets(tmp_path):
@@ -179,7 +179,7 @@ def test_blocked_candidate_is_rejected_and_json_matches_customer_workbook(tmp_pa
     json_by_source = {answer["source_id"]: answer for answer in payload["answers"]}
     sheet = customer["Qualitative"]
     xlsx_by_source = {
-        sheet.cell(row, 1).value: sheet.cell(row, 8).value or ""
+        sheet.cell(row, 1).value: sheet.cell(row, 5).value or ""
         for row in range(2, sheet.max_row + 1)
     }
     assert all(

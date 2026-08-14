@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 
 RAW_TABLE_TERMS = (
@@ -70,6 +71,36 @@ LEADING_FRAGMENT_RE = re.compile(
 )
 ENUMERATION_STUB_RE = re.compile(r"^(?:\d+[.)]?\s*)+$")
 LEADING_NUMBERED_BLOCK_RE = re.compile(r"^\d+[.)]\s+\S+")
+ANY_LIST_MARKER_RE = re.compile(r"(?:^|\s)(?:\d{1,3}[.)]|[A-Za-z][.)]|[IVXivx]{1,6}[.)])\s+\S+")
+TRAILING_LIST_MARKER_RE = re.compile(r"(?:^|\s)(?:\d{1,3}[.)]|[A-Za-z][.)]|[IVXivx]{1,6}[.)])\s*$")
+SPECIAL_LIST_SYMBOL_RE = re.compile(
+    r"[\u2022\u2023\u2043\u204c\u204d\u2219\u25a0-\u25ff\u2605-\u2606\u2610-\u2612\u2713-\u2718\u2756\u276f]"
+)
+LEADING_SPECIAL_LIST_SYMBOL_RE = re.compile(
+    r"^[\u2022\u2023\u2043\u204c\u204d\u2219\u25a0-\u25ff\u2605-\u2606\u2610-\u2612\u2713-\u2718\u2756\u276f]\s+\S+"
+)
+REFERENCE_MARK_RE = re.compile(r"[\u203b\uff0a]")
+QUESTION_MARK_RE = re.compile(r"[?\uff1f]")
+LEADING_PARENTHETICAL_HEADING_RE = re.compile(r"^\(([^)]{0,60})\)\s+\S+")
+KOREAN_CHAR_RE = re.compile(r"[\uac00-\ud7a3]")
+KOREAN_DECLARATIVE_ENDING_RE = re.compile(
+    r"(?:다|니다|습니다|입니다|합니다|됩니다|있습니다|없습니다|였습니다|하였습니다|한다|된다|있다|없다)[.。]?$"
+)
+KOREAN_QUESTION_CONTEXT_RE = re.compile(
+    r"(?:있는지|하는지|했는지|인지|여부(?:를)?|관련\s*질문|핵심지표란)\s*(?:확인)?\s*[.。/\\|]*$"
+)
+LEADING_PROCEDURE_HEADING_FRAGMENT_RE = re.compile(
+    r"^[^.?!\u3002\uff01\uff1f]{0,120}(?:업무\s*절차|work\s*procedure|procedure)\s*\)\s+\S+",
+    flags=re.IGNORECASE,
+)
+REPORT_COVER_BOILERPLATE_RE = re.compile(
+    r"^(?=[^.?!\u3002\uff01\uff1f]{0,220}\bESG\s+DATA\s+REPORT\b)"
+    r"(?=[^.?!\u3002\uff01\uff1f]{0,260}(?:보고서\s*개요|report\s+overview))",
+    flags=re.IGNORECASE,
+)
+KOREAN_NARRATIVE_START_RE = re.compile(
+    r"(?:회사는|당사는|[A-Za-z0-9&()./\-·\uac00-\ud7a3]{2,50}(?:은|는)\s)"
+)
 LEADING_EXAMPLE_RE = re.compile(
     r"^\(?\s*(?:예|예시|e\.g\.|example)\s*[:：)]",
     flags=re.IGNORECASE,
@@ -118,6 +149,176 @@ INLINE_KNOWN_HEADING_RE = re.compile(
     r"(?:^|\s+)(?:업계최초\s*직무급\s*제도와\s*여성인재\s*육성|품질\s*부문\s*조직)\s+(?=대웅제약은\b)"
 )
 
+ALLOWED_SYMBOL_PUNCTUATION = set("%&+-/=@.,;:()[]·")
+
+
+def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
+    """Normalize customer prose without chasing one-off bad characters."""
+
+    original = str(text or "").strip()
+    value = unicodedata.normalize("NFKC", original)
+    actions: list[str] = []
+    retained: list[str] = []
+    removed_control = False
+    removed_symbol = False
+    for char in value:
+        category = unicodedata.category(char)
+        if char in "\n\t":
+            retained.append(char)
+            continue
+        if category[0] == "C":
+            removed_control = True
+            continue
+        if category[0] == "Z":
+            retained.append(" ")
+            continue
+        if (
+            category[0] in {"P", "S"}
+            and char not in ALLOWED_SYMBOL_PUNCTUATION
+            and char not in {"'", '"'}
+        ):
+            retained.append(" ")
+            removed_symbol = True
+            continue
+        retained.append(char)
+
+    cleaned = "".join(retained)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    cleaned = re.sub(
+        r"^[\u2022\u2023\u2043\u204c\u204d\u2219\u25a0-\u25ff\u2605-\u2606\u2610-\u2612\u2713-\u2718\u2756\u276f]\s+",
+        "",
+        cleaned,
+    )
+    cleaned = re.sub(r"\s+([.,;:])", r"\1", cleaned)
+    cleaned = re.sub(r"(?:\s*[/\\|]+\s*)+([.。])$", r"\1", cleaned)
+    cleaned = re.sub(r"(?:[/\\|]+\s*)+$", "", cleaned).strip()
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip(" ,;:")
+    if removed_control:
+        actions.append("removed_control_unicode")
+    if removed_symbol:
+        actions.append("removed_symbol_punctuation")
+    if cleaned != original and not actions:
+        actions.append("normalized_unicode_punctuation")
+    return cleaned, actions
+
+
+def final_answer_block_reason(text: str) -> str:
+    """Return why text must not be exposed as a customer-facing Final Answer."""
+
+    value = " ".join(str(text or "").split()).strip()
+    if not value:
+        return ""
+    structural = non_narrative_reason(value)
+    if structural:
+        return structural
+    if KOREAN_QUESTION_CONTEXT_RE.search(value) or QUESTION_MARK_RE.search(value):
+        return "question_context_output"
+    hangul_count = len(KOREAN_CHAR_RE.findall(value))
+    if hangul_count >= 8 and not KOREAN_DECLARATIVE_ENDING_RE.search(value):
+        return "korean_fragment_output"
+    return ""
+
+
+def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
+    """Normalize and validate the final customer answer in one idempotent pass."""
+
+    original = str(text or "").strip()
+    initial_reason = final_answer_block_reason(original)
+    cleaned, actions = normalize_final_answer_text(original)
+    cleaned_reason = final_answer_block_reason(cleaned)
+    salvaged, salvage_actions = salvage_final_answer_narrative(
+        cleaned,
+        initial_reason or cleaned_reason,
+    )
+    if salvaged:
+        cleaned = salvaged
+        actions.extend(salvage_actions)
+    cleaned_reason = final_answer_block_reason(cleaned)
+    final_reason = cleaned_reason if initial_reason == "korean_fragment_output" else initial_reason or cleaned_reason
+    if salvaged and not cleaned_reason:
+        final_reason = ""
+    return cleaned, final_reason, actions
+
+
+def salvage_final_answer_narrative(text: str, reason: str) -> tuple[str, list[str]]:
+    """Keep existing narrative prose after removable list/heading fragments."""
+
+    if reason not in {
+        "list_fragment_output",
+        "list_dump_output",
+        "numbered_block_output",
+        "symbol_marker_output",
+        "parenthetical_heading_output",
+    }:
+        return "", []
+    value = " ".join(str(text or "").split()).strip()
+    if not value:
+        return "", []
+
+    retained: list[str] = []
+    for segment in _salvage_candidate_segments(value, reason):
+        candidate = _clean_salvage_candidate(segment)
+        if not candidate or candidate == value:
+            continue
+        if not _has_salvage_substance(candidate):
+            continue
+        if final_answer_block_reason(candidate):
+            continue
+        retained.append(candidate)
+
+    if not retained:
+        return "", []
+    result = " ".join(dict.fromkeys(retained))
+    result = re.sub(r"\s{2,}", " ", result).strip()
+    return result, ["salvaged_narrative_after_list_or_heading"]
+
+
+def _salvage_candidate_segments(value: str, reason: str) -> list[str]:
+    segments: list[str] = []
+    if reason == "parenthetical_heading_output":
+        segments.append(LEADING_PARENTHETICAL_HEADING_RE.sub("", value, count=1))
+    segments.extend(
+        segment
+        for segment in re.split(r"(?<=[.!?\u3002\uff01\uff1f])\s+|\n+", value)
+        if segment.strip()
+    )
+    segments.extend(segment for segment in ANY_LIST_MARKER_RE.split(value) if segment.strip())
+    markers = list(ANY_LIST_MARKER_RE.finditer(value))
+    if markers:
+        segments.append(value[markers[-1].end():])
+    return segments
+
+
+def _clean_salvage_candidate(segment: str) -> str:
+    value = str(segment or "").strip(" \t\r\n,;:-/\\|")
+    value = LEADING_PARENTHETICAL_HEADING_RE.sub("", value, count=1).strip()
+    value = re.sub(r"^(?:\d{1,3}[.)]|[A-Za-z][.)]|[IVXivx]{1,6}[.)])\s+", "", value).strip()
+    value = re.sub(
+        r"^[\u2022\u2023\u2043\u204c\u204d\u2219\u25a0-\u25ff\u2605-\u2606\u2610-\u2612\u2713-\u2718\u2756\u276f]\s+",
+        "",
+        value,
+    ).strip()
+    if SPECIAL_LIST_SYMBOL_RE.search(value) or REFERENCE_MARK_RE.search(value):
+        return ""
+    if KOREAN_CHAR_RE.search(value):
+        explicit_start = re.search(r"(?:회사는|당사는)", value)
+        if explicit_start and explicit_start.start() > 0:
+            value = value[explicit_start.start():].strip(" ,;:-")
+        else:
+            narrative_start = KOREAN_NARRATIVE_START_RE.search(value)
+            if narrative_start and narrative_start.start() > 0:
+                value = value[narrative_start.start():].strip(" ,;:-")
+    if ANY_LIST_MARKER_RE.search(value):
+        return ""
+    if TRAILING_LIST_MARKER_RE.search(value):
+        return ""
+    return re.sub(r"\s{2,}", " ", value).strip()
+
+
+def _has_salvage_substance(value: str) -> bool:
+    letters = re.findall(r"[A-Za-z\uac00-\ud7a3]", str(value or ""))
+    return len(str(value or "").strip()) >= 12 and len(letters) >= 6
+
 
 def non_narrative_reason(text: str) -> str:
     value = " ".join(str(text or "").split())
@@ -126,10 +327,27 @@ def non_narrative_reason(text: str) -> str:
     lower = value.casefold()
     if any(term.casefold() in lower[:500] for term in EDITORIAL_CUE_TERMS):
         return "editorial_instruction_output"
+    if REPORT_COVER_BOILERPLATE_RE.search(value):
+        return "document_boilerplate_output"
+    if LEADING_PROCEDURE_HEADING_FRAGMENT_RE.search(value):
+        return "procedure_heading_fragment_output"
     if any(term.casefold() in lower for term in RAW_TABLE_TERMS):
         return "raw_table_output"
     if LEADING_NUMBERED_BLOCK_RE.search(value):
         return "numbered_block_output"
+    if len(ANY_LIST_MARKER_RE.findall(value)) >= 2:
+        return "list_dump_output"
+    if ANY_LIST_MARKER_RE.search(value):
+        return "list_fragment_output"
+    special_markers = SPECIAL_LIST_SYMBOL_RE.findall(value)
+    if REFERENCE_MARK_RE.search(value) or (
+        special_markers
+        and not (len(special_markers) == 1 and LEADING_SPECIAL_LIST_SYMBOL_RE.search(value))
+    ):
+        return "symbol_marker_output"
+    heading_match = LEADING_PARENTHETICAL_HEADING_RE.search(value)
+    if heading_match and not re.search(r"\d", heading_match.group(1)):
+        return "parenthetical_heading_output"
     if LEADING_EXAMPLE_RE.search(value):
         return "example_fragment_output"
     pipe_count = value.count("|")
@@ -319,4 +537,5 @@ def clean_customer_evidence_text(text: str) -> tuple[str, list[str]]:
 def safe_narrative_text(text: str) -> str:
     cleaned, _ = clean_customer_evidence_text(text)
     normalized, _ = normalize_answer_coherence(cleaned)
-    return "" if non_narrative_reason(normalized) else normalized
+    final, reason, _ = clean_final_answer_for_customer(normalized)
+    return "" if reason else final

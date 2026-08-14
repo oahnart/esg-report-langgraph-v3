@@ -360,6 +360,7 @@ class ClaimSupport(BaseModel):
 class AnswerRecord(BaseModel):
     qid: str
     source_id: str = ""
+    area: str = ""
     category: str = ""
     question: str = ""
     answer_status: str = ""
@@ -401,6 +402,7 @@ class AnswerRecord(BaseModel):
     last_rejected_answer: str = ""
     qa_failure_stage: str = ""
     sanitizer_actions: list[str] = Field(default_factory=list)
+    original_evidence: str = ""
     evidence_summary: str = ""
     sources: list[dict[str, Any]] = Field(default_factory=list)
     claim_support: list[ClaimSupport] = Field(default_factory=list)

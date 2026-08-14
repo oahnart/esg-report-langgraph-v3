@@ -90,6 +90,26 @@ def test_table_shaped_narrative_fallback_bucket_is_failed():
     assert answer.qa_grade == "failed"
 
 
+def test_publication_contract_blocks_review_answer_with_symbol_or_list_noise():
+    answer = _answer(
+        qa_grade="partial",
+        coverage_reason="partial_answer",
+        coverage_issues=["partial_answer"],
+        publication_status="review_required",
+        publication_reason="partial_answer",
+        publication_issues=["qa_grade:partial"],
+        final_answer="친환경 제품 개발 3. 물 관리 용수 재활용 4. 생물다양성 리스크 식별",
+    )
+
+    decision = apply_customer_answer_contract(answer)
+
+    assert decision.status == "blocked"
+    assert decision.reason == "non_narrative_output"
+    assert answer.final_answer == ""
+    assert answer.last_rejected_answer
+    assert "list_dump_output" in answer.publication_issues
+
+
 def test_locally_admitted_insufficient_answer_requires_review_and_is_exported():
     answer = _answer(
         answer_status="insufficient",

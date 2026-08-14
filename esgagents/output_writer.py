@@ -83,9 +83,6 @@ COMBINED_QUALITATIVE_COLUMNS = [
     "Status",
     "Field",
     "Original Evidence",
-    "Evidence Source",
-    "Prompt Evidence",
-    "Writing Style Description",
     "Final Answer",
 ]
 
@@ -450,19 +447,16 @@ class OutputWriter:
                 [
                     answer.source_id,
                     _combined_status(answer),
-                    " / ".join(part for part in (answer.category, answer.question) if part),
-                    _original_evidence(answer.raw_rag_result),
-                    _evidence_sources(answer.sources),
-                    answer.evidence_summary,
-                    _writing_style_description(answer),
+                    _combined_field(answer),
+                    answer.original_evidence,
                     customer_export_answer(answer),
                 ],
             )
 
         self._style_report_sheet(
             qualitative,
-            widths=[16, 22, 36, 52, 38, 52, 44, 64],
-            wrap_columns=set(range(1, 9)),
+            widths=[16, 22, 36, 72, 64],
+            wrap_columns=set(range(1, 6)),
         )
         self._write_qualitative_table_metrics_sheet(workbook, artifacts)
         if artifacts.quantitative_results:
@@ -1413,42 +1407,108 @@ def _retry_improved(attempts: list[dict[str, Any]]) -> bool | None:
 
 
 def _combined_status(answer: Any) -> str:
-    answer_status = getattr(getattr(answer, "qa", None), "status", "") or "unknown"
-    evidence_status = getattr(answer, "answer_status", "") or "UNKNOWN"
-    quality = resolved_answer_quality(answer)
     publication = resolved_publication_decision(answer)
+    answer_status = {
+        "published": "PUBLISHED",
+        "review_required": "REVIEW",
+        "blocked": "BLOCKED",
+    }.get(str(publication.status or "").casefold(), str(publication.status or "UNKNOWN").upper())
     return (
         f"Answer: {answer_status}\n"
-        f"Consumer Decision: {getattr(answer, 'consumer_decision', '') or 'unknown'}\n"
-        f"QA Grade: {quality.grade}\n"
-        f"Publication: {publication.status}\n"
-        f"Publication Reason: {publication.reason}\n"
-        f"Coverage: {quality.reason}\n"
-        f"RAG Coverage: {getattr(answer, 'rag_coverage_status', '') or 'unknown'}\n"
-        f"Answerable: {getattr(answer, 'rag_answerable', None)}\n"
-        f"Evidence: {evidence_status}"
+        f"Evidence: {_combined_evidence_status(answer)}"
     )
 
 
-def _original_evidence(raw_rag_result: dict[str, Any]) -> str:
-    items = raw_rag_result.get("items", []) if isinstance(raw_rag_result, dict) else []
-    return "\n\n".join(
-        str(item.get("raw_evidence_ko") or "").strip()
-        for item in items
-        if isinstance(item, dict) and str(item.get("raw_evidence_ko") or "").strip()
+def _combined_evidence_status(answer: Any) -> str:
+    flags = {str(flag).casefold() for flag in getattr(answer, "quality_flags", []) or []}
+    coverage_issues = {
+        str(issue).casefold() for issue in getattr(answer, "coverage_issues", []) or []
+    }
+    notes = {
+        str(note).casefold()
+        for note in getattr(getattr(answer, "qa", None), "notes", []) or []
+    }
+    combined = flags | coverage_issues | notes
+    metric_audit = getattr(answer, "metric_audit", {}) or {}
+    answer_status = str(getattr(answer, "answer_status", "") or "").casefold()
+    rag_coverage = str(getattr(answer, "rag_coverage_status", "") or "").casefold()
+    publication = resolved_publication_decision(answer)
+
+    if (
+        getattr(answer, "upstream_coverage_mismatch", False)
+        or "upstream_coverage_mismatch" in combined
+        or "metric_summary_mismatch" in combined
+        or "conflicting_metric" in combined
+        or bool(metric_audit.get("metric_summary_mismatches"))
+        or int(metric_audit.get("conflict_count", 0) or 0) > 0
+    ):
+        return "MISMATCH"
+    if (
+        str(getattr(answer, "rag_metric_confidence", "") or "").casefold() == "low"
+        or "metric_low_confidence" in combined
+        or "metric_numeric_withheld" in combined
+        or bool(metric_audit.get("numeric_withheld"))
+    ):
+        return "METRIC_LOW_CONFIDENCE"
+    if (
+        getattr(answer, "rag_metric_expected", None) is True
+        or str(getattr(answer, "rag_metric_status", "") or "").casefold()
+        in {"found_table", "not_found"}
+        or "metric_not_found" in combined
+        or "malformed_metric_row" in combined
+        or "missing_metric_or_period" in combined
+    ):
+        if "metric_not_found" in combined or str(
+            getattr(answer, "rag_metric_status", "") or ""
+        ).casefold() == "not_found":
+            return "METRIC_REVIEW"
+        if publication.status != "published":
+            return "METRIC_REVIEW"
+    if (
+        answer_status in {"", "missing", "insufficient", "no_evidence"}
+        or rag_coverage in {"insufficient", "no_evidence"}
+        or bool(getattr(answer, "rag_failure_code", "") or "")
+        or bool(getattr(answer, "rag_contract_violations", []) or [])
+    ):
+        return "ERROR"
+    if (
+        answer_status == "thin_but_usable"
+        or rag_coverage == "partial"
+        or "partial_answer" in combined
+        or "rag_partial_coverage" in combined
+        or "local_partial_evidence" in combined
+        or "thin_evidence" in combined
+        or publication.status == "review_required"
+    ):
+        return "PARTIAL"
+    return "SUFFICIENT"
+
+
+def _combined_field(answer: Any) -> str:
+    return " / ".join(
+        part
+        for part in (
+            getattr(answer, "area", "") or getattr(answer, "category", ""),
+            _display_pillar(getattr(answer, "rag_pillar", "")),
+            getattr(answer, "question", ""),
+        )
+        if part
     )
 
 
-def _evidence_sources(sources: list[dict[str, Any]]) -> str:
-    return "\n".join(
-        _format_source(source)
-        for source in sources
-        if source.get("source_name")
-        or source.get("source_path")
-        or source.get("provenance_key")
-        or source.get("canonical_source_id")
-        or (source.get("document_id") and source.get("chunk_id"))
-    )
+def _display_pillar(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if "(" in text and ")" in text:
+        return text
+    return {
+        "strategy": "전략 (Strategy)",
+        "governance": "거버넌스 (Governance)",
+        "risk_management": "위험 관리 (Risk Management)",
+        "risk management": "위험 관리 (Risk Management)",
+        "metrics": "지표 (Metrics)",
+    }.get(text.casefold(), text)
 
 
 def _format_source(source: dict[str, Any]) -> str:
@@ -1495,14 +1555,3 @@ def _format_source(source: dict[str, Any]) -> str:
         if value
     )
     return f"[{metadata}] {location}" if metadata else location
-
-
-def _writing_style_description(answer: Any) -> str:
-    fields = [
-        ("Agent profile", getattr(answer, "agent_profile", "")),
-        ("Skill", getattr(answer, "skill_name", "")),
-        ("Skill version", getattr(answer, "skill_version", "")),
-        ("Selection reason", getattr(answer, "skill_selection_reason", "")),
-        ("Skill checks", "; ".join(getattr(answer, "skill_checks", []) or [])),
-    ]
-    return "\n".join(f"{label}: {value}" for label, value in fields if value)

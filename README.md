@@ -563,12 +563,18 @@ De tranh Excel formula injection, cac gia tri chuoi bat dau bang `=`, `+`, `-`
 hoac `@` (sau whitespace) duoc ghi vao workbook duoi dang text. Noi dung trong
 JSON van duoc giu nguyen.
 
-Moi source record trong JSON va chuoi `Sources`/`Evidence Source` trong hai workbook co them `canonical_source_id`, `source_tier`, `source_type`, `document_status` va `classification_reason`. `source_name` va `source_path` duoc giu nguyen.
+Moi source record trong JSON va audit co them `canonical_source_id`, `source_tier`, `source_type`, `document_status` va `classification_reason`. `source_name` va `source_path` duoc giu nguyen.
 
 Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co cac sheet:
 
 - `Qualitative`: `EBX Indicator`, `Status`, `Field`, `Original Evidence`,
-  `Evidence Source`, `Prompt Evidence`, `Writing Style Description`, `Final Answer`.
+  `Final Answer`. `Original Evidence` la raw evidence goc da duoc evidence
+  gate/normalizer chap nhan va dua vao writer cho QID do; noi dung tung
+  evidence chunk khong bi rewrite, summarize hay truncate trong pipeline.
+  `Status` gom hai dong `Answer: PUBLISHED|REVIEW|BLOCKED` va
+  `Evidence: SUFFICIENT|PARTIAL|ERROR|MISMATCH|METRIC_REVIEW|METRIC_LOW_CONFIDENCE`.
+  `Field` duoc ghi theo dang
+  `area / pillar / item`, vi du `일반 / 전략 (Strategy) / ESG 비전 및 중장기 전략`.
 - `Quantitative`: `Metric ID`, `Index`, `Metric Name`, `Value`, `Unit`,
   `Source`, `Status`, `Confidence`, `Metadata` (chi tao khi co du lieu).
 
