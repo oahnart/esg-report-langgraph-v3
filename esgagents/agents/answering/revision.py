@@ -114,17 +114,18 @@ class RevisionAgent:
             metric_audit = state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {})
             metric_status = str(metric_audit.get("metric_status") or "").casefold()
             final_answer_metric_audit = (
-                {} if metric_status == "found_table" else metric_audit
+                {**metric_audit, "accepted_facts": []}
+                if metric_status in {"found_table", "not_found"}
+                else metric_audit
             )
             revised, conflict_actions = salvage_conflicting_metric_claims(
                 revised,
                 metric_audit,
             )
             if metric_status in {"found_table", "not_found"}:
-                numeric_metric_audit = {**metric_audit, "accepted_facts": []}
                 revised, numeric_actions = salvage_metric_narrative_without_values(
                     revised,
-                    numeric_metric_audit,
+                    {"accepted_facts": []},
                 )
             else:
                 numeric_actions = []
@@ -212,10 +213,7 @@ class RevisionAgent:
         metric_audit = (
             state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {})
         )
-        if str(metric_audit.get("metric_status") or "").casefold() in {
-            "found_table",
-            "not_found",
-        }:
+        if str(metric_audit.get("metric_status") or "").casefold() in {"found_table", "not_found"}:
             return ""
         if not metric_audit.get("accepted_facts"):
             return ""
@@ -264,7 +262,8 @@ class RevisionAgent:
                     "output_language": str(
                         getattr(state.get("company"), "output_language", "") or ""
                     ),
-                }
+                },
+                redact_values=(metric_status in {"found_table", "not_found"}),
             )
 
         notes = [
@@ -381,9 +380,9 @@ class RevisionAgent:
                 "Rewrite instructions:",
                 "- Fix only the QA failures using the accepted evidence.",
                 "- Cover every required facet that is explicitly supported by evidence.",
-                "- For metric_status=found_table, rewrite Final Answer only from narrative_evidence. Never copy accepted structured metric facts into Final Answer; they are exported to the separate Qualitative Table Metrics worksheet.",
-                "- Never use scope_variant or denominator rows in Final Answer.",
-                "- For metric_status=not_found, use only supported qualitative content routed from non-metric items[], ignore narrative_evidence and normalized_answer_ko, add metric_not_found to quality_flags, and never infer a figure from prose.",
+                "- For metric_status=found_table, do not use accepted structured metric facts in Final Answer; those facts are rendered separately as the metric table. Use only narrative_evidence for context, formulas, scope changes, accounting changes, and caveats.",
+                "- Never use metric table rows, scope_variant rows, denominator rows, or accepted_facts in Final Answer.",
+                "- For metric_status=not_found, use only qualitative content routed from non-metric items[], ignore narrative_evidence and normalized_answer_ko, add metric_not_found to quality_flags, and never use, infer, or calculate a metric value from prose.",
                 "- If evidence does not support a facet, keep only the supported portion and record the missing facet in quality_flags; do not describe the gap in final_answer. Return an empty final_answer when no safe supported answer remains.",
             ]
         )

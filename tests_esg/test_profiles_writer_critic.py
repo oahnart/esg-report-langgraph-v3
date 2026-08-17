@@ -89,6 +89,67 @@ def test_skill_router_maps_specialist_skills():
     assert router.select("Q001", "board governance policy")[0] == "general_section"
 
 
+def test_writer_augments_missing_supported_follow_up_facet_from_strong_evidence():
+    planned = SimpleNamespace(
+        id="Q999",
+        pillar="Risk Management",
+        item_ko="Safety risk management",
+        description_ko="Risk identification and monitoring follow-up",
+    )
+    evidence = EvidenceItem(
+        raw_evidence_ko=(
+            "The company identifies and improves operational risk factors. "
+            "After improvement, progress is reported to the safety owner and shared through notices."
+        ),
+        source_name="safety.docx",
+        source_path="ESG/safety.docx",
+        source_tier="tier_2_operational",
+        document_status="approved",
+        semantic_label="strong",
+    )
+    answer = "The company identifies and improves operational risk factors."
+
+    augmented, flags = SkillWriterAgent._augment_missing_supported_facets(
+        answer,
+        {"evidence_items": [evidence]},
+        planned,
+        "not_expected",
+    )
+
+    assert "progress is reported to the safety owner" in augmented
+    assert flags == ["facet_supported_evidence_added"]
+
+
+def test_writer_does_not_augment_facets_from_assessment_checklist():
+    planned = SimpleNamespace(
+        id="Q999",
+        pillar="Strategy",
+        item_ko="Environmental management targets",
+        description_ko="Policy and targets",
+    )
+    checklist = EvidenceItem(
+        raw_evidence_ko=(
+            "The company establishes measurable environmental targets. "
+            "The company regularly reviews target appropriateness."
+        ),
+        source_name="human-rights-assessment.xlsx",
+        source_path="assessment.xlsx",
+        source_tier="tier_3_assessment",
+        document_status="external_assessment",
+        semantic_label="partial",
+    )
+
+    augmented, flags = SkillWriterAgent._augment_missing_supported_facets(
+        "The company operates an environmental management system.",
+        {"evidence_items": [checklist]},
+        planned,
+        "not_expected",
+    )
+
+    assert augmented == "The company operates an environmental management system."
+    assert flags == []
+
+
 def test_skill_router_uses_question_metadata_not_rag_evidence():
     router = SkillRouterAgent(_registry())
     state = {
@@ -191,6 +252,41 @@ def test_skill_policy_critic_flags_hard_failures_and_clears_final_answer():
     assert result["hard_failures"]["Q031"]
     assert result["final_answers"]["Q031"] == ""
     assert "unsupported numeric claim: 30%" not in result["quality_flags"]["Q031"]
+
+
+def test_skill_policy_critic_rejects_table_metric_values_in_found_table_final_answer():
+    planned = _planned("Q031", "GHG emissions")
+    answer = "Scope 1 emissions were 10 tCO2e in 2019 and 11 tCO2e in 2020."
+    state = {
+        "planned_questions": [planned],
+        "draft_answers": {"Q031": answer},
+        "final_answers": {"Q031": answer},
+        "evidence_gate": {"Q031": {"accepted": True, "reason": "accepted"}},
+        "normalized_evidence": {
+            "Q031": {
+                "evidence_summary": "The company disclosed Scope 1 emissions.",
+                "sources": [{"source_name": "source.docx", "source_path": "ESG/source.docx"}],
+                "metric_audit": {
+                    "metric_status": "found_table",
+                    "accepted_facts": [
+                        {"metric": "Scope 1 emissions", "period": "2019", "value": "10", "unit": "tCO2e"},
+                        {"metric": "Scope 1 emissions", "period": "2020", "value": "11", "unit": "tCO2e"},
+                    ],
+                },
+            }
+        },
+        "skill_selections": {"Q031": {"skill_key": "carbon"}},
+        "quality_flags": {},
+    }
+
+    result = SkillPolicyCriticAgent().run(state)
+
+    assert result["qa_results"]["Q031"].status == "failed"
+    assert result["final_answers"]["Q031"] == ""
+    assert any(
+        note.startswith("unsupported numeric claim:")
+        for note in result["qa_results"]["Q031"].notes
+    )
 
 
 def test_skill_policy_critic_salvages_grounded_claim_after_delivery_metadata():

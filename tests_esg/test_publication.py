@@ -272,6 +272,31 @@ def test_metric_not_found_numeric_claim_is_blocked_without_accepted_fact():
     assert "unsupported_metric_claim" in decision.issues
 
 
+def test_found_table_metric_claim_in_final_answer_is_blocked_even_when_table_has_fact():
+    answer = _answer(
+        rag_metric_status="found_table",
+        metric_audit={
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {
+                    "metric": "water reuse rate",
+                    "period": "2025",
+                    "value": "13.56",
+                    "normalized_value": "13.56",
+                    "unit": "%",
+                }
+            ],
+        },
+        final_answer="The 2025 water reuse rate was 13.56%.",
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "blocked"
+    assert decision.reason == "unsupported_metric_claim"
+    assert "unsupported_metric_claim" in decision.issues
+
+
 def test_metric_not_found_qualitative_answer_requires_review():
     answer = _answer(
         rag_metric_status="not_found",
@@ -328,10 +353,6 @@ def test_q021_board_only_answer_requires_review_at_publication_boundary():
     ("qid", "answer"),
     [
         (
-            "Q074",
-            "The Internal Transaction Committee reviews related-party transactions and the RCM.",
-        ),
-        (
             "Q083",
             "In 2024, information-security risks were assessed across 17 inspection targets.",
         ),
@@ -342,3 +363,14 @@ def test_wrong_topic_proxy_is_blocked_at_publication_boundary(qid, answer):
 
     assert decision.status == "blocked"
     assert decision.reason in {"thematic_mismatch", "unsupported_metric_claim"}
+
+
+def test_q074_committee_operation_risk_terms_are_not_wrong_topic_proxy():
+    decision = evaluate_publication(
+        _answer(
+            qid="Q074",
+            final_answer="The Internal Transaction Committee reviews related-party transactions and the RCM.",
+        )
+    )
+
+    assert "thematic_mismatch:committee_risk_proxy" not in decision.issues

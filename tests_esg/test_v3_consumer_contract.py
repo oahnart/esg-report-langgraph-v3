@@ -191,7 +191,7 @@ def test_writer_uses_non_conflicting_structured_facts_without_llm():
     assert flags == ["structured_metric_fallback"]
 
 
-def test_found_table_writer_replaces_stub_with_narrative_evidence_fallback():
+def test_found_table_writer_replaces_stub_with_narrative_fallback():
     class Structured:
         def invoke(self, prompt):
             return SkillDraft(final_answer="1.", quality_flags=[])
@@ -232,11 +232,459 @@ def test_found_table_writer_replaces_stub_with_narrative_evidence_fallback():
 
     answer, flags = SkillWriterAgent({}, LLM())._draft_answer(context, rag)
 
+    assert answer == "The company manages water risks through site-level monitoring and governance."
+    assert "non_substantive_llm_output" in flags
+    assert "evidence_extract_fallback" in flags
+
+
+def test_found_table_writer_keeps_supported_narrative_without_table_metric():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="The company manages water risks through site-level monitoring.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    context = {
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use accepted facts and evidence.",
+        "metric_audit": {
+            "accepted_facts": [
+                {
+                    "metric": "Water reuse",
+                    "period": "2025",
+                    "value": "25",
+                    "normalized_value": "25",
+                    "unit": "%",
+                }
+            ]
+        },
+        "question": "Water use status",
+        "description": "Describe water use and reuse rate.",
+        "evidence_items": [
+            _item(
+                "The company manages water risks through site-level monitoring.",
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "English",
+    }
+    rag = RagQuestionResult(
+        question_id="Q039",
+        answer_status="medium_confidence",
+        metric_status="found_table",
+    )
+
+    answer, flags = SkillWriterAgent({}, LLM())._draft_answer(context, rag)
+
     assert answer.startswith("The company manages water risks")
     assert "Water reuse" not in answer
     assert "25 %" not in answer
-    assert "non_substantive_llm_output" in flags
-    assert "evidence_extract_fallback" in flags
+    assert "structured_metric_fallback" not in flags
+
+
+def test_found_table_writer_removes_numeric_claims_and_uses_narrative_only():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "In 2025, waste generation totaled 1,250 tons. "
+                    "The company manages water risks through site-level monitoring."
+                ),
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = _planned("Q039")
+    context = {
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use accepted facts and evidence.",
+        "accepted": True,
+        "metric_audit": {
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {
+                    "metric": "Water reuse",
+                    "period": "2025",
+                    "value": "25",
+                    "normalized_value": "25",
+                    "unit": "%",
+                }
+            ],
+        },
+        "question": "Water use status",
+        "description": "Describe water use and reuse rate.",
+        "evidence_items": [
+            _item(
+                "The company manages water risks through site-level monitoring.",
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "English",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="medium_confidence",
+        metric_status="found_table",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "1,250" not in answer
+    assert "Water reuse" not in answer
+    assert "25 %" not in answer
+    assert answer == "The company manages water risks through site-level monitoring."
+    assert "claim_salvage_applied" in result["quality_flags"][planned.id]
+
+
+def test_writer_preserves_specific_follow_up_channel_even_when_monitoring_facet_present():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "회사는 위험요인을 평가하고 개선대책을 이행하며 "
+                    "분기별 안전보건회의를 운영합니다."
+                ),
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q006",
+        pillar="Risk Management",
+        item_ko="안전보건 리스크 관리",
+        description_ko="위험성 평가와 개선 후 후속관리 현황",
+        example_ko="",
+    )
+    context = {
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "위험성평가 개선활동 완료 후 안전보건관리책임자에게 경과를 "
+                    "보고하고, 산업안전보건 게시판 공지 또는 개인 메일링을 통해 "
+                    "안전보건활동을 임직원들에게 공유하고 있습니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "안전보건관리책임자에게 경과를 보고" in answer
+    assert "개인 메일링" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_preserves_due_diligence_risk_claim_from_draft_with_attribution():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "검토 중인 제안 자료상 회사는 협력회사에 ESG 전반의 "
+                    "관리 기준을 적용하고 단계별 로드맵을 추진할 계획입니다."
+                ),
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q066",
+        pillar="Risk Management",
+        item_ko="공급망 ESG 리스크 관리",
+        description_ko="공급망 내 지속가능성 리스크 식별 및 관리",
+        example_ko="",
+    )
+    context = {
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "공급망 내에서 발생할 수 있는 다양한 지속가능성 리스크를 "
+                    "사전에 식별·관리하기 위해 실사 의무를 공급망 리스크 관리 "
+                    "체계에 통합하고자 합니다."
+                ),
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+                document_status="draft",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="medium_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted_draft_evidence"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert answer.startswith("검토 중인 제안 자료상")
+    assert "실사 의무를 공급망 리스크 관리 체계에 통합" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_preserves_distinct_financial_risk_claim():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="회사는 법규 리스크와 운영 리스크를 관리하고 있습니다.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q082",
+        pillar="Risk Management",
+        item_ko="ESG 운영 관련 리스크 관리",
+        description_ko="주요 리스크 유형별 관리 정책 및 운영 현황",
+        example_ko="",
+    )
+    context = {
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "법규 리스크 관리 대웅제약은 국내외 법규 및 규정을 준수하고 "
+                    "중대재해 TFT를 구성하여 위험요소 도출 및 완화 조치를 이행하고 있습니다 "
+                    "재무 리스크 관리 정책 및 운영 현황 대웅제약은 2025년 공시담당부서를 "
+                    "기존 재무팀에서 IR팀으로 변경하여 공시 업무의 전문성과 대응 체계를 강화하였습니다."
+                ),
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+                document_status="draft",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="medium_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted_draft_evidence"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "공시담당부서를 기존 재무팀에서 IR팀으로 변경" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_recovers_stakeholder_risk_scenario_claim_from_draft():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="검토 중인 제안 자료상 회사는 이해관계자 의견을 리스크 평가에 반영합니다.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q094",
+        pillar="Risk Management",
+        item_ko="이해관계자 관련 리스크 관리",
+        description_ko="이해관계자 의견을 반영한 리스크 관리",
+        example_ko="",
+    )
+    context = {
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "이중 중대성 평가 방법론 STEP 1 이슈 후보군 도출 STEP 2 환경 사회 영향 중대성 평가 "
+                    "STEP 3 재무 중대성 평가 STEP 4 중대 이슈 선정 "
+                    "내부 이해관계자 FGI는 주요 ESG 이슈가 매출·비용·자산 등 기업 재무에 "
+                    "미치는 잠재적 영향을 논의하고, 리스크·기회 발생 시 재무 영향 시나리오를 검토합니다."
+                ),
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+                document_status="draft",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="medium_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted_draft_evidence"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert answer.startswith("검토 중인 제안 자료상")
+    assert "이해관계자 FGI" in answer
+    assert "리스크·기회 발생 시 재무 영향 시나리오를 검토" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_found_table_writer_preserves_additional_activity_without_metric_values():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="회사는 의료 인프라가 부족한 도서 지역에서 건강검진을 실시하였습니다.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q071",
+        pillar="Metrics",
+        item_ko="사회공헌 활동 및 투자 현황",
+        description_ko="사회공헌 활동과 투자 현황",
+        example_ko="",
+    )
+    context = {
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use narrative evidence only.",
+        "accepted": True,
+        "metric_audit": {
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {
+                    "metric": "사회공헌 투자 비율",
+                    "period": "2025",
+                    "value": "0.43",
+                    "normalized_value": "0.43",
+                    "unit": "%",
+                }
+            ],
+        },
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "이번 검진은 의료 취약 지역을 지원하기 위한 사회공헌 활동입니다. "
+                    "이번 지원은 지난 3월 발생한 대형 산불로 피해를 입은 "
+                    "이재민들의 건강한 일상 복귀를 돕기 위한 사회공헌활동의 "
+                    "일환으로 진행됐습니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_status="found_table",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "산불로 피해를 입은 이재민" in answer
+    assert "이번 지원은 발생한" not in answer
+    assert "0.43" not in answer
+    assert "3월" not in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
 
 
 def test_found_table_writer_cleans_editorial_boilerplate_from_narrative_fallback():

@@ -6,7 +6,6 @@ from typing import Any
 from esgagents.quality_flags import canonicalize_quality_flags
 from esgagents.schemas import QAResult
 from esgagents.customer_text import strip_customer_meta_limitations
-
 from .text_quality import (
     clean_final_answer_for_customer,
     clean_customer_evidence_text,
@@ -43,6 +42,10 @@ ROLE_ONLY_PAREN_RE = re.compile(
 ADJACENT_DUPLICATE_ROLE_RE = re.compile(
     rf"\b({ROLE_PATTERN})(?:\s*,\s*\1)+\b"
 )
+OBSOLETE_SOURCE_ATTRIBUTION_ACTIONS = {
+    "restored_required_assessment_attribution",
+    "restored_required_draft_attribution",
+}
 
 class OutputHygieneAgent:
     def __init__(self, config: dict[str, Any] | None = None):
@@ -66,6 +69,12 @@ class OutputHygieneAgent:
             normalized = normalize_markdown(original) if original else ""
             flags = quality_flags.setdefault(qid, [])
             actions = sanitizer_actions.setdefault(qid, [])
+            if actions:
+                actions[:] = [
+                    action
+                    for action in actions
+                    if action not in OBSOLETE_SOURCE_ATTRIBUTION_ACTIONS
+                ]
             planned = planned_by_id.get(qid)
             if original and normalized != original:
                 flags.append("markdown_normalized")
@@ -88,6 +97,14 @@ class OutputHygieneAgent:
             if limitation_actions:
                 flags.append("customer_meta_limitation_removed")
                 actions.extend(limitation_actions)
+
+            normalized, attribution_actions = preserve_required_source_attribution(
+                normalized,
+                flags,
+                state,
+            )
+            if attribution_actions:
+                actions.extend(attribution_actions)
 
             question_text = " ".join(
                 str(value or "")
@@ -127,7 +144,12 @@ class OutputHygieneAgent:
                     else QAResult(status="failed", notes=list(dict.fromkeys(notes)))
                 )
             gate_reason = str(state.get("evidence_gate", {}).get(qid, {}).get("reason", "") or "")
-            if not redacted and gate_reason.startswith("accepted"):
+            metric_audit = state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {}) or {}
+            metric_status = str(metric_audit.get("metric_status") or "").casefold()
+            has_metric_table = bool(metric_audit.get("accepted_facts"))
+            if not redacted and gate_reason.startswith("accepted") and not (
+                metric_status == "found_table" and has_metric_table
+            ):
                 flags.append("writer_empty")
             canonical_flags, flag_notes = canonicalize_quality_flags(flags)
             qa = qa_results.get(qid)
@@ -188,6 +210,22 @@ def sanitize_person_names(text: str) -> tuple[str, list[str]]:
 def redact_person_names(text: str) -> str:
     value, _ = sanitize_person_names(text)
     return value
+
+
+def preserve_required_source_attribution(
+    text: str,
+    flags: list[str],
+    state: dict[str, Any],
+) -> tuple[str, list[str]]:
+    """Keep limited-source attribution in metadata, not customer prose."""
+
+    value = str(text or "").strip()
+    normalized_flags = {str(flag or "").strip().casefold() for flag in flags}
+    if "draft_based_answer" in normalized_flags:
+        return value, ["draft_attribution_kept_in_metadata"]
+    if "assessment_based_answer" in normalized_flags:
+        return value, ["assessment_attribution_kept_in_metadata"]
+    return value, []
 
 
 def strip_leading_planned_context(text: str, planned: Any | None) -> tuple[str, list[str]]:

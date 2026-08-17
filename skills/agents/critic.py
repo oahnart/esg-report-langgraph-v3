@@ -294,7 +294,11 @@ def _structured_fact_numbers(normalized: dict[str, Any]) -> set[str]:
                 continue
             canonical = _canonical_number(value)
             supported.add(f"{canonical}%" if unit in {"%", "percent"} and not canonical.endswith("%") else canonical)
-    for fact in (normalized.get("metric_audit") or {}).get("accepted_facts", []):
+    metric_audit = normalized.get("metric_audit") or {}
+    metric_status = str(metric_audit.get("metric_status") or "").casefold()
+    if metric_status in {"found_table", "not_found"}:
+        return supported
+    for fact in metric_audit.get("accepted_facts", []):
         value = str(fact.get("value") or fact.get("normalized_value") or "").strip()
         unit = str(fact.get("unit") or "").strip().casefold()
         if value:
@@ -304,6 +308,9 @@ def _structured_fact_numbers(normalized: dict[str, Any]) -> set[str]:
                 if unit in {"%", "percent"} and not canonical.endswith("%")
                 else canonical
             )
+        period = str(fact.get("period") or "").strip()
+        if period:
+            supported.update(canonical for canonical, _ in _number_claims(period))
     return supported
 
 

@@ -17,6 +17,7 @@ from esgagents.agents.evidence.source_policy import (
     attribute_draft_statement,
 )
 from esgagents.schemas import SkillDraft
+from esgagents.agents.answering.question_contracts import build_question_contract
 from esgagents.agents.answering.text_quality import (
     clean_customer_evidence_text,
     has_substantive_answer,
@@ -30,6 +31,18 @@ from esgagents.agents.evidence.metric_facts import (
 )
 
 logger = logging.getLogger(__name__)
+
+FACET_AUGMENT_TERMS = {
+    "target": ("목표", "달성", "감축", "target", "goal"),
+    "accountable_body": ("위원회", "이사회", "tft", "tf", "팀", "부서", "담당", "책임자", "committee", "board", "department", "owner"),
+    "role": ("역할", "책임", "담당", "승인", "검토", "보고", "role", "responsib", "approve", "review"),
+    "oversight_cadence": ("정기", "월", "분기", "반기", "연 1회", "매년", "보고", "monitor", "quarter", "annual", "cadence"),
+    "risk_identification": ("리스크", "위험", "식별", "평가", "risk", "identify", "assess"),
+    "control_or_response": ("통제", "대응", "완화", "조치", "개선", "실사", "due diligence", "control", "response", "mitigat", "action"),
+    "monitoring_follow_up": ("모니터링", "점검", "추적", "후속", "검토", "보고", "공지", "공유", "메일", "monitor", "follow-up", "track", "review", "report"),
+    "operating_organization": ("환경경영팀", "환경 담당", "ehs팀", "ehs 조직", "ehs간사협의체", "간사협의체", "협의체", "실무 조직", "실무 담당", "운영 조직", "environment team", "ehs team", "operating organization"),
+    "site_management_system": ("사업장", "공장", "현장 관리", "환경관리체계", "환경 관리 체계", "site management", "facility management", "plant management"),
+}
 
 
 class SkillWriterAgent:
@@ -87,18 +100,32 @@ class SkillWriterAgent:
         for planned, context, rag, gate, metric_audit in candidates:
             answer, draft_flags = results[planned.id]
             metric_status = str(rag.metric_status or "").casefold()
-            if metric_status in {"found_table", "not_found"}:
-                numeric_metric_audit = {**metric_audit, "accepted_facts": []}
+            if metric_status == "found_table":
                 answer, unsupported_actions = salvage_metric_narrative_without_values(
                     answer,
-                    numeric_metric_audit,
+                    {"accepted_facts": []},
                 )
                 if unsupported_actions:
                     draft_flags.append("claim_salvage_applied")
                 if not answer:
-                    answer, fallback_flags = self._metric_narrative_fallback(context)
+                    answer, fallback_flags = self._metric_narrative_fallback(
+                        context,
+                        redact_values=True,
+                    )
                     draft_flags.extend(fallback_flags)
             if metric_status == "not_found":
+                answer, unsupported_actions = salvage_metric_narrative_without_values(
+                    answer,
+                    {"accepted_facts": []},
+                )
+                if unsupported_actions:
+                    draft_flags.append("claim_salvage_applied")
+                if not answer:
+                    answer, fallback_flags = self._metric_narrative_fallback(
+                        context,
+                        redact_values=True,
+                    )
+                    draft_flags.extend(fallback_flags)
                 draft_flags.append("metric_not_found")
                 reason = str((context.get("metric_absence") or {}).get("reason") or "")
                 if reason:
@@ -111,6 +138,18 @@ class SkillWriterAgent:
                         "human_review_required",
                     ]
                 )
+            augmented, augment_flags = self._augment_missing_supported_facets(
+                answer,
+                context,
+                planned,
+                metric_status,
+                allow_draft=gate.get("reason") == "accepted_draft_evidence"
+                or "검토 중인 제안 자료" in answer
+                or "draft" in answer.casefold(),
+            )
+            if augment_flags:
+                answer = augmented
+                draft_flags.extend(augment_flags)
             if gate.get("reason") == "accepted_thin_evidence":
                 draft_flags.append("thin_evidence")
             if gate.get("reason") == "accepted_draft_evidence":
@@ -207,8 +246,15 @@ class SkillWriterAgent:
                         answer,
                         context.get("metric_audit", {}),
                     ):
-                        answer = ""
-                        fallback_flags.append("unsupported_metric_llm_output")
+                        metric_answer = self._metric_fallback(context)
+                        if metric_answer and not non_substantive_reason(answer):
+                            answer = compact(f"{answer} {metric_answer}")
+                            fallback_flags.append("structured_metric_fallback")
+                        else:
+                            answer = metric_answer
+                            fallback_flags.append("unsupported_metric_llm_output")
+                            if metric_answer:
+                                fallback_flags.append("structured_metric_fallback")
                     if not answer:
                         answer = metric_fallback or fallback or evidence_fallback
                         if metric_fallback and answer == metric_fallback:
@@ -234,8 +280,15 @@ class SkillWriterAgent:
                 answer,
                 context.get("metric_audit", {}),
             ):
-                flags.append("unsupported_metric_llm_output")
-                answer = ""
+                metric_answer = self._metric_fallback(context)
+                if metric_answer and not non_substantive_reason(answer):
+                    answer = compact(f"{answer} {metric_answer}")
+                    flags.append("structured_metric_fallback")
+                else:
+                    flags.append("unsupported_metric_llm_output")
+                    answer = metric_answer
+                    if metric_answer:
+                        flags.append("structured_metric_fallback")
             answer = answer or metric_fallback or fallback or evidence_fallback
             if metric_fallback and answer == metric_fallback:
                 flags.append("structured_metric_fallback")
@@ -310,13 +363,18 @@ class SkillWriterAgent:
     def _metric_narrative_fallback(
         cls,
         context: dict[str, Any],
+        *,
+        redact_values: bool = True,
     ) -> tuple[str, list[str]]:
         evidence_fallback = cls._evidence_fallback(context)
         if evidence_fallback:
-            sanitized, actions = salvage_metric_narrative_without_values(
-                evidence_fallback,
-                {"accepted_facts": []},
-            )
+            if redact_values:
+                sanitized, actions = salvage_metric_narrative_without_values(
+                    evidence_fallback,
+                    {"accepted_facts": []},
+                )
+            else:
+                sanitized, actions = evidence_fallback, []
             sanitized = safe_narrative_text(compact(sanitized))
             if sanitized and not non_substantive_reason(sanitized):
                 return sanitized, sorted(
@@ -340,10 +398,13 @@ class SkillWriterAgent:
             if len(raw_parts) >= 2:
                 break
         if raw_parts:
-            sanitized, actions = salvage_metric_narrative_without_values(
-                " ".join(raw_parts),
-                {"accepted_facts": []},
-            )
+            if redact_values:
+                sanitized, actions = salvage_metric_narrative_without_values(
+                    " ".join(raw_parts),
+                    {"accepted_facts": []},
+                )
+            else:
+                sanitized, actions = " ".join(raw_parts), []
             sanitized = compact(sanitized)
             if len(sanitized) > 650:
                 sanitized = sanitized[:650].rsplit(" ", 1)[0].rstrip(" ,;:-")
@@ -363,6 +424,338 @@ class SkillWriterAgent:
                 )
 
         return "", ["metric_narrative_unusable", "human_review_required"]
+
+    @classmethod
+    def _augment_missing_supported_facets(
+        cls,
+        answer: str,
+        context: dict[str, Any],
+        planned: Any,
+        metric_status: str,
+        *,
+        allow_draft: bool = False,
+    ) -> tuple[str, list[str]]:
+        contract = build_question_contract(planned)
+        if contract.pillar == "metrics" or metric_status in {"found_table", "not_found"}:
+            if metric_status == "found_table":
+                activity_claim = cls._best_additional_activity_claim(
+                    context,
+                    answer,
+                    [],
+                    planned,
+                    redact_values=True,
+                )
+                if activity_claim:
+                    return compact(" ".join([answer, activity_claim])), [
+                        "facet_supported_evidence_added"
+                    ]
+            return answer, []
+        missing = [
+            facet
+            for facet in (*contract.required_facets, *contract.expected_facets)
+            if not cls._text_has_facet(answer, facet)
+        ]
+
+        additions: list[str] = []
+        for facet in missing:
+            claim = cls._best_facet_claim(context, facet, answer, additions)
+            if claim:
+                additions.append(claim)
+        follow_up_claim = cls._best_specific_follow_up_claim(context, answer, additions)
+        if follow_up_claim:
+            additions.append(follow_up_claim)
+        risk_claim = cls._best_specific_risk_claim(
+            context,
+            answer,
+            additions,
+            planned,
+            allow_draft=allow_draft,
+        )
+        if risk_claim:
+            additions.append(risk_claim)
+        if not additions:
+            return answer, []
+        return compact(" ".join(part for part in [answer, *additions] if part)), [
+            "facet_supported_evidence_added"
+        ]
+
+    @classmethod
+    def _best_facet_claim(
+        cls,
+        context: dict[str, Any],
+        facet: str,
+        answer: str,
+        additions: list[str],
+    ) -> str:
+        terms = FACET_AUGMENT_TERMS.get(facet, ())
+        if not terms:
+            return ""
+        seen_text = compact(" ".join([answer, *additions])).casefold()
+        candidates: list[tuple[int, int, str]] = []
+        sequence = 0
+        for item in context.get("evidence_items", []):
+            tier = str(getattr(item, "source_tier", "") or "").casefold()
+            if tier in {"tier_3_assessment", "tier_4_draft"}:
+                continue
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            for part in re.split(cls._evidence_sentence_split_pattern(), raw):
+                claim = safe_narrative_text(compact(part).strip(" •·")[:700])
+                if len(claim) < 20 or "|" in claim:
+                    continue
+                lower = claim.casefold()
+                if lower in seen_text or any(lower in item.casefold() for item in additions):
+                    continue
+                matches = sum(1 for term in terms if term.casefold() in lower)
+                if matches:
+                    candidates.append((matches, sequence, claim))
+                sequence += 1
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda row: (-row[0], row[1]))
+        claim = candidates[0][2]
+        if not re.search(r"[.!?。！？]$", claim):
+            claim += "."
+        return claim
+
+    @classmethod
+    def _best_specific_risk_claim(
+        cls,
+        context: dict[str, Any],
+        answer: str,
+        additions: list[str],
+        planned: Any,
+        *,
+        allow_draft: bool,
+    ) -> str:
+        question_text = " ".join(
+            str(value or "")
+            for value in (
+                context.get("question"),
+                context.get("description"),
+                getattr(planned, "item_ko", ""),
+                getattr(planned, "description_ko", ""),
+            )
+        ).casefold()
+        if not any(term in question_text for term in ("리스크", "위험", "risk")):
+            return ""
+        seen_text = compact(" ".join([answer, *additions])).casefold()
+        risk_patterns = (
+            ("실사", "리스크 관리 체계", "식별", "관리"),
+            ("due diligence", "risk management", "identify", "manage"),
+            ("재무 리스크", "공시", "담당부서"),
+            ("financial risk", "disclosure", "department"),
+            ("이해관계자", "리스크", "시나리오", "검토"),
+            ("stakeholder", "risk", "scenario", "review"),
+        )
+        candidates: list[tuple[int, int, str]] = []
+        sequence = 0
+        for item in context.get("evidence_items", []):
+            tier = str(getattr(item, "source_tier", "") or "").casefold()
+            if tier == "tier_3_assessment" or (tier == "tier_4_draft" and not allow_draft):
+                continue
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            for part in re.split(cls._evidence_sentence_split_pattern(), raw):
+                claim = safe_narrative_text(compact(part).strip(" •·")[:700])
+                if len(claim) < 20 or "|" in claim:
+                    continue
+                lower = claim.casefold()
+                if lower in seen_text or any(lower in item.casefold() for item in additions):
+                    continue
+                for pattern in risk_patterns:
+                    matches = sum(1 for term in pattern if term.casefold() in lower)
+                    if matches >= min(3, len(pattern)):
+                        candidates.append((matches, sequence, claim))
+                        break
+                sequence += 1
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda row: (-row[0], row[1]))
+        claim = candidates[0][2]
+        if not re.search(r"[.!?。！？]$", claim):
+            claim += "."
+        return claim
+
+    @classmethod
+    def _best_additional_activity_claim(
+        cls,
+        context: dict[str, Any],
+        answer: str,
+        additions: list[str],
+        planned: Any,
+        *,
+        redact_values: bool,
+    ) -> str:
+        question_text = " ".join(
+            str(value or "")
+            for value in (
+                context.get("question"),
+                context.get("description"),
+                getattr(planned, "item_ko", ""),
+                getattr(planned, "description_ko", ""),
+            )
+        ).casefold()
+        if not any(
+            term in question_text
+            for term in ("활동", "사회공헌", "community", "contribution", "activity")
+        ):
+            return ""
+        seen_text = compact(" ".join([answer, *additions])).casefold()
+        activity_terms = (
+            "구호",
+            "기부",
+            "지원",
+            "산불",
+            "이재민",
+            "봉사",
+            "donation",
+            "relief",
+            "support",
+            "volunteer",
+            "disaster",
+        )
+        candidates: list[tuple[int, int, str]] = []
+        sequence = 0
+        for item in context.get("evidence_items", []):
+            tier = str(getattr(item, "source_tier", "") or "").casefold()
+            if tier in {"tier_3_assessment", "tier_4_draft"}:
+                continue
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            for part in re.split(cls._evidence_sentence_split_pattern(), raw):
+                claim = safe_narrative_text(compact(part).strip(" •·")[:700])
+                if len(claim) < 20 or "|" in claim:
+                    continue
+                lower = claim.casefold()
+                if lower in seen_text or any(lower in item.casefold() for item in additions):
+                    continue
+                matches = sum(1 for term in activity_terms if term.casefold() in lower)
+                if matches < 2:
+                    continue
+                if redact_values:
+                    claim = cls._redact_nonessential_numbers(claim)
+                    if not claim:
+                        continue
+                candidates.append((matches, sequence, claim))
+                sequence += 1
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda row: (-row[0], row[1]))
+        claim = candidates[0][2]
+        if not re.search(r"[.!?。！？]$", claim):
+            claim += "."
+        return claim
+
+    @classmethod
+    def _best_specific_follow_up_claim(
+        cls,
+        context: dict[str, Any],
+        answer: str,
+        additions: list[str],
+    ) -> str:
+        seen_text = compact(" ".join([answer, *additions])).casefold()
+        if any(
+            term in seen_text
+            for term in ("게시판", "메일", "메일링", "bulletin", "notice board", "email")
+        ):
+            return ""
+        action_terms = (
+            "개선활동 완료 후",
+            "개선 완료 후",
+            "조치 완료 후",
+            "corrective action",
+            "after improvement",
+            "after completion",
+            "following completion",
+        )
+        channel_terms = (
+            "보고",
+            "공지",
+            "공유",
+            "메일",
+            "메일링",
+            "게시판",
+            "report",
+            "notify",
+            "notice",
+            "share",
+            "email",
+            "bulletin",
+        )
+        candidates: list[tuple[int, int, str]] = []
+        sequence = 0
+        for item in context.get("evidence_items", []):
+            tier = str(getattr(item, "source_tier", "") or "").casefold()
+            if tier in {"tier_3_assessment", "tier_4_draft"}:
+                continue
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            for part in re.split(cls._evidence_sentence_split_pattern(), raw):
+                claim = safe_narrative_text(compact(part).strip(" •·")[:700])
+                if len(claim) < 20 or "|" in claim:
+                    continue
+                lower = claim.casefold()
+                if lower in seen_text or any(lower in item.casefold() for item in additions):
+                    continue
+                has_action = any(term.casefold() in lower for term in action_terms)
+                has_channel = any(term.casefold() in lower for term in channel_terms)
+                if has_action and has_channel:
+                    score = sum(1 for term in channel_terms if term.casefold() in lower)
+                    candidates.append((score, sequence, claim))
+                sequence += 1
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda row: (-row[0], row[1]))
+        claim = candidates[0][2]
+        if not re.search(r"[.!?。！？]$", claim):
+            claim += "."
+        return claim
+
+    @staticmethod
+    def _evidence_sentence_split_pattern() -> str:
+        return (
+            r"(?<=[.!?。！？])\s+|\n+|(?:^|\s)[•·]\s+|"
+            r"\s*[•·]\s+|"
+            r"(?=\s*(?:공급망\s*내에서|재무\s*리스크\s*관리|"
+            r"내부\s*이해관계자\s*FGI|외부\s*이해관계자\s*FGI|"
+            r"supply\s+chain\s+risk|financial\s+risk|stakeholder\s+FGI))"
+        )
+
+    @staticmethod
+    def _redact_nonessential_numbers(text: str) -> str:
+        value = re.sub(r"지난\s*\d+\s*월\s*발생한\s*", "", text)
+        value = re.sub(r"지난\s*\d+\s*월\s*", "", value)
+        value = re.sub(r"(?<!지난\s)\d+\s*월\s*", "해당 월 ", value)
+        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개\s*시군", "여러 지역", value)
+        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:세트|개|명|인)", "복수의 지원 대상", value)
+        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:months?|sets?|people|persons?)", "multiple recipients", value, flags=re.IGNORECASE)
+        value = re.sub(r"(?<![A-Za-z가-힣])\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z가-힣])", "", value)
+        value = re.sub(r"\s{2,}", " ", value).strip(" ,;:-")
+        if re.search(r"\d", value):
+            return ""
+        return safe_narrative_text(value)
+
+    @staticmethod
+    def _text_has_facet(text: str, facet: str) -> bool:
+        lower = compact(text).casefold()
+        return any(term.casefold() in lower for term in FACET_AUGMENT_TERMS.get(facet, ()))
 
     @staticmethod
     def _fallback_search_terms(text: str) -> set[str]:

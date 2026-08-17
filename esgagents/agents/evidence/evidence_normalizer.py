@@ -18,7 +18,13 @@ from .metric_routing import (
     valid_primary_metric_items,
 )
 from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
-from .source_policy import TIER_RANK, classify_source, evidence_fingerprint, relevance_band
+from .source_policy import (
+    TIER_RANK,
+    classify_source,
+    evidence_fingerprint,
+    is_unanswered_assessment_criteria,
+    relevance_band,
+)
 
 
 STATUS_RANK = {
@@ -89,6 +95,15 @@ class EvidenceNormalizerAgent:
                 key=self._rank_key,
                 reverse=True,
             )
+            withheld_assessment_criteria = [
+                item for item in ranked if is_unanswered_assessment_criteria(item)
+            ]
+            if withheld_assessment_criteria:
+                ranked = [
+                    item
+                    for item in ranked
+                    if not is_unanswered_assessment_criteria(item)
+                ]
             if rag.metric_status == "found_table":
                 ranked = sorted(ranked, key=self._metric_order_key)
             normalized_answer = (
@@ -232,6 +247,7 @@ class EvidenceNormalizerAgent:
                 "metric_audit": metric_audit,
                 "metric_evidence": all_metric_evidence,
                 "narrative_evidence": list(rag.narrative_evidence),
+                "withheld_assessment_criteria": withheld_assessment_criteria,
             }
         return {"normalized_evidence": normalized}
 

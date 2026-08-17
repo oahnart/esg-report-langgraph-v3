@@ -178,8 +178,9 @@ def _redact_metric_quantities(statement: str) -> str:
     )
     value = re.sub(r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*%", "해당 비율", value)
     value = re.sub(
-        r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:톤|tCO2e?q?|GJ|kWh|MWh|L|mL|㎥|억원|백만원|원|KRW|USD)",
-        "해당 수준",
+        r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*"
+        r"(?:톤|tCO2e?q?|GJ|kWh|MWh|L|mL|㎥|억원|백만원|원|KRW|USD|tons?|tonnes?|cases?|people|employees|hours?)",
+        "metric value",
         value,
         flags=re.IGNORECASE,
     )

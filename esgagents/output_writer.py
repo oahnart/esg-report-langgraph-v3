@@ -83,6 +83,7 @@ COMBINED_QUALITATIVE_COLUMNS = [
     "Status",
     "Field",
     "Original Evidence",
+    "Evidence Source",
     "Final Answer",
 ]
 
@@ -449,14 +450,15 @@ class OutputWriter:
                     _combined_status(answer),
                     _combined_field(answer),
                     answer.original_evidence,
+                    _evidence_sources(answer.sources),
                     customer_export_answer(answer),
                 ],
             )
 
         self._style_report_sheet(
             qualitative,
-            widths=[16, 22, 36, 72, 64],
-            wrap_columns=set(range(1, 6)),
+            widths=[16, 22, 36, 72, 48, 64],
+            wrap_columns=set(range(1, 7)),
         )
         self._write_qualitative_table_metrics_sheet(workbook, artifacts)
         if artifacts.quantitative_results:
@@ -1510,6 +1512,18 @@ def _display_pillar(value: Any) -> str:
         "risk management": "위험 관리 (Risk Management)",
         "metrics": "지표 (Metrics)",
     }.get(text.casefold(), text)
+
+
+def _evidence_sources(sources: list[dict[str, Any]]) -> str:
+    return "\n".join(
+        _format_source(source)
+        for source in sources
+        if source.get("source_name")
+        or source.get("source_path")
+        or source.get("provenance_key")
+        or source.get("canonical_source_id")
+        or (source.get("document_id") and source.get("chunk_id"))
+    )
 
 
 def _format_source(source: dict[str, Any]) -> str:

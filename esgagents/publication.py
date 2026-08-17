@@ -29,6 +29,7 @@ REVIEW_FLAGS = {
     "legal_review_required",
     "local_partial_evidence",
     "metric_low_confidence",
+    "metric_inline_candidate_unstructured",
     "metric_not_found",
     "metric_numeric_withheld",
     "metric_summary_mismatch",
@@ -118,7 +119,7 @@ def evaluate_publication(
     unresolved_conflicts = conflicting_metric_claims(final_answer, metric_audit)
     final_answer_metric_audit = (
         {**metric_audit, "accepted_facts": []}
-        if metric_status == "found_table"
+        if metric_status in {"found_table", "not_found"}
         else metric_audit
     )
     unsupported_metric_claims = (
@@ -276,32 +277,6 @@ def _qid_contract_issues(answer: Any) -> tuple[set[str], set[str]]:
             review.add("missing_facet:operating_organization")
         if not any(term in text for term in site_terms):
             review.add("missing_facet:site_management_system")
-    if qid == "Q074":
-        target_terms = (
-            "독립성",
-            "이해상충",
-            "사외이사",
-            "전문성",
-            "전문 역량",
-            "전문가",
-            "independence",
-            "conflict of interest",
-            "expertise",
-            "professionalism",
-        )
-        proxy_terms = (
-            "내부거래",
-            "특수관계자",
-            "내부회계",
-            "rcm",
-            "related-party transaction",
-            "internal transaction",
-            "internal accounting",
-        )
-        if any(term in text for term in proxy_terms) and not any(
-            term in text for term in target_terms
-        ):
-            blocking.add("thematic_mismatch:committee_risk_proxy")
     if qid == "Q083":
         privacy_or_security = any(
             term in text

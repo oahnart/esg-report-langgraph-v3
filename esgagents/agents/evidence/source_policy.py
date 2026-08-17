@@ -40,6 +40,52 @@ DRAFT_ATTRIBUTION_TERMS = (
     "proposed",
     "under review",
 )
+ASSESSMENT_KEYWORDS = (
+    "평가完",
+    "평가완",
+    "인권영향평가",
+    "영향평가",
+    "평가결과",
+    "서면평가",
+    "ecovadis",
+    "audit",
+    "assessment",
+    "on-site",
+    "onsite",
+    "고객사 esg",
+    "현대차",
+)
+ASSESSMENT_RESULT_TERMS = (
+    "결과",
+    "점수",
+    "등급",
+    "충족",
+    "미충족",
+    "적합",
+    "부적합",
+    "확인되었",
+    "확인됨",
+    "완료",
+    "처리 완료",
+    "개선 완료",
+    "answered",
+    "answer",
+    "response",
+    "score",
+    "rating",
+    "result",
+    "met",
+    "not met",
+)
+ASSESSMENT_CRITERIA_TERMS = (
+    "체크리스트",
+    "평가항목",
+    "평가 항목",
+    "평가기준",
+    "평가 기준",
+    "항목",
+    "기준",
+)
 
 TIER_RANK = {
     "tier_1_governing": 5,
@@ -94,6 +140,15 @@ def classify_source(item: Any) -> SourceClassification:
             document_status="draft",
             classification_reason=f"rag_metadata_refined;inferred_keyword:{draft_match}",
         )
+    assessment_match = next((keyword for keyword in ASSESSMENT_KEYWORDS if keyword in haystack), None)
+    if assessment_match and explicit_status in {"", "unknown"}:
+        return SourceClassification(
+            canonical_source_id=canonical_id,
+            source_tier="tier_3_assessment",
+            source_type=explicit_type if explicit_type not in {"", "unknown"} else "external_assessment",
+            document_status="external_assessment",
+            classification_reason=f"rag_metadata_refined;inferred_keyword:{assessment_match}",
+        )
     if explicit_tier in SOURCE_TIERS:
         return SourceClassification(
             canonical_source_id=canonical_id,
@@ -114,7 +169,7 @@ def classify_source(item: Any) -> SourceClassification:
             "tier_3_assessment",
             "external_assessment",
             "assessed",
-            ("평가결과", "서면평가", "ecovadis", "audit", "assessment", "on-site", "onsite", "고객사 esg", "현대차"),
+            ASSESSMENT_KEYWORDS,
         ),
         (
             "tier_1_governing",
@@ -229,3 +284,33 @@ def attribute_assessment_statement(text: str, output_language: str = "") -> str:
     if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):
         return f"외부 평가 자료상 {value}"
     return f"The external assessment records: {value}"
+
+
+def is_unanswered_assessment_criteria(item: Any) -> bool:
+    """True when an assessment row is only a questionnaire criterion, not a result."""
+
+    classification = classify_source(item)
+    if classification.source_tier != "tier_3_assessment":
+        return False
+    raw = unicodedata.normalize("NFKC", _field(item, "raw_evidence_ko")).strip()
+    if not raw:
+        return False
+    lower = raw.casefold()
+    if any(term in lower for term in ASSESSMENT_RESULT_TERMS):
+        return False
+    source_hint = unicodedata.normalize(
+        "NFKC",
+        f"{_field(item, 'source_name')} {_field(item, 'source_path')}",
+    ).casefold()
+    looks_like_assessment_form = any(
+        term.casefold() in source_hint or term.casefold() in lower
+        for term in (*ASSESSMENT_KEYWORDS, *ASSESSMENT_CRITERIA_TERMS)
+    )
+    criterion_sentence_count = len(
+        re.findall(
+            r"(?:한다|있다|수립한다|점검한다|평가한다|제공한다|확인한다|마련한다)\s*[.。]",
+            raw,
+        )
+    )
+    has_blank_cells = bool(re.search(r"\|\s*\|\s*\|", raw))
+    return looks_like_assessment_form and (criterion_sentence_count >= 2 or has_blank_cells)

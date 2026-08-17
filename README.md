@@ -568,7 +568,7 @@ Moi source record trong JSON va audit co them `canonical_source_id`, `source_tie
 Workbook `[langgraph][company_name]report-YYYY.MM.DD_N.xlsx` co cac sheet:
 
 - `Qualitative`: `EBX Indicator`, `Status`, `Field`, `Original Evidence`,
-  `Final Answer`. `Original Evidence` la raw evidence goc da duoc evidence
+  `Evidence Source`, `Final Answer`. `Original Evidence` la raw evidence goc da duoc evidence
   gate/normalizer chap nhan va dua vao writer cho QID do; noi dung tung
   evidence chunk khong bi rewrite, summarize hay truncate trong pipeline.
   `Status` gom hai dong `Answer: PUBLISHED|REVIEW|BLOCKED` va

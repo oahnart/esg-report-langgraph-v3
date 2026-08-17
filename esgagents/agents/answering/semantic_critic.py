@@ -107,14 +107,18 @@ FACET_TERMS = {
     "role": ("역할", "책임", "담당", "승인", "검토", "보고", "role", "responsib", "approve", "review"),
     "oversight_cadence": ("정기", "월", "분기", "반기", "연 1회", "매년", "보고", "monitor", "quarter", "annual", "cadence"),
     "risk_identification": ("리스크", "위험", "식별", "평가", "risk", "identify", "assess"),
-    "control_or_response": ("통제", "대응", "완화", "조치", "개선", "control", "response", "mitigat", "action"),
-    "monitoring_follow_up": ("모니터링", "점검", "추적", "후속", "검토", "monitor", "follow-up", "track", "review"),
+    "control_or_response": ("통제", "대응", "완화", "조치", "개선", "실사", "due diligence", "control", "response", "mitigat", "action"),
+    "monitoring_follow_up": ("모니터링", "점검", "추적", "후속", "검토", "보고", "공지", "공유", "메일", "monitor", "follow-up", "track", "review", "report"),
     "operating_organization": (
         "환경경영팀",
         "환경 담당",
         "ehs팀",
         "ehs 조직",
+        "ehs간사협의체",
+        "간사협의체",
+        "협의체",
         "실무 조직",
+        "실무 담당",
         "운영 조직",
         "environment team",
         "ehs team",
@@ -153,7 +157,7 @@ METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
     "occupational_accident_count": (r"(?:산업|업무).{0,8}재해.{0,8}(?:건|명|count)", r"occupational accident"),
     "ltifr": (r"ltifr", r"재해율"),
     "safety_training": (r"안전(?:보건)?.{0,8}교육", r"safety training"),
-    "human_rights_grievances": (r"인권.{0,8}고충", r"human rights?.{0,8}grievance"),
+    "human_rights_grievances": (r"인권.{0,8}고충", r"human[-\s]+rights?.{0,8}grievance"),
     "product_recall_count": (r"제품.{0,8}리콜", r"product recall"),
     "product_safety_incident_count": (r"제품.{0,8}안전.{0,8}사고", r"product safety incident"),
     "quality_complaint_count": (r"품질.{0,8}(?:불만|민원)", r"quality complaint"),
@@ -161,7 +165,7 @@ METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
     "data_leak_incident_count": (r"데이터.{0,8}유출", r"data (?:leak|breach)"),
     "security_violation_count": (r"정보보안.{0,8}(?:법규|규정).{0,8}위반", r"security.{0,8}(?:violation|incident)"),
     "water_reuse_rate": (r"용수.{0,5}(?:재사용|재이용)률", r"water reuse rate"),
-    "waste_recycling_rate": (r"폐기물.{0,5}재활용률", r"waste recycling rate"),
+    "waste_recycling_rate": (r"폐기물.{0,20}재활용률", r"waste recycling rate"),
     "environmental_violation_count": (r"환경.{0,8}(?:법규|법령).{0,8}위반", r"environmental.{0,8}violation"),
     "environmental_accident_count": (r"환경.{0,8}(?:사고|incident)", r"environmental accident"),
     "ethics_violation_reports": (r"윤리.{0,8}(?:위반|신고)", r"ethics?.{0,8}(?:violation|report)"),
@@ -179,7 +183,10 @@ METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
     "air_pollutant_emissions": (r"대기오염물질.{0,8}(?:배출|원단위)", r"air pollutant emission"),
     "water_pollutant_emissions": (r"수질오염물질.{0,8}(?:배출|원단위)", r"water[-\s]+pollutant.{0,12}(?:emission|intensity)"),
     "eco_friendly_product_count": (r"친환경.{0,8}제품", r"eco-friendly product"),
-    "environmental_certification_count": (r"환경.{0,8}인증", r"environmental certification"),
+    "environmental_certification_count": (
+        r"환경.{0,8}인증.{0,8}(?:수|건|현황)",
+        r"environmental certification(?: count|s?\b)",
+    ),
     "product_recovery_recycling": (r"제품.{0,8}(?:회수|재활용)", r"product.{0,8}(?:recovery|recycling)"),
     "environmental_regulatory_response": (r"환경.{0,8}(?:규제|법규).{0,8}(?:대응|준수)", r"environmental regulat.{0,8}(?:response|compliance)"),
     "employee_training_hours": (r"임직원.{0,8}교육.{0,8}시간", r"employee training hours"),
@@ -188,6 +195,7 @@ METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
     "workforce_gender_mix": (r"성별.{0,8}(?:구성|인원|비율)", r"gender.{0,8}(?:mix|composition|ratio)"),
     "workforce_age_mix": (r"연령별.{0,8}(?:구성|인원|비율)", r"age.{0,8}(?:mix|composition|ratio)"),
     "female_manager_ratio": (r"여성.{0,8}관리자.{0,8}비율", r"female manager ratio"),
+    "managed_supplier_count": (r"(?:관리하고 있는\s*)?협력사.{0,12}(?:총\s*)?수", r"managed supplier count"),
     "supplier_esg_assessment_count": (r"협력사.{0,8}esg.{0,8}평가", r"supplier esg assessment"),
     "supplier_improvement_support": (r"협력사.{0,8}(?:개선|지원)", r"supplier.{0,8}improvement support"),
     "community_investment": (r"사회공헌.{0,8}(?:투자|금액)", r"community investment"),
@@ -260,13 +268,9 @@ class SemanticCompletenessCriticAgent:
             metric_support_actions: list[str] = []
             metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
             if metric_status in {"found_table", "not_found"}:
-                numeric_metric_audit = {
-                    **normalized.get("metric_audit", {}),
-                    "accepted_facts": [],
-                }
                 answer, metric_support_actions = salvage_metric_narrative_without_values(
                     answer,
-                    numeric_metric_audit,
+                    {"accepted_facts": []},
                 )
                 if not answer and evidence_items:
                     from skills.agents.writer import SkillWriterAgent
@@ -277,7 +281,8 @@ class SemanticCompletenessCriticAgent:
                             "description": str(getattr(item, "description_ko", "") or ""),
                             "evidence_items": evidence_items,
                             "output_language": output_language,
-                        }
+                        },
+                        redact_values=True,
                     )
                     if answer:
                         metric_support_actions.append("restored_qualitative_narrative")
@@ -289,26 +294,28 @@ class SemanticCompletenessCriticAgent:
                 and "metric_audit" in normalized
                 and bool(getattr(rag, "is_v3", False))
             ):
+                metric_audit = normalized.get("metric_audit", {})
                 final_answer_metric_audit = (
-                    {}
-                    if str(getattr(rag, "metric_status", "") or "").casefold()
-                    == "found_table"
-                    else normalized.get("metric_audit", {})
+                    {**metric_audit, "accepted_facts": []}
+                    if metric_status in {"found_table", "not_found"}
+                    else metric_audit
                 )
                 answer, conflict_actions = salvage_conflicting_metric_claims(
                     answer,
-                    normalized.get("metric_audit", {}),
+                    metric_audit,
                 )
+                numeric_actions = []
                 answer, support_actions = salvage_supported_claims(
                     answer,
                     evidence_items,
                     final_answer_metric_audit,
                 )
             else:
-                conflict_actions, support_actions = [], []
+                conflict_actions, numeric_actions, support_actions = [], [], []
             salvage_actions = [
                 *metric_support_actions,
                 *conflict_actions,
+                *numeric_actions,
                 *support_actions,
             ]
             if metric_status in {"found_table", "not_found"} and not answer and evidence_items:
@@ -320,7 +327,8 @@ class SemanticCompletenessCriticAgent:
                         "description": str(getattr(item, "description_ko", "") or ""),
                         "evidence_items": evidence_items,
                         "output_language": output_language,
-                    }
+                    },
+                    redact_values=(metric_status in {"found_table", "not_found"}),
                 )
                 if answer:
                     salvage_actions.append("restored_qualitative_narrative")
@@ -482,7 +490,11 @@ class SemanticCompletenessCriticAgent:
                 {},
             )
             metric_status = str(metric_audit.get("metric_status") or "").casefold()
-            final_answer_metric_audit = {} if metric_status == "found_table" else metric_audit
+            final_answer_metric_audit = (
+                {**metric_audit, "accepted_facts": []}
+                if metric_status in {"found_table", "not_found"}
+                else metric_audit
+            )
             supports = [
                 self._with_metric_fact_support(support, final_answer_metric_audit).model_copy(
                     update={
@@ -524,6 +536,12 @@ class SemanticCompletenessCriticAgent:
             ).casefold()
             if item_metric_status == "not_found":
                 flags.extend(["metric_not_found", "partial_answer"])
+                if self._has_unstructured_metric_candidate(
+                    state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                    contract,
+                ):
+                    flags.extend(["metric_inline_candidate_unstructured", "human_review_required"])
+                    review.notes.append("unstructured metric candidate present but metric_evidence is not_found")
             draft_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_4_draft" and support.support_status in {"grounded", "partial"}]
             assessment_claims = [support for support in claim_support.get(qid, []) if support.support_tier == "tier_3_assessment" and support.support_status in {"grounded", "partial"}]
             if draft_claims or self._draft_only_sources(state, qid):
@@ -559,6 +577,11 @@ class SemanticCompletenessCriticAgent:
             missing_for_checks.update(
                 f"metric_{dimension}" for dimension in missing_metric_dimensions
             )
+            if item_metric_status == "not_found" and contract.pillar == "metrics":
+                missing_for_checks.update(("metric_result", "reporting_period"))
+                missing_for_checks.update(
+                    f"metric_{dimension}" for dimension in contract.metric_dimensions
+                )
             checks = [check for check in skill_checks.get(qid, []) if not check.startswith(("question_alignment:", "source_usage:", "facet_"))]
             checks.extend(
                 [
@@ -583,7 +606,18 @@ class SemanticCompletenessCriticAgent:
                 or review.source_usage == "unclear"
             ):
                 flags.append("partial_answer")
-                flags.extend(f"missing_facet:{facet}" for facet in review.missing_facets)
+                flag_missing_facets = [
+                    facet
+                    for facet in review.missing_facets
+                    if not (
+                        item_metric_status == "not_found"
+                        and (
+                            facet in {"metric_result", "reporting_period"}
+                            or facet.startswith("metric_")
+                        )
+                    )
+                ]
+                flags.extend(f"missing_facet:{facet}" for facet in flag_missing_facets)
                 qa_results[qid] = QAResult(
                     status="passed",
                     notes=review.notes or ["semantic review partial"],
@@ -676,21 +710,22 @@ class SemanticCompletenessCriticAgent:
                 covered.append("qualitative_narrative")
             else:
                 missing.append("qualitative_narrative")
+            missing.extend(("metric_result", "reporting_period"))
             advisory_missing_dimensions = []
         elif contract.pillar == "metrics" and metric_status == "found_table":
             if self._has_non_gap_statement(answer):
                 covered.append("qualitative_narrative")
-            else:
-                missing.append("qualitative_narrative")
-            table_facts = [
-                *metric_audit.get("accepted_facts", []),
-                *metric_audit.get("withheld_facts", []),
-            ]
-            if table_facts:
+            if metric_audit.get("accepted_facts"):
                 covered.extend(("metric_result", "reporting_period"))
             else:
                 missing.extend(("metric_result", "reporting_period"))
             advisory_missing_dimensions = []
+            for dimension in contract.metric_dimensions:
+                facet = f"metric_{dimension}"
+                if self._metric_audit_has_dimension(metric_audit, dimension):
+                    covered.append(facet)
+                else:
+                    advisory_missing_dimensions.append(facet)
         elif contract.pillar == "metrics":
             if self._has_metric_result(answer):
                 covered.append("metric_result")
@@ -730,7 +765,13 @@ class SemanticCompletenessCriticAgent:
             if contract.metric_dimensions
             else self._has_metric_result(answer)
         )
-        if contract.pillar == "metrics" and missing and supported_metric_answer:
+        if (
+            contract.pillar == "metrics"
+            and metric_status == "not_found"
+            and "qualitative_narrative" in covered
+        ):
+            alignment = "partial"
+        elif contract.pillar == "metrics" and missing and supported_metric_answer:
             alignment = "partial"
         elif contract.pillar == "metrics" and missing:
             alignment = "insufficient"
@@ -978,21 +1019,6 @@ class SemanticCompletenessCriticAgent:
             ):
                 return True
         qid = str(getattr(planned, "id", "") or "")
-        if qid == "Q074":
-            target_terms = FACET_TERMS["committee_independence"] + FACET_TERMS["committee_expertise"]
-            proxy_terms = (
-                "내부거래",
-                "특수관계자",
-                "내부회계",
-                "rcm",
-                "related-party transaction",
-                "internal transaction",
-                "internal accounting",
-            )
-            if any(term in answer_text for term in proxy_terms) and not any(
-                term in answer_text for term in target_terms
-            ):
-                return True
         if qid == "Q083":
             esg_progress = any(
                 re.search(pattern, answer_text, flags=re.IGNORECASE)
@@ -1214,6 +1240,49 @@ class SemanticCompletenessCriticAgent:
         return False
 
     @classmethod
+    def _has_unstructured_metric_candidate(
+        cls,
+        evidence_items: list[Any],
+        contract: QuestionContract,
+    ) -> bool:
+        if contract.pillar != "metrics" or not contract.metric_dimensions:
+            return False
+        patterns = [
+            pattern
+            for dimension in contract.metric_dimensions
+            for pattern in METRIC_DIMENSION_PATTERNS.get(dimension, ())
+        ]
+        if not patterns:
+            return False
+        for item in evidence_items:
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            text = unicodedata.normalize(
+                "NFKC",
+                str(getattr(item, "raw_evidence_ko", "") or ""),
+            ).casefold()
+            if not re.search(r"\d", text):
+                continue
+            if any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns):
+                return True
+        return False
+
+    @classmethod
+    def _metric_audit_has_dimension(
+        cls,
+        metric_audit: dict[str, Any],
+        dimension: str,
+    ) -> bool:
+        patterns = METRIC_DIMENSION_PATTERNS.get(dimension, ())
+        if not patterns:
+            return False
+        for fact in metric_audit.get("accepted_facts", []):
+            metric = unicodedata.normalize("NFKC", str(fact.get("metric") or "")).casefold()
+            if any(re.search(pattern, metric, flags=re.IGNORECASE) for pattern in patterns):
+                return True
+        return False
+
+    @classmethod
     def _claim_facets(
         cls,
         claim: str,
@@ -1299,7 +1368,22 @@ class SemanticCompletenessCriticAgent:
             deterministic.notes + llm_review.notes,
             missing_set,
         )
-        if SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(notes):
+        metric_not_found_partial = (
+            contract.pillar == "metrics"
+            and "metric_not_found" in {str(note or "").strip().casefold() for note in notes}
+            and "qualitative_narrative" in covered_set
+            and deterministic.alignment == "partial"
+            and not SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(deterministic.notes)
+            and source_usage != "overstated"
+        )
+        if metric_not_found_partial:
+            notes = [
+                note
+                for note in notes
+                if not SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch([note])
+            ]
+            alignment = "partial"
+        elif SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(notes):
             alignment = "misaligned"
         if deterministic.alignment == "insufficient" or source_usage == "overstated":
             alignment = "insufficient"

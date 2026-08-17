@@ -23,6 +23,7 @@ CANONICAL_FLAGS = {
     "markdown_normalized",
     "metric_low_confidence",
     "metric_not_found",
+    "metric_inline_candidate_unstructured",
     "metric_numeric_withheld",
     "metric_summary_mismatch",
     "metric_absence_no_candidate",

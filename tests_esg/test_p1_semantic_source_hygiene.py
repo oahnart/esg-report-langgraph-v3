@@ -236,10 +236,11 @@ def _with_metric_not_found(state, qid, reason="no_candidate"):
     return state
 
 
-def test_q011_metric_not_found_withholds_number_and_keeps_qualitative_answer():
+def test_q011_metric_not_found_withholds_inline_number_and_keeps_qualitative_answer():
     planned = _planned(qid="Q011", item="Human-rights grievances", description="Count and resolution")
     answer = (
-        "In 2025, human-rights grievances totaled 63 cases. "
+        "In 2025, human-rights grievances were received and all were resolved. "
+        "Human-rights grievances totaled 63 cases. "
         "No quantitative figure was found in the supplied evidence."
     )
     state = _with_metric_not_found(
@@ -253,9 +254,10 @@ def test_q011_metric_not_found_withholds_number_and_keeps_qualitative_answer():
     assert result["final_answers"][planned.id]
     assert "63" not in result["final_answers"][planned.id]
     assert "metric_not_found" in result["quality_flags"][planned.id]
+    assert "metric_inline_candidate_unstructured" in result["quality_flags"][planned.id]
 
 
-def test_q023_metric_not_found_keeps_process_claim_after_numeric_salvage():
+def test_q023_metric_not_found_withholds_inline_metric_but_keeps_process_claim():
     planned = _planned(
         qid="Q023",
         item="Environmental performance and incidents",
@@ -276,10 +278,144 @@ def test_q023_metric_not_found_keeps_process_claim_after_numeric_salvage():
     assert result["qa_results"][planned.id].status == "passed"
     assert "ISO 14001" in result["final_answers"][planned.id]
     assert "9.34" not in result["final_answers"][planned.id]
+    assert "metric_inline_candidate_unstructured" in result["quality_flags"][planned.id]
     assert not any(
         flag.startswith("missing_facet:metric_")
         for flag in result["quality_flags"][planned.id]
     )
+
+
+def test_found_table_metric_question_uses_table_for_qa_without_injecting_final_number():
+    planned = _planned(
+        qid="Q039",
+        item="Water use and discharge status",
+        description="Disclose water consumption and water reuse rate",
+    )
+    state = _semantic_state(
+        planned,
+        "The company manages water risks through site-level monitoring.",
+        evidence_text="The company manages water risks through site-level monitoring.",
+    )
+    state["rag_results"] = {
+        planned.id: RagQuestionResult(
+            question_id=planned.id,
+            answer_status="high_confidence",
+            coverage_status="complete",
+            answerable=True,
+            metric_expected=True,
+            metric_status="found_table",
+        )
+    }
+    state["normalized_evidence"][planned.id]["metric_audit"] = {
+        "metric_status": "found_table",
+        "accepted_facts": [
+            {
+                "metric": "water reuse rate",
+                "period": "2025",
+                "value": "13.56",
+                "normalized_value": "13.56",
+                "unit": "%",
+            }
+        ],
+    }
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "13.56" not in result["final_answers"][planned.id]
+    assert "facet_metric_water_reuse_rate: covered" in result["skill_checks"][planned.id]
+
+
+def test_found_table_semantic_critic_does_not_use_accepted_facts_for_final_answer():
+    planned = _planned(
+        qid="Q039",
+        item="Water use and discharge status",
+        description="Disclose water consumption and water reuse rate",
+    )
+    state = _semantic_state(
+        planned,
+        "The 2025 water reuse rate was 13.56%.",
+        evidence_text="The company manages water risks through site-level monitoring.",
+    )
+    state["rag_results"] = {
+        planned.id: RagQuestionResult(
+            question_id=planned.id,
+            answer_status="high_confidence",
+            coverage_status="complete",
+            answerable=True,
+            metric_expected=True,
+            metric_status="found_table",
+        )
+    }
+    state["normalized_evidence"][planned.id]["metric_audit"] = {
+        "metric_status": "found_table",
+        "accepted_facts": [
+            {
+                "metric": "water reuse rate",
+                "period": "2025",
+                "value": "13.56",
+                "normalized_value": "13.56",
+                "unit": "%",
+            }
+        ],
+    }
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert "13.56" not in result["final_answers"][planned.id]
+    assert result["final_answers"][planned.id] == (
+        "The company manages water risks through site-level monitoring."
+    )
+    assert "claim_salvage_applied" in result["quality_flags"][planned.id]
+
+
+def test_q067_managed_supplier_count_is_valid_partial_metric_dimension():
+    planned = _planned(
+        qid="Q067",
+        item="협력사 ESG 평가 현황",
+        description="협력사 ESG 평가 및 지원 현황을 설명합니다",
+    )
+    answer = "조직이 관리하고 있는 협력사 총 수는 2022년 1,371개 사, 2025년 68개 사로 보고되었습니다."
+    state = _semantic_state(
+        planned,
+        answer,
+        evidence_text=answer,
+    )
+    state["rag_results"] = {
+        planned.id: RagQuestionResult(
+            question_id=planned.id,
+            answer_status="high_confidence",
+            coverage_status="complete",
+            answerable=True,
+            metric_expected=True,
+            metric_status="found_table",
+        )
+    }
+    state["normalized_evidence"][planned.id]["metric_audit"] = {
+        "metric_status": "found_table",
+        "accepted_facts": [
+            {
+                "metric": "조직이 관리하고 있는 협력사 총 수",
+                "period": "2022",
+                "value": "1371",
+                "normalized_value": "1371",
+                "unit": "개 사",
+            },
+            {
+                "metric": "조직이 관리하고 있는 협력사 총 수",
+                "period": "2025",
+                "value": "68",
+                "normalized_value": "68",
+                "unit": "개 사",
+            },
+        ],
+    }
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["final_answers"][planned.id]
+    assert result["qa_results"][planned.id].status != "failed"
+    assert "facet_metric_managed_supplier_count: covered" in result["skill_checks"][planned.id]
 
 
 def test_q051_metric_not_found_keeps_qualitative_packaging_roadmap():
@@ -301,6 +437,8 @@ def test_q051_metric_not_found_keeps_qualitative_packaging_roadmap():
 
     assert result["qa_results"][planned.id].status == "passed"
     assert "eco-friendly packaging roadmap" in result["final_answers"][planned.id]
+    assert "partial_answer" in result["quality_flags"][planned.id]
+    assert "metric_not_found" in result["quality_flags"][planned.id]
     assert not any(
         flag.startswith("missing_facet:metric_")
         for flag in result["quality_flags"][planned.id]
@@ -366,12 +504,12 @@ def test_q021_board_only_answer_is_partial_without_operating_and_site_facets():
     assert "facet_site_management_system: missing" in result["skill_checks"][planned.id]
 
 
-def test_q074_internal_transaction_proxy_is_wrong_topic():
+def test_q074_internal_transaction_controls_are_valid_committee_operation_risk():
     planned = _planned(
         qid="Q074",
         pillar="Risk Management",
-        item="Committee independence and expertise risks",
-        description="Explain independence and professionalism risks",
+        item="Committee operation risk management",
+        description="Explain committee operation related risk management",
     )
     answer = (
         "The Internal Transaction Committee reviews related-party transactions and the "
@@ -382,8 +520,8 @@ def test_q074_internal_transaction_proxy_is_wrong_topic():
         _semantic_state(planned, answer, evidence_text=answer)
     )
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
 
 
 def test_q004_achieved_status_is_not_downgraded_to_target_set():
@@ -555,6 +693,84 @@ def test_llm_misalignment_clears_answer_for_revision(qid):
     assert "semantic misalignment" in result["qa_results"][qid].notes
 
 
+def test_metric_not_found_keeps_on_topic_qualitative_narrative_despite_llm_metric_mismatch():
+    planned = _planned(
+        qid="Q023",
+        pillar="Metrics",
+        item="Environmental performance and incidents",
+        description="Disclose environmental performance metrics and incident status.",
+    )
+    answer = (
+        "The company operates an ISO 14001 environmental management system and manages "
+        "environmental performance through reuse and pollutant-intensity improvement targets."
+    )
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+    llm = _StructuredLLM(
+        SemanticReview(
+            alignment="misaligned",
+            notes=["semantic thematic mismatch", "environmental incident metrics are missing"],
+        )
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, llm).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "ISO 14001" in result["final_answers"][planned.id]
+    assert "metric_not_found" in result["quality_flags"][planned.id]
+
+
+def test_q023_metric_not_found_korean_iso_environmental_system_is_not_certification_mismatch():
+    planned = _planned(
+        qid="Q023",
+        pillar="Metrics",
+        item="환경 성과 지표 및 환경 사고 현황",
+        description="환경 성과 지표 및 환경 사고 현황",
+    )
+    answer = (
+        "대웅그룹은 ISO 14001 환경경영시스템 인증을 통해 표준 절차에 따라 "
+        "환경보호를 추진하고 있습니다. 환경 성과 관리를 위해 재사용률 향상과 "
+        "오염물질 원단위 감소 목표를 관리하고 있습니다."
+    )
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert "ISO 14001" in result["final_answers"][planned.id]
+    assert "semantic thematic mismatch" not in result["qa_results"][planned.id].notes
+
+
+def test_metric_not_found_still_rejects_deterministic_wrong_topic_answer():
+    planned = _planned(
+        qid="Q083",
+        pillar="Metrics",
+        item="ESG operating performance and target progress",
+        description="Disclose ESG target progress.",
+    )
+    answer = "In 2024, the company inspected information security risks and implemented corrective actions."
+    state = _with_metric_not_found(
+        _semantic_state(planned, answer, evidence_text=answer),
+        planned.id,
+    )
+    llm = _StructuredLLM(
+        SemanticReview(
+            alignment="misaligned",
+            notes=["semantic thematic mismatch"],
+        )
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, llm).run(state)
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+
+
 def test_q091_style_related_party_metrics_do_not_satisfy_shareholder_question():
     planned = _planned(
         qid="Q091",
@@ -704,6 +920,22 @@ def test_unknown_rag_status_allows_strong_draft_filename_to_refine_metadata():
     assert result.document_status == "draft"
 
 
+def test_unknown_rag_status_allows_assessment_filename_to_refine_metadata():
+    item = EvidenceItem(
+        source_name="(1차 평가完",
+        source_path="",
+        source_tier="tier_2_operational",
+        source_type="unknown",
+        document_status="unknown",
+    )
+
+    result = classify_source(item)
+
+    assert result.source_tier == "tier_3_assessment"
+    assert result.source_type == "external_assessment"
+    assert result.document_status == "external_assessment"
+
+
 def test_path_variants_deduplicate_to_one_source_but_keep_distinct_excerpts():
     items = [
         EvidenceItem(raw_evidence_ko="Excerpt A", source_name="Policy.pdf", source_path="ESG/Policy.pdf", semantic_label="useful"),
@@ -791,6 +1023,30 @@ def test_assessment_only_source_cannot_prove_operating_policy_without_attributio
         "The company operates an approved safety policy and has established safety targets.",
         tier="tier_3_assessment",
         evidence_text="The assessment checklist marks safety policy items as partially met.",
+    )
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+    assert "source usage overstated" in result["qa_results"][planned.id].notes
+
+
+def test_korean_assessment_checklist_cannot_prove_environmental_system_operation():
+    planned = _planned(
+        qid="Q020",
+        pillar="Strategy",
+        item="환경경영 정책 및 목표",
+        description="환경경영체제와 목표를 설명합니다",
+    )
+    state = _semantic_state(
+        planned,
+        "회사는 환경경영체제를 수립 및 유지하며 측정 가능한 목표를 설정하고 정기적인 점검을 수행하고 있습니다.",
+        tier="tier_3_assessment",
+        evidence_text=(
+            "9. 환경권 보장. 회사는 환경경영체제를 수립 및 유지한다. "
+            "측정 가능한 목표를 수립하고 정기적으로 점검한다."
+        ),
     )
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
@@ -932,6 +1188,22 @@ def test_text_quality_removes_leading_process_dump_before_pharmacovigilance_sent
     assert "removed_leading_process_dump" in actions
     assert "removed_inline_heading_fragment" in actions
     assert "repaired_awkward_korean_phrase" in actions
+
+
+def test_text_quality_deduplicates_repeated_sentence():
+    sentence = (
+        "대웅제약의 약물감시는 대웅제약에서 생산하는 모든 제품에 대하여 "
+        "전 생애주기의 이상사례와 안전성 문제를 과학적으로 탐지·평가하는 활동입니다."
+    )
+    answer = (
+        "대웅제약은 품질경영 조직 간 협업을 통해 제품 품질을 관리하고 있습니다. "
+        f"{sentence} {sentence}"
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.count(sentence) == 1
+    assert "deduplicated_repeated_sentence" in actions
 
 
 def test_text_quality_removes_known_heading_when_it_starts_answer():
@@ -1288,6 +1560,44 @@ def test_output_hygiene_removes_source_attribution_from_customer_answer():
     assert phrase not in result["final_answers"][qid]
     assert result["final_answers"][qid] == "위원회가 운영되며, 연 4회 개최됩니다."
     assert "removed_source_attribution" in result["sanitizer_actions"][qid]
+
+
+def test_output_hygiene_keeps_draft_attribution_in_metadata_not_customer_answer():
+    qid = "Q075"
+    planned = _planned(qid=qid, pillar="Metrics", item="위원회 활동", description="활동 현황")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "company": SimpleNamespace(output_language="Korean"),
+            "planned_questions": [planned],
+            "final_answers": {qid: "검토 중인 제안 자료상 위원회가 운영됩니다."},
+            "quality_flags": {qid: ["draft_based_answer"]},
+            "sanitizer_actions": {qid: ["restored_required_draft_attribution"]},
+        }
+    )
+
+    assert not result["final_answers"][qid].startswith("검토 중인 제안 자료상")
+    assert result["final_answers"][qid] == "위원회가 운영됩니다."
+    assert "draft_attribution_kept_in_metadata" in result["sanitizer_actions"][qid]
+    assert "restored_required_draft_attribution" not in result["sanitizer_actions"][qid]
+
+
+def test_output_hygiene_keeps_assessment_attribution_in_metadata_not_customer_answer():
+    qid = "Q075"
+    planned = _planned(qid=qid, pillar="Metrics", item="위원회 활동", description="활동 현황")
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "company": SimpleNamespace(output_language="Korean"),
+            "planned_questions": [planned],
+            "final_answers": {qid: "외부 평가 자료상 위원회가 운영됩니다."},
+            "quality_flags": {qid: ["assessment_based_answer"]},
+            "sanitizer_actions": {qid: ["restored_required_assessment_attribution"]},
+        }
+    )
+
+    assert not result["final_answers"][qid].startswith("외부 평가 자료상")
+    assert result["final_answers"][qid] == "위원회가 운영됩니다."
+    assert "assessment_attribution_kept_in_metadata" in result["sanitizer_actions"][qid]
+    assert "restored_required_assessment_attribution" not in result["sanitizer_actions"][qid]
 
 
 @pytest.mark.parametrize(

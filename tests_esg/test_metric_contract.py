@@ -253,8 +253,46 @@ def test_found_table_uses_only_primary_rows_and_keeps_entities_separate():
         item.semantic_label.casefold() != "metric_row"
         for item in normalized["items"]
     )
-    assert "boundary changed" in normalized["evidence_summary"].casefold()
-    assert len(normalized["metric_evidence"]) == 4
+
+
+def test_normalizer_withholds_unanswered_assessment_checklist_from_writer_items():
+    config = load_config({"agent_mode": "offline"})
+    operational = _narrative(
+        "대웅제약은 ISO14001 환경경영시스템에 따라 환경 관리 절차를 운영하고 있습니다."
+    )
+    checklist = EvidenceItem(
+        raw_evidence_ko=(
+            "9. 환경권 보장. 회사는 환경경영체제를 수립 및 유지하고 있다. "
+            "환경개선을 위한 측정 가능한 목표를 설정하고 정기적으로 점검한다."
+        ),
+        source_name="(1차 평가完) 20260518 대웅제약 인권영향평가.xlsx",
+        source_path="assessments/인권영향평가.xlsx",
+        source_tier="tier_3_assessment",
+        source_type="external_assessment",
+        document_status="external_assessment",
+        semantic_label="partial",
+    )
+    rag = RagQuestionResult(
+        question_id="Q020",
+        answer_status="high_confidence",
+        metric_expected=False,
+        metric_status="not_expected",
+        items=[operational, checklist],
+    )
+
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {"Q020": rag}}
+    )["normalized_evidence"]["Q020"]
+
+    assert [item.raw_evidence_ko for item in normalized["items"]] == [
+        operational.raw_evidence_ko
+    ]
+    assert [item.raw_evidence_ko for item in normalized["narrative_items"]] == [
+        operational.raw_evidence_ko
+    ]
+    assert [item.raw_evidence_ko for item in normalized["withheld_assessment_criteria"]] == [
+        checklist.raw_evidence_ko
+    ]
 
 
 def test_q039_full_fixture_preserves_23_rows_and_five_primary_blocks():

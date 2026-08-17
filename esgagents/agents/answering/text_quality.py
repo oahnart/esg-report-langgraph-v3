@@ -479,8 +479,35 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
     if trimmed != value:
         value = trimmed
         actions.append("removed_trailing_heading_fragment")
+    deduplicated, removed_duplicate = deduplicate_repeated_sentences(value)
+    if removed_duplicate:
+        value = deduplicated
+        actions.append("deduplicated_repeated_sentence")
     value = re.sub(r"\s{2,}", " ", value).strip(" ,")
     return value, list(dict.fromkeys(actions))
+
+
+def deduplicate_repeated_sentences(text: str) -> tuple[str, bool]:
+    parts = [
+        part.strip()
+        for part in re.findall(r"[^.!?\u3002\uff01\uff1f]+[.!?\u3002\uff01\uff1f]?", str(text or ""))
+        if part.strip()
+    ]
+    if len(parts) < 2:
+        return text, False
+    seen: set[str] = set()
+    retained: list[str] = []
+    removed = False
+    for part in parts:
+        key = re.sub(r"\s+", " ", part.rstrip(".!?\u3002\uff01\uff1f").strip()).casefold()
+        if len(key) >= 30 and key in seen:
+            removed = True
+            continue
+        seen.add(key)
+        retained.append(part)
+    if not removed:
+        return text, False
+    return " ".join(retained).strip(), True
 
 
 def clean_customer_evidence_text(text: str) -> tuple[str, list[str]]:

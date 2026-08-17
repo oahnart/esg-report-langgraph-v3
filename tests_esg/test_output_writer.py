@@ -39,7 +39,7 @@ def _audit_value(worksheet, column_name, row=2):
     return worksheet.cell(row=row, column=column).value
 
 
-def test_writer_original_evidence_uses_raw_accepted_writer_items():
+def test_writer_original_evidence_uses_narrative_only_for_found_table():
     metric_item = MetricEvidenceItem(
         raw_evidence_ko="Metric row | tCO2e | 2025=10",
         block_role="primary",
@@ -55,6 +55,26 @@ def test_writer_original_evidence_uses_raw_accepted_writer_items():
             "metric_items": [metric_item],
             "narrative_items": [narrative_item],
             "metric_audit": {"metric_status": "found_table"},
+        }
+    )
+
+    assert result == narrative_item.raw_evidence_ko
+
+
+def test_writer_original_evidence_excludes_metric_items_when_metric_not_found():
+    metric_item = MetricEvidenceItem(
+        raw_evidence_ko="Metric row | tCO2e | 2025=10",
+        block_role="primary",
+        table_block="GHG",
+        entity_class="company",
+    )
+    narrative_item = EvidenceItem(raw_evidence_ko="Qualitative fallback evidence.")
+
+    result = ReportManagerAgent._writer_original_evidence(
+        {
+            "metric_items": [metric_item],
+            "narrative_items": [narrative_item],
+            "metric_audit": {"metric_status": "not_found"},
         }
     )
 
@@ -292,7 +312,8 @@ def test_output_writer_creates_json_and_excel_audit(tmp_path):
     assert '"direct_answer": true' in _audit_json_value(audit, "RAG Structured Coverage")
     assert "locator(page=3,section=Governance)" in _audit_json_value(audit, "Sources")
     combined = load_workbook(written.output_paths["combined_excel"])["Qualitative"]
-    assert combined["E2"].value == "answer"
+    assert "source_type=policy_procedure" in combined["E2"].value
+    assert combined["F2"].value == "answer"
     payload = json.loads(open(written.output_paths["json"], encoding="utf-8").read())
     assert payload["answers"][0]["draft_answer"] == "draft answer"
     assert payload["answers"][0]["last_rejected_answer"] == "rejected answer"
@@ -878,7 +899,9 @@ def test_output_writer_creates_two_sheet_combined_workbook_and_numbered_names(tm
     assert qualitative["B2"].value == "Answer: PUBLISHED\nEvidence: SUFFICIENT"
     assert qualitative["C2"].value == "일반 / 거버넌스 (Governance) / question"
     assert qualitative["D2"].value == "accepted original evidence"
-    assert qualitative["E2"].value == "'=unsafe"
+    assert "canonical_source_id=src_report" in qualitative["E2"].value
+    assert "report.pdf" in qualitative["E2"].value
+    assert qualitative["F2"].value == "'=unsafe"
     assert quantitative.max_row == 252
     assert quantitative["A252"].value == "QUANT-0251"
     assert quantitative["D2"].value == 1

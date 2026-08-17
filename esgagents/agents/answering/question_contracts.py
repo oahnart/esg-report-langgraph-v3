@@ -33,7 +33,11 @@ METRIC_DIMENSIONS_BY_QID: dict[str, tuple[str, ...]] = {
     "Q055": ("product_recovery_recycling", "environmental_regulatory_response"),
     "Q059": ("employee_training_hours", "training_investment", "turnover_rate"),
     "Q063": ("workforce_gender_mix", "workforce_age_mix", "female_manager_ratio"),
-    "Q067": ("supplier_esg_assessment_count", "supplier_improvement_support"),
+    "Q067": (
+        "managed_supplier_count",
+        "supplier_esg_assessment_count",
+        "supplier_improvement_support",
+    ),
     "Q071": ("community_investment", "volunteer_participation"),
     "Q075": ("committee_meeting_count", "committee_activity_count"),
     "Q079": (
@@ -62,12 +66,7 @@ QUESTION_CONTRACTS_BY_QID: dict[str, QuestionContract] = {
     ),
     "Q074": QuestionContract(
         "risk_management",
-        (
-            "risk_identification",
-            "control_or_response",
-            "committee_independence",
-            "committee_expertise",
-        ),
+        ("risk_identification", "control_or_response"),
         ("monitoring_follow_up",),
     ),
 }
