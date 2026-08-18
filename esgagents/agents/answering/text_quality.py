@@ -59,15 +59,40 @@ ATTRIBUTION_PHRASES = (
     "제안 자료에 따르면,",
     "검토 중인 제안 자료상",
     "외부 평가 자료상",
+    "according to the draft proposal,",
+    "according to the proposal under review,",
+    "the proposal under review states:",
+    "the proposal under review describes",
+    "according to the external assessment,",
+    "the external assessment records:",
+    "external assessment records:",
+    "theo đề xuất đang được xem xét",
+    "theo đề xuất",
+    "de xuat dang duoc xem xet",
 )
 SOURCE_ATTRIBUTION_RE = re.compile(
     r"(?:제안/검토\s*자료에\s*따르면,?|평가\s*자료에\s*따르면,?|제안\s*자료에\s*따르면,?|"
-    r"검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상)\s*"
+    r"검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상|"
+    r"according\s+to\s+the\s+draft\s+proposal,?|according\s+to\s+the\s+proposal\s+under\s+review,?|"
+    r"the\s+proposal\s+under\s+review\s+(?:states:|describes(?:\s+that)?)|"
+    r"according\s+to\s+the\s+external\s+assessment,?|(?:the\s+)?external\s+assessment\s+records:|"
+    r"theo\s+(?:đề|de)\s*xuất(?:\s+(?:đang|dang)\s+(?:được|duoc)\s+xem\s+xét)?,?|"
+    r"(?:đề|de)\s*xuất\s+(?:đang|dang)\s+(?:được|duoc)\s+xem\s+xét)\s*",
+    flags=re.IGNORECASE,
+)
+SOURCE_LIMITATION_REWRITE_RE = re.compile(
+    r"(?:방안으로\s*제시(?:하고\s*있습니다|됩니다|된|됨)?|"
+    r"presented\s+as\s+(?:a\s+)?(?:proposal|proposed\s+measure|measure|plan)|"
+    r"described\s+as\s+(?:a\s+)?(?:proposal|proposed\s+measure|measure|plan))",
+    flags=re.IGNORECASE,
 )
 YEAR_EQUALS_RE = re.compile(r"\b(?:19|20)\d{2}\s*=")
 LEADING_FRAGMENT_RE = re.compile(
     r"^(?:[a-z]{1,8}(?:/[a-z]{1,8})?\)|[a-z]{1,8}/[a-z]{1,8}\)|[%/]+\))",
     flags=re.IGNORECASE,
+)
+KOREAN_LEADING_DEPENDENT_FRAGMENT_RE = re.compile(
+    r"^(?:미치는|인식하는|발생하는|검토하는|수렴하는|반영하는|관리하는|제공하는|수립하는)\s+\S+"
 )
 ENUMERATION_STUB_RE = re.compile(r"^(?:\d+[.)]?\s*)+$")
 LEADING_NUMBERED_BLOCK_RE = re.compile(r"^\d+[.)]\s+\S+")
@@ -146,10 +171,25 @@ LEADING_DRAFT_HEADING_RE = re.compile(
     r"[^.!?。！？]{5,180}?(?=(?:대웅제약은|대웅은|당사는|회사는)\b)"
 )
 INLINE_KNOWN_HEADING_RE = re.compile(
-    r"(?:^|\s+)(?:업계최초\s*직무급\s*제도와\s*여성인재\s*육성|품질\s*부문\s*조직)\s+(?=대웅제약은\b)"
+    r"(?:^|\s+)(?:업계최초\s*직무급\s*제도와\s*여성인재\s*육성|품질\s*부문\s*조직|"
+    r"(?:EHS\s*인증\s*현황\s*)?(?:EHS\s*중장기\s*목표\s*)?(?:환경경영\s*관리체계\s*)?환경경영)"
+    r"\s+(?=(?:대웅제약은|대웅은|당사는|회사는)\b)"
+)
+INLINE_SOURCE_REFERENCE_RE = re.compile(
+    r"(?:^|\s+)(?:[A-Za-z가-힣()·\s]{0,40}\s*)?(?:20\d{2}\s*)?"
+    r"(?:SR\s*보고서|지속가능경영보고서)\s*P\.?\s*\d+"
+    r"(?:(?!참고|source|출처)[^.!?\u3002\uff01\uff1f]){0,220}"
+    r"(?:참고|source|출처)\s*",
+    flags=re.IGNORECASE,
 )
 
 ALLOWED_SYMBOL_PUNCTUATION = set("%&+-/=@.,;:()[]·")
+
+
+def _capitalize_initial_ascii(text: str) -> str:
+    if text and "a" <= text[0] <= "z":
+        return text[0].upper() + text[1:]
+    return text
 
 
 def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
@@ -193,6 +233,16 @@ def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
     cleaned = re.sub(r"(?:\s*[/\\|]+\s*)+([.。])$", r"\1", cleaned)
     cleaned = re.sub(r"(?:[/\\|]+\s*)+$", "", cleaned).strip()
     cleaned = re.sub(r"\s{2,}", " ", cleaned).strip(" ,;:")
+    cleaned_without_intro, removed_intro = remove_intro_only_sentences(cleaned)
+    if removed_intro:
+        cleaned = cleaned_without_intro
+        actions.append("removed_intro_only_sentence")
+    cleaned_without_generic_metric, removed_generic_metric = (
+        remove_duplicate_underspecified_metric_sentences(cleaned)
+    )
+    if removed_generic_metric:
+        cleaned = cleaned_without_generic_metric
+        actions.append("removed_underspecified_duplicate_metric_sentence")
     if removed_control:
         actions.append("removed_control_unicode")
     if removed_symbol:
@@ -200,6 +250,68 @@ def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
     if cleaned != original and not actions:
         actions.append("normalized_unicode_punctuation")
     return cleaned, actions
+
+
+def remove_intro_only_sentences(text: str) -> tuple[str, bool]:
+    parts = [
+        part.strip()
+        for part in re.split(
+            r"(?<!\d)(?<=[.!?\u3002\uff01\uff1f])(?!\d)\s+",
+            str(text or ""),
+        )
+        if part.strip()
+    ]
+    if len(parts) < 2:
+        return text, False
+    retained: list[str] = []
+    removed = False
+    for index, part in enumerate(parts):
+        if index < len(parts) - 1 and INTRO_ONLY_RE.search(part.strip()):
+            removed = True
+            continue
+        retained.append(part)
+    if not removed:
+        return text, False
+    return " ".join(retained).strip(), True
+
+
+def remove_duplicate_underspecified_metric_sentences(text: str) -> tuple[str, bool]:
+    parts = [
+        part.strip()
+        for part in re.split(
+            r"(?<!\d)(?<=[.!?\u3002\uff01\uff1f])(?!\d)\s+",
+            str(text or ""),
+        )
+        if part.strip()
+    ]
+    if len(parts) < 2:
+        return text, False
+    compact_parts = [re.sub(r"\s+", "", part).casefold() for part in parts]
+    retained: list[str] = []
+    removed = False
+    for index, part in enumerate(parts):
+        if not re.match(r"^(?:목표|target)\s*(?:은|는|:)", part, flags=re.IGNORECASE):
+            retained.append(part)
+            continue
+        tokens = {
+            re.sub(r"\s+", "", match.group(0)).casefold()
+            for match in re.finditer(
+                r"\d[\d,.]*\s*(?:%|건|명|인|회|개|톤|tons?|tonnes?|tCO2e|GJ/억원|kg/억원|억원|원|시간|hours?)",
+                part,
+                flags=re.IGNORECASE,
+            )
+        }
+        if tokens and any(
+            token in other and idx != index
+            for token in tokens
+            for idx, other in enumerate(compact_parts)
+        ):
+            removed = True
+            continue
+        retained.append(part)
+    if not removed:
+        return text, False
+    return " ".join(retained).strip(), True
 
 
 def final_answer_block_reason(text: str) -> str:
@@ -219,12 +331,27 @@ def final_answer_block_reason(text: str) -> str:
     return ""
 
 
+def customer_source_attribution_reason(text: str) -> str:
+    value = " ".join(str(text or "").split()).strip()
+    if not value:
+        return ""
+    if SOURCE_ATTRIBUTION_RE.search(value):
+        return "source_attribution_output"
+    if SOURCE_LIMITATION_REWRITE_RE.search(value):
+        return "source_limitation_rewrite_output"
+    return ""
+
+
 def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
     """Normalize and validate the final customer answer in one idempotent pass."""
 
     original = str(text or "").strip()
     initial_reason = final_answer_block_reason(original)
     cleaned, actions = normalize_final_answer_text(original)
+    without_source_attribution = SOURCE_ATTRIBUTION_RE.sub("", cleaned).strip()
+    if without_source_attribution != cleaned:
+        cleaned = _capitalize_initial_ascii(without_source_attribution)
+        actions.append("removed_source_attribution")
     cleaned_reason = final_answer_block_reason(cleaned)
     salvaged, salvage_actions = salvage_final_answer_narrative(
         cleaned,
@@ -233,6 +360,10 @@ def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
     if salvaged:
         cleaned = salvaged
         actions.extend(salvage_actions)
+    deduplicated, removed_duplicate = deduplicate_repeated_sentences(cleaned)
+    if removed_duplicate:
+        cleaned = deduplicated
+        actions.append("deduplicated_repeated_sentence")
     cleaned_reason = final_answer_block_reason(cleaned)
     final_reason = cleaned_reason if initial_reason == "korean_fragment_output" else initial_reason or cleaned_reason
     if salvaged and not cleaned_reason:
@@ -249,6 +380,7 @@ def salvage_final_answer_narrative(text: str, reason: str) -> tuple[str, list[st
         "numbered_block_output",
         "symbol_marker_output",
         "parenthetical_heading_output",
+        "korean_leading_fragment_output",
     }:
         return "", []
     value = " ".join(str(text or "").split()).strip()
@@ -377,6 +509,8 @@ def non_narrative_reason(text: str) -> str:
         return "document_navigation_dump_output"
     if LEADING_FRAGMENT_RE.search(value):
         return "fragment_output"
+    if KOREAN_LEADING_DEPENDENT_FRAGMENT_RE.search(value):
+        return "korean_leading_fragment_output"
     if len(value) >= 240 and not re.search(r"[.!?。！？]", value):
         return "unstructured_long_output"
     return ""
@@ -431,6 +565,11 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
         value = without_inline_heading
         actions.append("removed_inline_heading_fragment")
 
+    without_source_reference = INLINE_SOURCE_REFERENCE_RE.sub(" ", value)
+    if without_source_reference != value:
+        value = without_source_reference
+        actions.append("removed_inline_source_reference")
+
     fixed_terms = re.sub(r"인권\s+노동", "인권·노동", value)
     fixed_terms = re.sub(
         r"디지털\s*전환이\s*빠르게\s*진행됨에\s*따라\s*정보보안\s*및\s*정보보호의\s*중요성이\s*증가함에\s*따라",
@@ -450,7 +589,7 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
         fixed_terms,
     )
     fixed_terms = re.sub(
-        r"((?:검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상|제안\s*자료에\s*따르면,|평가\s*자료에\s*따르면,)\s*)또한[,，]?\s*",
+        r"((?:검토\s*중인\s*제안\s*자료상|외부\s*평가\s*자료상|제안\s*자료에\s*따르면,|평가\s*자료에\s*따르면,|according\s+to\s+the\s+draft\s+proposal,?|according\s+to\s+the\s+proposal\s+under\s+review,?|according\s+to\s+the\s+external\s+assessment,?)\s*)또한[,，]?\s*",
         r"\1",
         fixed_terms,
     )
@@ -461,7 +600,7 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
 
     without_source_attribution = SOURCE_ATTRIBUTION_RE.sub("", value).strip()
     if without_source_attribution != value:
-        value = without_source_attribution
+        value = _capitalize_initial_ascii(without_source_attribution)
         actions.append("removed_source_attribution")
 
     value = re.sub(r",\s*,", ",", value)

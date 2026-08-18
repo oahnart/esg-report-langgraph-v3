@@ -146,7 +146,7 @@ def test_writer_downgrades_stale_published_status_to_customer_visible_review():
     assert customer_export_answer(stale) == stale.final_answer
 
 
-def test_blocked_candidate_moves_to_last_rejected_answer():
+def test_metric_not_found_inline_number_stays_customer_visible_for_review():
     answer = _answer(
         rag_metric_status="not_found",
         metric_audit={"metric_status": "not_found", "accepted_facts": []},
@@ -155,11 +155,11 @@ def test_blocked_candidate_moves_to_last_rejected_answer():
 
     decision = apply_customer_answer_contract(answer)
 
-    assert decision.status == "blocked"
-    assert answer.final_answer == ""
-    assert answer.last_rejected_answer.endswith("63 cases.")
-    assert answer.consumer_decision == "blocked_evidence"
-    assert answer.result_bucket == "empty"
+    assert decision.status == "review_required"
+    assert answer.final_answer.endswith("63 cases.")
+    assert answer.last_rejected_answer == ""
+    assert answer.consumer_decision == "answered_partial"
+    assert answer.result_bucket == "answered"
 
 
 def test_review_answer_keeps_review_metadata_out_of_customer_text():
@@ -258,7 +258,7 @@ def test_review_flags_prevent_auto_publication(flag):
     assert decision.status == "review_required"
 
 
-def test_metric_not_found_numeric_claim_is_blocked_without_accepted_fact():
+def test_metric_not_found_numeric_claim_requires_review_not_blocking():
     answer = _answer(
         rag_metric_status="not_found",
         metric_audit={"metric_status": "not_found", "accepted_facts": []},
@@ -267,12 +267,11 @@ def test_metric_not_found_numeric_claim_is_blocked_without_accepted_fact():
 
     decision = evaluate_publication(answer)
 
-    assert decision.status == "blocked"
-    assert decision.reason == "unsupported_metric_claim"
-    assert "unsupported_metric_claim" in decision.issues
+    assert decision.status == "review_required"
+    assert "metric_not_found" in decision.issues
 
 
-def test_found_table_metric_claim_in_final_answer_is_blocked_even_when_table_has_fact():
+def test_found_table_metric_claim_in_final_answer_is_blocked_when_only_table_has_fact():
     answer = _answer(
         rag_metric_status="found_table",
         metric_audit={
@@ -295,6 +294,58 @@ def test_found_table_metric_claim_in_final_answer_is_blocked_even_when_table_has
     assert decision.status == "blocked"
     assert decision.reason == "unsupported_metric_claim"
     assert "unsupported_metric_claim" in decision.issues
+
+
+def test_found_table_metric_claim_supported_by_narrative_evidence_is_not_blocked():
+    answer = _answer(
+        rag_metric_status="found_table",
+        metric_audit={
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {
+                    "metric": "water reuse rate",
+                    "period": "2025",
+                    "value": "13.56",
+                    "normalized_value": "13.56",
+                    "unit": "%",
+                }
+            ],
+        },
+        rag_narrative_evidence=[
+            {
+                "raw_evidence_ko": (
+                    "The 2025 water reuse rate was 13.56% after facility "
+                    "reuse improvements."
+                ),
+                "semantic_label": "useful",
+            }
+        ],
+        final_answer="The 2025 water reuse rate was 13.56%.",
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "published"
+    assert "unsupported_metric_claim" not in decision.issues
+
+
+def test_found_table_zero_absence_claim_supported_by_narrative_evidence_is_not_blocked():
+    answer = _answer(
+        rag_metric_status="found_table",
+        metric_audit={"metric_status": "found_table", "accepted_facts": []},
+        rag_narrative_evidence=[
+            {
+                "raw_evidence_ko": "공시 대상 연도 내에 중대한 변동을 초래하는 사건은 발생하지 않았습니다.",
+                "semantic_label": "useful",
+            }
+        ],
+        final_answer="공시 대상 연도 내에 중대한 변동을 초래하는 사건은 발생하지 않았습니다.",
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "published"
+    assert "unsupported_metric_claim" not in decision.issues
 
 
 def test_metric_not_found_qualitative_answer_requires_review():

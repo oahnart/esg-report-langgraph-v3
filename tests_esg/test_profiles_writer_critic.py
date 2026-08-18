@@ -773,7 +773,6 @@ def test_revision_attributes_only_the_claim_supported_by_draft_evidence():
     )
     assert "under review" in result["final_answers"]["Q042"]
     assert "draft_based_answer" in result["quality_flags"]["Q042"]
-    assert "draft_attributed" in result["quality_flags"]["Q042"]
 
 
 def test_revision_writer_keeps_failed_draft_empty_when_llm_is_unavailable():

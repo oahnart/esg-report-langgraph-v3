@@ -7,15 +7,12 @@ from decimal import Decimal, InvalidOperation
 import re
 from time import perf_counter
 from typing import Any
+from types import SimpleNamespace
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from skills.agents.context_builder import compact
 from esgagents.llm_clients.structured import bind_structured
-from esgagents.agents.evidence.source_policy import (
-    attribute_assessment_statement,
-    attribute_draft_statement,
-)
 from esgagents.schemas import SkillDraft
 from esgagents.agents.answering.question_contracts import build_question_contract
 from esgagents.agents.answering.text_quality import (
@@ -43,6 +40,38 @@ FACET_AUGMENT_TERMS = {
     "operating_organization": ("환경경영팀", "환경 담당", "ehs팀", "ehs 조직", "ehs간사협의체", "간사협의체", "협의체", "실무 조직", "실무 담당", "운영 조직", "environment team", "ehs team", "operating organization"),
     "site_management_system": ("사업장", "공장", "현장 관리", "환경관리체계", "환경 관리 체계", "site management", "facility management", "plant management"),
 }
+
+METRIC_RESULT_FACETS = {
+    "metric_result",
+    "reporting_period",
+}
+
+INLINE_METRIC_DIMENSION_TERMS = {
+    "human_rights_grievances": ("인권", "고충", "grievance"),
+    "water_reuse_rate": ("용수", "재사용률", "재이용률", "water reuse"),
+    "waste_recycling_rate": ("폐기물", "재활용률", "waste recycling"),
+    "environmental_violation_count": ("환경", "위반", "violation"),
+    "environmental_accident_count": ("환경", "사고", "incident"),
+    "committee_meeting_count": ("위원회", "개최", "회의", "meeting"),
+    "committee_activity_count": ("위원회", "안건", "활동", "activity"),
+    "board_composition": ("이사회", "구성", "board"),
+    "independent_director_ratio": ("사외이사", "독립이사", "independent"),
+    "board_meeting_count": ("이사회", "개최", "회의", "meeting"),
+    "board_attendance_rate": ("이사회", "참석률", "출석률", "attendance"),
+    "compliance_violation_cases": ("법규", "규제", "준법", "위반", "행정처분"),
+    "fine_amount": ("과징금", "과태료", "벌금", "fine"),
+    "compliance_training": ("준법", "컴플라이언스", "교육"),
+    "stakeholder_communication_activity": ("이해관계자", "소통", "FGI", "고충"),
+}
+
+INLINE_METRIC_VALUE_RE = re.compile(
+    r"\d[\d,.]*\s*(?:%|건|명|인|회|개|톤|tons?|tonnes?|tCO2e|GJ/억원|kg/억원|억원|원|시간|hours?|times?)",
+    flags=re.IGNORECASE,
+)
+INLINE_PERIOD_RE = re.compile(
+    r"(?:19|20)\d{2}\s*년|\bFY\s*\d{2,4}\b|\d{1,2}\s*월\s*\d{1,2}\s*일|상반기|하반기|분기|반기",
+    flags=re.IGNORECASE,
+)
 
 
 class SkillWriterAgent:
@@ -101,29 +130,23 @@ class SkillWriterAgent:
             answer, draft_flags = results[planned.id]
             metric_status = str(rag.metric_status or "").casefold()
             if metric_status == "found_table":
-                answer, unsupported_actions = salvage_metric_narrative_without_values(
+                answer, unsupported_actions = self._salvage_found_table_answer_numbers(
                     answer,
-                    {"accepted_facts": []},
+                    context,
                 )
                 if unsupported_actions:
                     draft_flags.append("claim_salvage_applied")
                 if not answer:
                     answer, fallback_flags = self._metric_narrative_fallback(
                         context,
-                        redact_values=True,
+                        redact_values=False,
                     )
                     draft_flags.extend(fallback_flags)
             if metric_status == "not_found":
-                answer, unsupported_actions = salvage_metric_narrative_without_values(
-                    answer,
-                    {"accepted_facts": []},
-                )
-                if unsupported_actions:
-                    draft_flags.append("claim_salvage_applied")
                 if not answer:
                     answer, fallback_flags = self._metric_narrative_fallback(
                         context,
-                        redact_values=True,
+                        redact_values=False,
                     )
                     draft_flags.extend(fallback_flags)
                 draft_flags.append("metric_not_found")
@@ -153,11 +176,9 @@ class SkillWriterAgent:
             if gate.get("reason") == "accepted_thin_evidence":
                 draft_flags.append("thin_evidence")
             if gate.get("reason") == "accepted_draft_evidence":
-                answer = attribute_draft_statement(answer, context.get("output_language", ""))
-                draft_flags.extend(["draft_attributed", "draft_based_answer"])
+                draft_flags.append("draft_based_answer")
             if gate.get("reason") == "accepted_assessment_evidence":
-                answer = attribute_assessment_statement(answer, context.get("output_language", ""))
-                draft_flags.extend(["assessment_attributed", "assessment_based_answer"])
+                draft_flags.append("assessment_based_answer")
             if gate.get("reason") == "accepted_v3_partial":
                 draft_flags.append("rag_partial_coverage")
             if gate.get("reason") == "accepted_v3_local_partial":
@@ -309,6 +330,19 @@ class SkillWriterAgent:
         question_text = " ".join(
             str(context.get(key) or "") for key in ("question", "description")
         ).casefold()
+        contract = build_question_contract(
+            SimpleNamespace(
+                id=str(context.get("qid") or ""),
+                pillar=str(context.get("pillar") or ""),
+                item_ko=str(context.get("question") or ""),
+                description_ko=str(context.get("description") or ""),
+            )
+        )
+        wanted_facets = [
+            facet
+            for facet in (*contract.required_facets, *contract.expected_facets)
+            if not SkillWriterAgent._metric_value_facet(facet)
+        ]
         organization_question = any(
             term in question_text
             for term in (
@@ -349,6 +383,18 @@ class SkillWriterAgent:
                     flags=re.IGNORECASE,
                 ):
                     relevance += 3
+                if re.search(r"위원회|회의|committee|meeting", question_text, flags=re.IGNORECASE) and re.search(
+                    r"상반기|하반기|\d{1,2}\s*월\s*\d{1,2}\s*일|개최|진행|held|meeting",
+                    normalized_claim,
+                    flags=re.IGNORECASE,
+                ):
+                    relevance += 3
+                for facet in wanted_facets:
+                    relevance += SkillWriterAgent._facet_match_score(
+                        facet,
+                        normalized_claim,
+                        FACET_AUGMENT_TERMS.get(facet, ()),
+                    )
                 ranked_claims.append((relevance, sequence, safe_claim))
                 sequence += 1
 
@@ -436,20 +482,49 @@ class SkillWriterAgent:
         allow_draft: bool = False,
     ) -> tuple[str, list[str]]:
         contract = build_question_contract(planned)
-        if contract.pillar == "metrics" or metric_status in {"found_table", "not_found"}:
+        metric_narrative_only = contract.pillar == "metrics" or metric_status in {"found_table", "not_found"}
+        if metric_narrative_only:
+            missing = [
+                facet
+                for facet in (*contract.required_facets, *contract.expected_facets)
+                if not cls._metric_value_facet(facet)
+                and not cls._text_has_facet(answer, facet)
+            ]
+            additions: list[str] = []
+            for facet in missing:
+                claim = cls._best_facet_claim(
+                    context,
+                    facet,
+                    answer,
+                    additions,
+                    allow_draft=allow_draft,
+                    redact_values=False,
+                )
+                if claim:
+                    additions.append(claim)
             if metric_status == "found_table":
                 activity_claim = cls._best_additional_activity_claim(
                     context,
                     answer,
-                    [],
+                    additions,
                     planned,
-                    redact_values=True,
+                    redact_values=False,
                 )
                 if activity_claim:
-                    return compact(" ".join([answer, activity_claim])), [
-                        "facet_supported_evidence_added"
-                    ]
-            return answer, []
+                    additions.append(activity_claim)
+            inline_metric_claim = cls._best_inline_metric_claim(
+                context,
+                answer,
+                additions,
+                planned,
+            )
+            if inline_metric_claim:
+                additions.append(inline_metric_claim)
+            if not additions:
+                return answer, []
+            return compact(" ".join(part for part in [answer, *additions] if part)), [
+                "facet_supported_evidence_added"
+            ]
         missing = [
             facet
             for facet in (*contract.required_facets, *contract.expected_facets)
@@ -458,7 +533,14 @@ class SkillWriterAgent:
 
         additions: list[str] = []
         for facet in missing:
-            claim = cls._best_facet_claim(context, facet, answer, additions)
+            claim = cls._best_facet_claim(
+                context,
+                facet,
+                answer,
+                additions,
+                allow_draft=allow_draft,
+                redact_values=False,
+            )
             if claim:
                 additions.append(claim)
         follow_up_claim = cls._best_specific_follow_up_claim(context, answer, additions)
@@ -479,6 +561,10 @@ class SkillWriterAgent:
             "facet_supported_evidence_added"
         ]
 
+    @staticmethod
+    def _metric_value_facet(facet: str) -> bool:
+        return facet in METRIC_RESULT_FACETS or facet.startswith("metric_")
+
     @classmethod
     def _best_facet_claim(
         cls,
@@ -486,6 +572,9 @@ class SkillWriterAgent:
         facet: str,
         answer: str,
         additions: list[str],
+        *,
+        allow_draft: bool = False,
+        redact_values: bool = False,
     ) -> str:
         terms = FACET_AUGMENT_TERMS.get(facet, ())
         if not terms:
@@ -495,7 +584,7 @@ class SkillWriterAgent:
         sequence = 0
         for item in context.get("evidence_items", []):
             tier = str(getattr(item, "source_tier", "") or "").casefold()
-            if tier in {"tier_3_assessment", "tier_4_draft"}:
+            if tier == "tier_3_assessment" or (tier == "tier_4_draft" and not allow_draft):
                 continue
             if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
                 continue
@@ -510,7 +599,12 @@ class SkillWriterAgent:
                 lower = claim.casefold()
                 if lower in seen_text or any(lower in item.casefold() for item in additions):
                     continue
-                matches = sum(1 for term in terms if term.casefold() in lower)
+                if redact_values:
+                    claim = cls._redact_nonessential_numbers(claim)
+                    if not claim:
+                        continue
+                    lower = claim.casefold()
+                matches = cls._facet_match_score(facet, lower, terms)
                 if matches:
                     candidates.append((matches, sequence, claim))
                 sequence += 1
@@ -521,6 +615,35 @@ class SkillWriterAgent:
         if not re.search(r"[.!?。！？]$", claim):
             claim += "."
         return claim
+
+    @staticmethod
+    def _facet_match_score(facet: str, lower: str, terms: tuple[str, ...]) -> int:
+        matches = sum(1 for term in terms if term.casefold() in lower)
+        if facet == "operating_organization" and re.search(
+            r"(ehs\s*)?(?:간사협의체|실무\s*조직|실무\s*담당|운영\s*조직|전담\s*조직|협의체|working\s+group|operating\s+organization)",
+            lower,
+            flags=re.IGNORECASE,
+        ):
+            matches += 4
+        if facet == "site_management_system" and re.search(
+            r"(?:사업장|공장|연구소|현장|site|facility|plant).{0,60}(?:관리|체계|시스템|운영|monitor|system)",
+            lower,
+            flags=re.IGNORECASE,
+        ):
+            matches += 4
+        if facet == "oversight_cadence" and re.search(
+            r"(?:연|매년|반기|분기|매월)\s*\d*\s*회|상반기|하반기|\d{1,2}\s*월\s*\d{1,2}\s*일|regular|quarter|annual",
+            lower,
+            flags=re.IGNORECASE,
+        ):
+            matches += 4
+        if facet == "monitoring_follow_up" and re.search(
+            r"(?:모니터링|점검|추적|보고|공유|공시|평가|개선|후속|monitor|follow|track|report|disclose|evaluate)",
+            lower,
+            flags=re.IGNORECASE,
+        ):
+            matches += 3
+        return matches
 
     @classmethod
     def _best_specific_risk_claim(
@@ -660,6 +783,143 @@ class SkillWriterAgent:
         return claim
 
     @classmethod
+    def _best_inline_metric_claim(
+        cls,
+        context: dict[str, Any],
+        answer: str,
+        additions: list[str],
+        planned: Any,
+    ) -> str:
+        dimensions = tuple(str(item or "") for item in context.get("metric_dimensions", []) if item)
+        if not dimensions:
+            return ""
+        seen_text = compact(" ".join([answer, *additions])).casefold()
+        question_text = " ".join(
+            str(value or "")
+            for value in (
+                context.get("question"),
+                context.get("description"),
+                getattr(planned, "item_ko", ""),
+                getattr(planned, "description_ko", ""),
+            )
+        ).casefold()
+        question_terms = cls._fallback_search_terms(question_text)
+        candidates: list[tuple[int, int, str]] = []
+        sequence = 0
+        for item in context.get("evidence_items", []):
+            if str(getattr(item, "semantic_label", "") or "").casefold() == "metric_row":
+                continue
+            raw, _ = clean_customer_evidence_text(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+            )
+            raw = cls._strip_leading_question_context(raw, context)
+            carried_period = ""
+            for part in re.split(cls._evidence_sentence_split_pattern(), raw):
+                claim = safe_narrative_text(compact(part).strip(" •·")[:700])
+                if len(claim) < 20 or "|" in claim:
+                    continue
+                lower = claim.casefold()
+                period_match = INLINE_PERIOD_RE.search(claim)
+                if period_match:
+                    carried_period = period_match.group(0).strip()
+                if lower in seen_text or any(lower in item.casefold() for item in additions):
+                    continue
+                if not INLINE_METRIC_VALUE_RE.search(claim):
+                    continue
+                candidate_claim = claim
+                if not period_match:
+                    if not carried_period:
+                        continue
+                    candidate_claim = f"{carried_period} {claim}"
+                    lower = candidate_claim.casefold()
+                dimension_hits = 0
+                hit_terms: list[str] = []
+                for dimension in dimensions:
+                    terms = INLINE_METRIC_DIMENSION_TERMS.get(dimension, ())
+                    if terms and any(term.casefold() in lower for term in terms):
+                        dimension_hits += 1
+                        hit_terms.extend(term.casefold() for term in terms)
+                if not dimension_hits:
+                    continue
+                if cls._inline_metric_claim_already_covered(
+                    candidate_claim,
+                    seen_text,
+                    hit_terms,
+                ):
+                    continue
+                relevance = (dimension_hits * 6) + sum(
+                    1 for term in question_terms if term in lower
+                )
+                candidates.append((relevance, sequence, candidate_claim))
+                sequence += 1
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda row: (-row[0], row[1]))
+        claim = candidates[0][2]
+        if not re.search(r"[.!?。！？]$", claim):
+            claim += "."
+        return claim
+
+    @classmethod
+    def _inline_metric_claim_already_covered(
+        cls,
+        claim: str,
+        seen_text: str,
+        dimension_terms: list[str],
+    ) -> bool:
+        normalized_seen = re.sub(r"\s+", "", seen_text.casefold())
+        metric_tokens = {
+            re.sub(r"\s+", "", match.group(0)).casefold()
+            for match in INLINE_METRIC_VALUE_RE.finditer(claim)
+        }
+        if not metric_tokens or not all(token in normalized_seen for token in metric_tokens):
+            return False
+        return any(term and term in seen_text for term in dimension_terms)
+
+    @classmethod
+    def _salvage_found_table_answer_numbers(
+        cls,
+        answer: str,
+        context: dict[str, Any],
+    ) -> tuple[str, list[str]]:
+        value = compact(str(answer or ""))
+        if not value:
+            return "", []
+        evidence_text = compact(
+            " ".join(
+                str(getattr(item, "raw_evidence_ko", "") or "")
+                for item in context.get("evidence_items", [])
+                if str(getattr(item, "semantic_label", "") or "").casefold()
+                != "metric_row"
+            )
+        ).casefold()
+        if not evidence_text:
+            return value, []
+        retained: list[str] = []
+        removed = False
+        for part in re.findall(r"[^.!?。！？]+[.!?。！？]?", value):
+            sentence = part.strip()
+            if not sentence:
+                continue
+            metric_values = [
+                re.sub(r"\s+", "", match.group(0)).casefold()
+                for match in INLINE_METRIC_VALUE_RE.finditer(sentence)
+            ]
+            unsupported = [
+                token
+                for token in metric_values
+                if token not in re.sub(r"\s+", "", evidence_text)
+            ]
+            if unsupported:
+                removed = True
+                continue
+            retained.append(sentence)
+        if not removed:
+            return value, []
+        salvaged = compact(" ".join(retained))
+        return salvaged, ["removed_unsupported_metric_sentence_from_found_table_answer"]
+
+    @classmethod
     def _best_specific_follow_up_claim(
         cls,
         context: dict[str, Any],
@@ -740,15 +1000,45 @@ class SkillWriterAgent:
 
     @staticmethod
     def _redact_nonessential_numbers(text: str) -> str:
-        value = re.sub(r"지난\s*\d+\s*월\s*발생한\s*", "", text)
-        value = re.sub(r"지난\s*\d+\s*월\s*", "", value)
-        value = re.sub(r"(?<!지난\s)\d+\s*월\s*", "해당 월 ", value)
+        value = str(text or "")
+        protected: list[str] = []
+
+        def protect(match: re.Match[str]) -> str:
+            protected.append(match.group(0))
+            return f"\ue100{chr(0xE200 + len(protected) - 1)}\ue101"
+
+        value = re.sub(r"(?<!\d)(?:19|20)\d{2}\s*년", protect, value)
+        value = re.sub(r"(?<!\d)\d{1,2}\s*월\s*\d{1,2}\s*일", protect, value)
+        value = re.sub(r"지난\s*\d{1,2}\s*월", protect, value)
+        value = re.sub(r"(?:연|매년|반기|분기)\s*\d+(?:\.\d+)?\s*회(?:\s*이상)?", protect, value)
+        value = re.sub(
+            r"(?:총\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*개\s*\([^)]*\)\s*(?:의\s*)?안건",
+            "상·하반기에 걸친 여러 안건",
+            value,
+        )
         value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개\s*시군", "여러 지역", value)
-        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:세트|개|명|인)", "복수의 지원 대상", value)
+        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:세트|명|인)", "복수의 지원 대상", value)
+        value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개(?!\s*(?:영역|세부\s*항목|항목|단계))", "여러", value)
         value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*(?:months?|sets?|people|persons?)", "multiple recipients", value, flags=re.IGNORECASE)
+        value = re.sub(r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*%", "해당 비율", value)
+        value = re.sub(
+            r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?\s*"
+            r"(?:톤|tCO2e?q?|GJ|kWh|MWh|L|mL|㎥|억원|백만원|원|KRW|USD|kg/억원|tons?|tonnes?|hours?)",
+            "metric value",
+            value,
+            flags=re.IGNORECASE,
+        )
         value = re.sub(r"(?<![A-Za-z가-힣])\d+(?:,\d{3})*(?:\.\d+)?(?![A-Za-z가-힣])", "", value)
+        for index, original in enumerate(protected):
+            value = value.replace(f"\ue100{chr(0xE200 + index)}\ue101", original)
+        value = re.sub(r"해당\s*위원회에서는\s*상·하반기에\s*걸친", "해당 위원회에서는 상·하반기에 걸쳐", value)
+        value = re.sub(r"(?:해당\s*비율|metric value)[^.!?。！？]{0,40}(?:달성|보고|목표|설정)[^.!?。！？]*", "", value)
         value = re.sub(r"\s{2,}", " ", value).strip(" ,;:-")
-        if re.search(r"\d", value):
+        probe = re.sub(r"(?<!\d)(?:19|20)\d{2}\s*년", "", value)
+        probe = re.sub(r"(?<!\d)\d{1,2}\s*월\s*\d{1,2}\s*일", "", probe)
+        probe = re.sub(r"지난\s*\d{1,2}\s*월", "", probe)
+        probe = re.sub(r"(?:연|매년|반기|분기)\s*\d+(?:\.\d+)?\s*회(?:\s*이상)?", "", probe)
+        if re.search(r"\d", probe):
             return ""
         return safe_narrative_text(value)
 
@@ -848,16 +1138,6 @@ class SkillWriterAgent:
                 str(entry.get("source_tier") or "tier_unknown")
                 for entry in entries
             }
-            if "tier_4_draft" in tiers:
-                sentence = attribute_draft_statement(
-                    sentence,
-                    str(context.get("output_language") or ""),
-                )
-            elif "tier_3_assessment" in tiers:
-                sentence = attribute_assessment_statement(
-                    sentence,
-                    str(context.get("output_language") or ""),
-                )
             sentences.append(sentence)
         return compact(" ".join(sentences))
 

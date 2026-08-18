@@ -140,7 +140,7 @@ def test_coverage_summary_contains_all_publication_buckets(tmp_path):
     assert coverage["json_xlsx_answer_parity_mismatch_qids"] == []
 
 
-def test_blocked_candidate_is_rejected_and_json_matches_customer_workbook(tmp_path):
+def test_metric_not_found_inline_number_exports_for_review_and_matches_workbook(tmp_path):
     candidate = "In 2025, human-rights grievances totaled 63 cases."
     artifacts = RunArtifacts(
         run_id="publication_parity",
@@ -186,9 +186,10 @@ def test_blocked_candidate_is_rejected_and_json_matches_customer_workbook(tmp_pa
         json_by_source[source_id]["final_answer"] == xlsx_answer
         for source_id, xlsx_answer in xlsx_by_source.items()
     )
-    assert json_by_source["EBX-Q-011"]["final_answer"] == ""
-    assert json_by_source["EBX-Q-011"]["last_rejected_answer"] == candidate
+    assert json_by_source["EBX-Q-011"]["final_answer"] == candidate
+    assert json_by_source["EBX-Q-011"]["last_rejected_answer"] == ""
+    assert json_by_source["EBX-Q-011"]["publication_status"] == "review_required"
     assert json_by_source["EBX-Q-021"]["final_answer"]
     assert audit["columns"] == AUDIT_COLUMNS
     assert audit["rows"][0]["Final Answer"] == candidate
-    assert audit["rows"][0]["Last Rejected Answer"] == candidate
+    assert audit["rows"][0]["Last Rejected Answer"] == ""

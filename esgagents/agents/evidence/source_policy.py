@@ -254,36 +254,17 @@ def has_draft_attribution(text: str) -> bool:
 
 
 def attribute_draft_statement(text: str, output_language: str = "") -> str:
+    """Draft-source limits belong in metadata, not customer-facing prose."""
+
     value = " ".join((text or "").split())
-    if not value or has_draft_attribution(value):
-        return value
-    language = (output_language or "").strip().casefold()
-    if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):
-        return f"검토 중인 제안 자료상 {value}"
-    return f"The proposal under review states: {value}"
+    return value
 
 
 def attribute_assessment_statement(text: str, output_language: str = "") -> str:
+    """Assessment-source limits belong in metadata, not customer-facing prose."""
+
     value = " ".join((text or "").split())
-    if not value:
-        return value
-    lower = unicodedata.normalize("NFKC", value).casefold()
-    if any(
-        term in lower
-        for term in (
-            "평가에 따르면",
-            "평가 자료에 따르면",
-            "평가 자료상",
-            "평가 결과",
-            "assessment",
-            "assessed",
-        )
-    ):
-        return value
-    language = (output_language or "").strip().casefold()
-    if language in {"ko", "kor", "korean", "한국어"} or language.startswith("ko-"):
-        return f"외부 평가 자료상 {value}"
-    return f"The external assessment records: {value}"
+    return value
 
 
 def is_unanswered_assessment_criteria(item: Any) -> bool:

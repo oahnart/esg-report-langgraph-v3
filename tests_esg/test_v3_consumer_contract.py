@@ -287,7 +287,7 @@ def test_found_table_writer_keeps_supported_narrative_without_table_metric():
     assert "structured_metric_fallback" not in flags
 
 
-def test_found_table_writer_removes_numeric_claims_and_uses_narrative_only():
+def test_found_table_writer_removes_unsupported_numeric_claims_and_uses_narrative_only():
     class Structured:
         def invoke(self, prompt):
             return SkillDraft(
@@ -418,7 +418,269 @@ def test_writer_preserves_specific_follow_up_channel_even_when_monitoring_facet_
     assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
 
 
-def test_writer_preserves_due_diligence_risk_claim_from_draft_with_attribution():
+def test_writer_adds_supported_operating_organization_and_site_system_facets():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "대웅그룹은 대표이사를 포함한 이사회를 통해 환경안전 경영을 추진하고 "
+                    "매년 경영방침과 KPI, 예산을 검토·승인합니다."
+                ),
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q021",
+        pillar="Governance",
+        item_ko="환경경영 관리 조직 및 책임",
+        description_ko="환경경영 거버넌스, 운영조직, 사업장 관리체계",
+        example_ko="",
+    )
+    context = {
+        "qid": planned.id,
+        "pillar": planned.pillar,
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "대웅그룹 EHS 경영위원회 산하에는 각 그룹사 EHS 실무 담당자로 "
+                    "구성된 EHS간사협의체를 운영하고 있습니다. 각 사업장은 "
+                    "환경안전보건 지표를 관리하고 현장 실행을 점검합니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "EHS간사협의체" in answer
+    assert "각 사업장은 환경안전보건 지표를 관리" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_preserves_inline_metric_claims_from_routed_narrative_evidence():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="회사는 환경 성과를 관리하고 있습니다.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q023",
+        pillar="Metrics",
+        item_ko="환경 성과 지표 및 환경 사고 현황",
+        description_ko="용수 재사용률과 폐기물 재활용률 성과",
+        example_ko="",
+    )
+    context = {
+        "qid": planned.id,
+        "pillar": planned.pillar,
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "found_table", "accepted_facts": []},
+        "metric_dimensions": ["water_reuse_rate", "waste_recycling_rate"],
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "용수 재사용률은 2024년 7.23%, 2025년 9.34%를 달성하였고 "
+                    "2026년 목표는 14.7%입니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_expected=True,
+        metric_status="found_table",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "용수 재사용률은 2024년 7.23%, 2025년 9.34%" in answer
+    assert "2026년 목표는 14.7%" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_does_not_duplicate_existing_inline_metric_claim():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer=(
+                    "2025년 내부 이해관계자로부터 접수된 인권 관련 고충처리는 "
+                    "총 63건이며, 모두 처리가 완료되었습니다."
+                ),
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q011",
+        pillar="Metrics",
+        item_ko="인권 관련 고충 및 처리 현황",
+        description_ko="인권 관련 고충 건수와 처리 현황",
+        example_ko="",
+    )
+    context = {
+        "qid": planned.id,
+        "pillar": planned.pillar,
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_found", "accepted_facts": []},
+        "metric_dimensions": ["human_rights_grievances"],
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "2025년 내부 이해관계자 인권 관련 접수된 고충처리는 "
+                    "63건으로 확인되었으며 63건 모두 처리가 완료되었습니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_expected=True,
+        metric_status="not_found",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert answer.count("63건") == 1
+    assert "facet_supported_evidence_added" not in result["quality_flags"][planned.id]
+
+
+def test_writer_adds_draft_cadence_and_role_facets_when_draft_is_allowed():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(
+                final_answer="대웅제약은 전사 환경안전 관리 체계 내에서 생물다양성 관련 이슈를 검토하고 있습니다.",
+                quality_flags=[],
+            )
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q041",
+        pillar="Governance",
+        item_ko="생물다양성 감독 및 의사결정 체계",
+        description_ko="감독 주체, 역할, 운영 주기",
+        example_ko="",
+    )
+    context = {
+        "qid": planned.id,
+        "pillar": planned.pillar,
+        "system_prompt": "Write a grounded answer.",
+        "user_prompt": "Use evidence.",
+        "accepted": True,
+        "metric_audit": {"metric_status": "not_expected", "accepted_facts": []},
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "상반기 EHS 위원회에서는 전년도 생물다양성 정책 논의 내용을 "
+                    "이사회에 보고하였으며, 하반기 EHS 위원회에서는 정기적인 "
+                    "생물다양성 보호활동 계획을 수립하였습니다."
+                ),
+                semantic_label="useful",
+                source_tier="tier_4_draft",
+                document_status="draft",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="medium_confidence",
+        metric_status="not_expected",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted_draft_evidence"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "상반기 EHS 위원회" in answer
+    assert "이사회에 보고" in answer
+    assert "하반기 EHS 위원회" in answer
+    assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_writer_preserves_due_diligence_risk_claim_from_draft_without_customer_attribution():
     class Structured:
         def invoke(self, prompt):
             return SkillDraft(
@@ -479,8 +741,10 @@ def test_writer_preserves_due_diligence_risk_claim_from_draft_with_attribution()
     )
 
     answer = result["draft_answers"][planned.id]
-    assert answer.startswith("검토 중인 제안 자료상")
+    assert not answer.startswith("검토 중인 제안 자료상")
+    assert "검토 중인 제안 자료상" not in answer
     assert "실사 의무를 공급망 리스크 관리 체계에 통합" in answer
+    assert "draft_based_answer" in result["quality_flags"][planned.id]
     assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
 
 
@@ -606,9 +870,11 @@ def test_writer_recovers_stakeholder_risk_scenario_claim_from_draft():
     )
 
     answer = result["draft_answers"][planned.id]
-    assert answer.startswith("검토 중인 제안 자료상")
+    assert not answer.startswith("검토 중인 제안 자료상")
+    assert "검토 중인 제안 자료상" not in answer
     assert "이해관계자 FGI" in answer
     assert "리스크·기회 발생 시 재무 영향 시나리오를 검토" in answer
+    assert "draft_based_answer" in result["quality_flags"][planned.id]
     assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
 
 
@@ -683,8 +949,82 @@ def test_found_table_writer_preserves_additional_activity_without_metric_values(
     assert "산불로 피해를 입은 이재민" in answer
     assert "이번 지원은 발생한" not in answer
     assert "0.43" not in answer
-    assert "3월" not in answer
+    assert "3월" in answer
     assert "facet_supported_evidence_added" in result["quality_flags"][planned.id]
+
+
+def test_found_table_writer_keeps_meeting_dates_but_redacts_agenda_metric_counts():
+    class Structured:
+        def invoke(self, prompt):
+            return SkillDraft(final_answer="1.", quality_flags=[])
+
+    class LLM:
+        def with_structured_output(self, schema):
+            return Structured()
+
+    planned = SimpleNamespace(
+        id="Q075",
+        pillar="Metrics",
+        item_ko="위원회 활동 및 회의 현황",
+        description_ko="위원회 회의 개최와 주요 안건",
+        example_ko="",
+    )
+    context = {
+        "qid": planned.id,
+        "pillar": planned.pillar,
+        "system_prompt": "Write a grounded metric answer.",
+        "user_prompt": "Use narrative evidence only.",
+        "accepted": True,
+        "metric_audit": {
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {
+                    "metric": "위원회 안건 수",
+                    "period": "2025",
+                    "value": "23",
+                    "normalized_value": "23",
+                    "unit": "개",
+                }
+            ],
+        },
+        "question": planned.item_ko,
+        "description": planned.description_ko,
+        "evidence_items": [
+            _item(
+                (
+                    "2025년에는 상반기 3월 20일, 하반기 10월 22일에 진행하였습니다. "
+                    "해당 위원회에서는 총 23개(상반기 11개, 하반기 12개)의 안건을 논의하였고, "
+                    "주요 안건으로는 환경안전보건 사업계획, 거버넌스 현황, 탄소중립 및 "
+                    "에너지절감 성과보고, 임직원 안전사고 재발방지 방안 등이 있었습니다."
+                ),
+                semantic_label="useful",
+            )
+        ],
+        "output_language": "Korean",
+    }
+    rag = RagQuestionResult(
+        question_id=planned.id,
+        answer_status="high_confidence",
+        metric_status="found_table",
+    )
+
+    result = SkillWriterAgent({}, LLM()).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {planned.id: context},
+            "evidence_gate": {planned.id: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {planned.id: rag},
+            "quality_flags": {},
+            "revision_counts": {},
+        }
+    )
+
+    answer = result["draft_answers"][planned.id]
+    assert "3월 20일" in answer
+    assert "10월 22일" in answer
+    assert "총 23개" in answer
+    assert "상반기 11개" in answer
+    assert "하반기 12개" in answer
 
 
 def test_found_table_writer_cleans_editorial_boilerplate_from_narrative_fallback():
@@ -868,5 +1208,32 @@ def test_source_overstatement_salvage_keeps_safe_attributed_claim():
         evidence,
     )
 
-    assert answer == "According to the draft proposal, the proposal describes an EHS committee."
-    assert actions == ["removed_claim:source_overstatement:c2"]
+    assert answer == (
+        "According to the draft proposal, the proposal describes an EHS committee. "
+        "According to the draft proposal, the company operates ISO 14001."
+    )
+    assert actions == []
+
+
+def test_source_overstatement_salvage_keeps_attributed_draft_plan_claim():
+    evidence = [
+        _item(
+            (
+                "상반기 EHS 위원회에서는 생물다양성 정책 논의 내용을 이사회에 보고하였으며, "
+                "하반기 EHS 위원회에서는 정기적인 생물다양성 보호활동 계획을 수립하였습니다."
+            ),
+            semantic_label="useful",
+            source_tier="tier_4_draft",
+            document_status="draft",
+        )
+    ]
+
+    answer, actions = salvage_source_overstatement(
+        "검토 중인 제안 자료상 상반기 EHS 위원회에서는 생물다양성 정책 논의 내용을 "
+        "이사회에 보고하였으며, 하반기 EHS 위원회에서는 정기적인 생물다양성 보호활동 "
+        "계획을 수립하였습니다.",
+        evidence,
+    )
+
+    assert "하반기 EHS 위원회" in answer
+    assert actions == []

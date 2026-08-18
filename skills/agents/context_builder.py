@@ -69,6 +69,7 @@ class SkillContextBuilderAgent:
             ]
             contexts[planned.id] = {
                 "qid": planned.id,
+                "pillar": planned.pillar,
                 "question": planned.item_ko,
                 "description": planned.description_ko,
                 "metric_dimensions": list(contract.metric_dimensions),
@@ -98,8 +99,8 @@ class SkillContextBuilderAgent:
                         ),
                         "Evidence:",
                         *(f"- {line}" for line in evidence_lines),
-                        "Source-use policy: Draft/proposal/consultant evidence may only support explicitly attributed proposed, draft, or planned statements. External assessments support the assessment result and assessed content, not an unstated detailed policy.",
-                        "Coverage policy: For metric_status=found_table, the metric table is handled separately from metric_evidence; write Final Answer only from narrative_evidence for context, formulas, boundary changes, accounting-method changes, and comparability caveats. For metric_status=not_found, write only qualitative content from non-metric items[]; ignore narrative_evidence and normalized_answer_ko, leave numeric cells empty, and never use, infer, or calculate a metric value from prose.",
+                        "Source-use policy: Keep customer-facing Final Answer clean; do not add draft/proposal/consultant attribution phrases to final_answer. Draft/proposal/consultant source limits are carried by quality_flags and review metadata. External assessments support the assessment result and assessed content, not an unstated detailed policy.",
+                        "Coverage policy: For metric_status=found_table, the metric table is handled separately from metric_evidence; write Final Answer only from narrative_evidence for context, formulas, boundary changes, accounting-method changes, and comparability caveats. For metric_status=not_found, leave numeric cells empty and use only content routed from non-metric items[]; do not infer, calculate, or move prose numbers into the metric table, but keep inline figures in Final Answer when the exact claim is directly supported by items[].",
                         "Metric scope policy: Final Answer must not use metric table rows, accepted_facts, rejected conflicts, scope_variant rows, denominator rows, or non-primary table rows as reported results. The metric table export handles the full table_block and entity_class detail separately.",
                         "Conflict policy: Never use a metric-period pair listed as conflicting. Keep other non-conflicting supported facts.",
                         "Length policy: Let the answer length be determined by the question and accepted evidence. Cover every directly supported facet needed to answer the question, including relevant policies, governance, processes, actions, metrics, targets, periods, scope, and caveats when evidenced. Use a shorter answer when evidence supports only one narrow claim, and a longer answer when multiple distinct supported facts are needed. Never pad the answer with repetition, generic ESG language, or unsupported context.",

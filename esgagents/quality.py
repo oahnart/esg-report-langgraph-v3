@@ -21,11 +21,13 @@ FAILED_REASON_PRECEDENCE = (
     "unsupported_claim",
     "source_usage_overstated",
     "missing_metric_or_period",
+    "metric_table_not_found",
     "qa_failed",
 )
 PARTIAL_REASON_PRECEDENCE = (
     "qa_invariant_violation",
     "missing_metric_or_period",
+    "metric_table_not_found",
     "missing_required_facets",
     "missing_expected_facets",
     "disclosed_data_gap",
@@ -79,7 +81,7 @@ def answer_invariant_issues(answer: Any) -> tuple[str, ...]:
             "metric absence",
         )
     ) or "metric_not_found" in flags
-    if metric_missing and any(
+    if metric_missing and "metric_inline_answered" not in flags and any(
         facet == "metric_result" or facet.startswith("metric_")
         for facet in covered_facets
     ):
@@ -125,8 +127,13 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
         issues.add("rag_wrong_topic")
     if "writer_empty" in combined:
         issues.add("writer_empty")
+    inline_metric_answered = "metric_inline_answered" in flags
     if "metric_not_found" in combined:
-        issues.add("missing_metric_or_period")
+        issues.add(
+            "metric_table_not_found"
+            if inline_metric_answered
+            else "missing_metric_or_period"
+        )
     if "provenance_fallback" in combined:
         issues.add("thin_evidence")
     if "non_narrative_output" in combined or any(
@@ -180,7 +187,11 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
             "missing required facet: reporting_period",
         )
     ):
-        issues.add("missing_metric_or_period")
+        issues.add(
+            "metric_table_not_found"
+            if inline_metric_answered and "metric_not_found" in combined
+            else "missing_metric_or_period"
+        )
     if "missing required facet:" in combined:
         issues.add("missing_required_facets")
     if (

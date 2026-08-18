@@ -4,11 +4,6 @@ import re
 import unicodedata
 from typing import Any
 
-from esgagents.agents.evidence.source_policy import (
-    attribute_assessment_statement,
-    attribute_draft_statement,
-)
-
 from .claim_support import build_claim_support
 from esgagents.agents.evidence.metric_facts import metric_facts_supporting_claim
 
@@ -57,11 +52,11 @@ def attribute_supported_claims(
         claim = support.claim_text
         if support.support_status in {"grounded", "partial"}:
             if support.support_tier == "tier_4_draft":
-                claim = attribute_draft_statement(claim, output_language)
-                flags.extend(["draft_attributed", "draft_based_answer"])
+                claim = support.claim_text
+                flags.append("draft_based_answer")
             elif support.support_tier == "tier_3_assessment":
-                claim = attribute_assessment_statement(claim, output_language)
-                flags.extend(["assessment_attributed", "assessment_based_answer"])
+                claim = support.claim_text
+                flags.append("assessment_based_answer")
         claims.append(claim)
     return " ".join(claims), sorted(set(flags))
 
@@ -121,6 +116,9 @@ def salvage_source_overstatement(
             and support.support_status in {"grounded", "partial"}
             and has_definitive_source_claim(support.claim_text)
         ):
+            if support.support_tier == "tier_4_draft":
+                kept.append(support.claim_text)
+                continue
             actions.append(f"removed_claim:source_overstatement:{support.claim_id}")
         else:
             kept.append(support.claim_text)

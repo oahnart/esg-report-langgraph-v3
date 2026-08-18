@@ -29,4 +29,4 @@ def test_claim_support_prefers_operational_source_and_marks_draft_only_claim():
         ("c2", "tier_4_draft"),
     ]
     assert supports[0].attribution_required is False
-    assert supports[1].attribution_required is True
+    assert supports[1].attribution_required is False

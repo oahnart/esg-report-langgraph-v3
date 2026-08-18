@@ -30,8 +30,8 @@
       "expected": {"final_answer": "non_empty", "facet_metric_result": "covered"}
     },
     "Q080": {
-      "case": "draft source requires attribution",
-      "expected": {"qa_grade": "cautious", "quality_flags": ["draft_based_answer", "draft_attributed"]}
+      "case": "draft source is disclosed through metadata-only caution",
+      "expected": {"qa_grade": "cautious", "quality_flags": ["draft_based_answer"]}
     },
     "Q082": {
       "case": "covered facet has no contradictory missing note",

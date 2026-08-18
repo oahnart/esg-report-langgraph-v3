@@ -104,11 +104,81 @@ def test_final_answer_keeps_pure_list_dump_blocked_when_no_narrative_remains():
     assert "salvaged_narrative_after_list_or_heading" not in actions
 
 
-def test_draft_and_assessment_attribution_are_distinct_and_natural():
+def test_draft_attribution_helper_keeps_customer_prose_clean():
     draft = attribute_draft_statement("회사는 감축 방안을 마련했습니다.", "Korean")
     assessment = attribute_assessment_statement("일부 항목이 충족되었습니다.", "Korean")
 
-    assert draft.startswith("검토 중인 제안 자료상 ")
+    assert draft == "회사는 감축 방안을 마련했습니다."
     assert "제안/검토 자료에 따르면" not in draft
-    assert assessment.startswith("외부 평가 자료상 ")
+    assert assessment == "일부 항목이 충족되었습니다."
     assert "평가 자료에 따르면" not in assessment
+
+
+def test_final_answer_hygiene_removes_english_draft_proposal_attribution():
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "According to the draft proposal, the company operates ISO 14001."
+    )
+
+    assert cleaned == "The company operates ISO 14001."
+    assert reason == ""
+    assert "removed_source_attribution" in actions
+
+
+def test_final_answer_hygiene_removes_english_assessment_attribution():
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "The external assessment records: safety policy items were partially met."
+    )
+
+    assert cleaned == "Safety policy items were partially met."
+    assert reason == ""
+    assert "removed_source_attribution" in actions
+
+
+def test_final_answer_boundary_deduplicates_repeated_sentences():
+    repeated = (
+        "또한, 2025년 기준 내부 이해관계자로부터 접수된 인권 관련 "
+        "고충처리 63건에 대해 모두 처리를 완료하였습니다."
+    )
+
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "회사는 이해관계자 의견을 수렴하고 있습니다. "
+        f"{repeated} 외부 이해관계자 의견도 평가에 반영하고 있습니다. {repeated}"
+    )
+
+    assert cleaned.count(repeated) == 1
+    assert reason == ""
+    assert "deduplicated_repeated_sentence" in actions
+
+
+def test_final_answer_salvages_after_korean_leading_dependent_fragment():
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "미치는 잠재적 영향과 리스크 기회 시나리오를 검토하고 의견을 수렴하고 있습니다. "
+        "또한, 2025년 기준 내부 이해관계자로부터 접수된 인권 관련 고충처리 63건에 대해 모두 처리를 완료하였습니다."
+    )
+
+    assert not cleaned.startswith("미치는 잠재적 영향")
+    assert "고충처리 63건" in cleaned
+    assert reason == ""
+    assert "salvaged_narrative_after_list_or_heading" in actions
+
+
+def test_final_answer_removes_intro_only_sentence_before_substance():
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "목표는 다음과 같습니다. 2026년 용수 재사용률 목표는 14.7%입니다."
+    )
+
+    assert cleaned == "2026년 용수 재사용률 목표는 14.7%입니다."
+    assert reason == ""
+    assert "removed_intro_only_sentence" in actions
+
+
+def test_final_answer_removes_duplicate_underspecified_metric_sentence():
+    cleaned, reason, actions = clean_final_answer_for_customer(
+        "목표는 14.7%입니다. "
+        "용수 재사용률은 2024년 7.23%, 2025년 9.34%를 달성하였고, 2026년 목표는 14.7%입니다."
+    )
+
+    assert not cleaned.startswith("목표는 14.7%")
+    assert "용수 재사용률은 2024년 7.23%" in cleaned
+    assert reason == ""
+    assert "removed_underspecified_duplicate_metric_sentence" in actions

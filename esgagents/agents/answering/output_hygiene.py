@@ -9,6 +9,7 @@ from esgagents.customer_text import strip_customer_meta_limitations
 from .text_quality import (
     clean_final_answer_for_customer,
     clean_customer_evidence_text,
+    customer_source_attribution_reason,
     normalize_answer_coherence,
 )
 
@@ -130,6 +131,16 @@ class OutputHygieneAgent:
                 actions.extend(final_cleanup_actions)
                 flags.append("final_answer_normalized")
             redacted = cleaned_answer
+            source_reason = customer_source_attribution_reason(redacted)
+            source_limited = any(
+                str(flag or "").casefold()
+                in {"draft_based_answer", "assessment_based_answer"}
+                for flag in flags
+            )
+            if source_reason == "source_attribution_output" or (
+                source_reason == "source_limitation_rewrite_output" and source_limited
+            ):
+                structural_reason = source_reason
             if structural_reason:
                 redacted = ""
                 flags.append("non_narrative_output")

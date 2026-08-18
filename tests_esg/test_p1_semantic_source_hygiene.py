@@ -236,7 +236,7 @@ def _with_metric_not_found(state, qid, reason="no_candidate"):
     return state
 
 
-def test_q011_metric_not_found_withholds_inline_number_and_keeps_qualitative_answer():
+def test_q011_metric_not_found_keeps_grounded_inline_number_in_prose():
     planned = _planned(qid="Q011", item="Human-rights grievances", description="Count and resolution")
     answer = (
         "In 2025, human-rights grievances were received and all were resolved. "
@@ -252,12 +252,16 @@ def test_q011_metric_not_found_withholds_inline_number_and_keeps_qualitative_ans
 
     assert result["qa_results"][planned.id].status == "passed"
     assert result["final_answers"][planned.id]
-    assert "63" not in result["final_answers"][planned.id]
+    assert "63" in result["final_answers"][planned.id]
     assert "metric_not_found" in result["quality_flags"][planned.id]
+    assert "metric_inline_answered" in result["quality_flags"][planned.id]
     assert "metric_inline_candidate_unstructured" in result["quality_flags"][planned.id]
+    assert "facet_metric_result: covered" in result["skill_checks"][planned.id]
+    assert "facet_reporting_period: covered" in result["skill_checks"][planned.id]
+    assert "facet_metric_human_rights_grievances: covered" in result["skill_checks"][planned.id]
 
 
-def test_q023_metric_not_found_withholds_inline_metric_but_keeps_process_claim():
+def test_q023_metric_not_found_keeps_grounded_inline_metric_in_prose():
     planned = _planned(
         qid="Q023",
         item="Environmental performance and incidents",
@@ -277,7 +281,7 @@ def test_q023_metric_not_found_withholds_inline_metric_but_keeps_process_claim()
 
     assert result["qa_results"][planned.id].status == "passed"
     assert "ISO 14001" in result["final_answers"][planned.id]
-    assert "9.34" not in result["final_answers"][planned.id]
+    assert "9.34" in result["final_answers"][planned.id]
     assert "metric_inline_candidate_unstructured" in result["quality_flags"][planned.id]
     assert not any(
         flag.startswith("missing_facet:metric_")
@@ -483,6 +487,13 @@ def test_q015_metric_not_found_keeps_product_safety_process_without_numbers():
     assert result["qa_results"][planned.id].status == "passed"
     assert result["final_answers"][planned.id] == answer
     assert "metric_not_found" in result["quality_flags"][planned.id]
+    assert "metric_inline_answered" not in result["quality_flags"][planned.id]
+    assert "facet_metric_result: missing" in result["skill_checks"][planned.id]
+    assert "facet_reporting_period: missing" in result["skill_checks"][planned.id]
+    assert not any(
+        check.endswith(": covered") and "facet_metric_product" in check
+        for check in result["skill_checks"][planned.id]
+    )
 
 
 def test_q021_board_only_answer_is_partial_without_operating_and_site_facets():
@@ -664,6 +675,47 @@ def test_missing_expected_metric_dimension_is_passed_but_partial():
     assert "missing_facet:metric_committee_activity_count" in result["quality_flags"][planned.id]
 
 
+def test_found_table_committee_inline_narrative_covers_activity_and_meeting_facets():
+    planned = _planned(
+        qid="Q075",
+        item="위원회 개최 및 활동 현황",
+        description="위원회 회의 개최와 주요 안건",
+    )
+    answer = (
+        "해당 위원회에서는 총 23개(상반기 11개, 하반기 12개)의 안건을 논의하였습니다. "
+        "EHS경영위원회를 반기 1회 이상 실시하고, 2025년에는 상반기 3월 20일, "
+        "하반기 10월 22일에 진행하였습니다."
+    )
+    state = _semantic_state(planned, answer, evidence_text=answer)
+    state["rag_results"] = {
+        planned.id: RagQuestionResult(
+            question_id=planned.id,
+            answer_status="high_confidence",
+            metric_expected=True,
+            metric_status="found_table",
+        )
+    }
+    state["normalized_evidence"][planned.id]["metric_audit"] = {
+        "metric_status": "found_table",
+        "accepted_facts": [
+            {
+                "metric": "위원회 개최 및 활동 현황",
+                "period": "2025",
+                "value": "23",
+                "unit": "개",
+            }
+        ],
+    }
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    checks = result["skill_checks"][planned.id]
+    assert "facet_metric_committee_activity_count: covered" in checks
+    assert "facet_metric_committee_meeting_count: covered" in checks
+    assert "missing_facet:metric_committee_activity_count" not in result["quality_flags"][planned.id]
+    assert "missing_facet:metric_committee_meeting_count" not in result["quality_flags"][planned.id]
+
+
 class _StructuredLLM:
     def __init__(self, result=None, error=None):
         self.result = result
@@ -691,6 +743,26 @@ def test_llm_misalignment_clears_answer_for_revision(qid):
     assert result["qa_results"][qid].status == "failed"
     assert result["final_answers"][qid] == ""
     assert "semantic misalignment" in result["qa_results"][qid].notes
+
+
+def test_compliance_governance_question_rejects_security_only_proxy_answer():
+    planned = _planned(
+        qid="Q998",
+        pillar="Governance",
+        item="컴플라이언스 관리 조직 및 체계",
+        description="준법 관리 조직과 책임 체계",
+    )
+    answer = (
+        "정보보호팀은 보안 기준과 원칙을 수립하고 임직원의 보안 문화 정착을 "
+        "지원하고 있습니다."
+    )
+    state = _semantic_state(planned, answer, evidence_text=answer)
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+
+    assert result["qa_results"][planned.id].status == "failed"
+    assert result["final_answers"][planned.id] == ""
+    assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
 def test_metric_not_found_keeps_on_topic_qualitative_narrative_despite_llm_metric_mismatch():
@@ -1001,19 +1073,38 @@ def test_output_hygiene_emits_only_canonical_flags_and_moves_free_text_to_notes(
     assert "writer said this needs manual checking" in result["qa_results"][planned.id].notes
 
 
-def test_draft_only_approved_claim_fails_but_attributed_proposal_is_kept():
+def test_draft_only_grounded_claim_is_kept_without_customer_proposal_attribution():
     planned = _planned(pillar="Strategy", item="Strategy", description="Policy direction")
-    state = _semantic_state(planned, "The policy is approved and implemented.", tier="tier_4_draft")
+    answer = "The policy is approved and implemented."
+    state = _semantic_state(planned, answer, tier="tier_4_draft", evidence_text=answer)
     critic = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None)
 
-    failed = critic.run(state)
-    assert failed["qa_results"][planned.id].status == "failed"
-    assert "source usage overstated" in failed["qa_results"][planned.id].notes
+    result = critic.run(state)
 
-    attributed = "The consultant proposal is a draft under review and is not an approved policy."
-    kept = critic.run(_semantic_state(planned, attributed, tier="tier_4_draft"))
-    assert kept["qa_results"][planned.id].status == "passed"
-    assert kept["final_answers"][planned.id] == attributed
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "source usage overstated" not in result["qa_results"][planned.id].notes
+    assert "draft_based_answer" in result["quality_flags"][planned.id]
+
+
+def test_draft_current_state_claim_is_not_rewritten_to_proposal_phrase_when_supported():
+    planned = _planned(
+        pillar="Strategy",
+        item="ESG policy direction",
+        description="Policy direction",
+    )
+    answer = "The company operates a policy and governance system."
+    evidence = "The company operates a policy and governance system."
+
+    result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
+        _semantic_state(planned, answer, tier="tier_4_draft", evidence_text=evidence)
+    )
+
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "The proposal under review" not in result["final_answers"][planned.id]
+    assert "source usage overstated" not in result["qa_results"][planned.id].notes
+    assert "draft_based_answer" in result["quality_flags"][planned.id]
 
 
 def test_assessment_only_source_cannot_prove_operating_policy_without_attribution():
@@ -1056,13 +1147,13 @@ def test_korean_assessment_checklist_cannot_prove_environmental_system_operation
     assert "source usage overstated" in result["qa_results"][planned.id].notes
 
 
-def test_natural_assessment_attribution_is_accepted_for_assessed_content():
+def test_natural_assessment_result_is_accepted_without_customer_source_attribution():
     planned = _planned(
         pillar="Strategy",
         item="Safety assessment",
         description="Assessment result",
     )
-    answer = "The external assessment records: safety policy items were partially met."
+    answer = "Safety policy items were partially met."
 
     result = SemanticCompletenessCriticAgent(
         {"semantic_qa_enabled": True}, None
@@ -1077,9 +1168,10 @@ def test_natural_assessment_attribution_is_accepted_for_assessed_content():
 
     assert result["qa_results"][planned.id].status == "passed"
     assert result["final_answers"][planned.id] == answer
+    assert "assessment_based_answer" in result["quality_flags"][planned.id]
 
 
-def test_q080_style_draft_does_not_hide_definitive_commitment_behind_unrelated_plan_word():
+def test_q080_style_draft_current_state_claim_is_reviewable_not_emptied():
     planned = _planned(qid="Q080", pillar="Strategy", item="Climate strategy", description="Targets")
     answer = (
         "The company operates an ESG system and has established a 2040 Net-Zero target. "
@@ -1088,11 +1180,13 @@ def test_q080_style_draft_does_not_hide_definitive_commitment_behind_unrelated_p
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
         _semantic_state(planned, answer, tier="tier_4_draft")
     )
-    assert result["qa_results"][planned.id].status == "failed"
-    assert "source usage overstated" in result["qa_results"][planned.id].notes
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "source usage overstated" not in result["qa_results"][planned.id].notes
+    assert "draft_based_answer" in result["quality_flags"][planned.id]
 
 
-def test_q080_attribution_does_not_make_definitive_draft_claim_acceptable():
+def test_q080_draft_attribution_phrase_is_not_required_for_acceptance():
     planned = _planned(qid="Q080", pillar="Strategy", item="Climate strategy", description="Targets")
     answer = (
         "According to the draft proposal, the company operates an ESG system "
@@ -1103,9 +1197,9 @@ def test_q080_attribution_does_not_make_definitive_draft_claim_acceptable():
         _semantic_state(planned, answer, tier="tier_4_draft")
     )
 
-    assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
-    assert "source usage overstated" in result["qa_results"][planned.id].notes
+    assert result["qa_results"][planned.id].status == "passed"
+    assert result["final_answers"][planned.id] == answer
+    assert "source usage overstated" not in result["qa_results"][planned.id].notes
 
 
 def test_output_hygiene_removes_markdown_and_person_names_but_keeps_roles():
@@ -1217,6 +1311,38 @@ def test_text_quality_removes_known_heading_when_it_starts_answer():
     assert final.startswith("대웅제약은 품질경영")
     assert "품질 부문 조직" not in final
     assert "removed_inline_heading_fragment" in actions
+
+
+def test_text_quality_removes_environment_heading_dump_when_it_starts_answer():
+    answer = (
+        "EHS 인증 현황 EHS 중장기 목표 환경경영 관리체계 환경경영 "
+        "대웅제약은 탄소배출 및 오염물질 저감 등 친환경 경영을 추진하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert final.startswith("대웅제약은 탄소배출")
+    assert "EHS 인증 현황" not in final
+    assert "환경경영 관리체계 환경경영" not in final
+    assert "removed_inline_heading_fragment" in actions
+
+
+def test_text_quality_removes_inline_report_page_reference():
+    answer = (
+        "대웅제약은 공급망 관리를 전담하는 역할을 설정하고 있습니다. "
+        "CP 운영 현황 2025 SR보고서 P.83 / 대웅제약 홈페이지 ESG Social "
+        "상생경영 /공정거래자율준수프로그램운영현황(안내공시) 참고 "
+        "CP(공정거래자율준수프로그램)를 운영하고 있습니다."
+    )
+
+    final, actions = normalize_answer_coherence(answer)
+
+    assert "SR보고서" not in final
+    assert "P.83" not in final
+    assert "홈페이지" not in final
+    assert "참고" not in final
+    assert "CP(공정거래자율준수프로그램)를 운영" in final
+    assert "removed_inline_source_reference" in actions
 
 
 def test_text_quality_removes_stray_leading_contrast_and_colloquial_policy_phrase():

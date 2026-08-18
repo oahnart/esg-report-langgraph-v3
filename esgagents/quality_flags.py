@@ -22,6 +22,7 @@ CANONICAL_FLAGS = {
     "local_partial_evidence",
     "markdown_normalized",
     "metric_low_confidence",
+    "metric_inline_answered",
     "metric_not_found",
     "metric_inline_candidate_unstructured",
     "metric_numeric_withheld",

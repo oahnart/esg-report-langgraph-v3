@@ -114,7 +114,7 @@ def build_claim_support(answer: str, evidence_items: list[Any]) -> list[ClaimSup
                 support_tier=strongest_tier,
                 support_status="grounded",
                 reporting_period=period_match.group(0) if period_match else "",
-                attribution_required=strongest_tier in {"tier_3_assessment", "tier_4_draft"},
+                attribution_required=False,
             )
         )
     return result

@@ -107,7 +107,7 @@ def evaluate_publication(
     # a cycle while publication policy is imported by ReportManagerAgent.
     from esgagents.agents.evidence.metric_facts import (
         conflicting_metric_claims,
-        unsupported_numeric_metric_claims,
+        unsupported_numeric_claims_not_in_text_evidence,
     )
 
     metric_audit = getattr(answer, "metric_audit", {}) or {}
@@ -117,16 +117,13 @@ def evaluate_publication(
         or ""
     ).casefold()
     unresolved_conflicts = conflicting_metric_claims(final_answer, metric_audit)
-    final_answer_metric_audit = (
-        {**metric_audit, "accepted_facts": []}
-        if metric_status in {"found_table", "not_found"}
-        else metric_audit
-    )
-    unsupported_metric_claims = (
-        unsupported_numeric_metric_claims(final_answer, final_answer_metric_audit)
-        if metric_status in {"found_table", "not_found"}
-        else []
-    )
+    if metric_status == "found_table":
+        unsupported_metric_claims = unsupported_numeric_claims_not_in_text_evidence(
+            final_answer,
+            list(getattr(answer, "rag_narrative_evidence", []) or []),
+        )
+    else:
+        unsupported_metric_claims = []
     claim_blocking, claim_review = _claim_support_issues(answer)
     source_review = _source_review_issues(answer)
     qid_blocking, qid_review = _qid_contract_issues(answer)

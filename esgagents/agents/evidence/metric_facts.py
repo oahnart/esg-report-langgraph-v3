@@ -82,6 +82,38 @@ def unsupported_numeric_metric_claims(
     return unsupported
 
 
+def unsupported_numeric_claims_not_in_text_evidence(
+    answer: str,
+    evidence_items: list[Any],
+) -> list[str]:
+    """Return numeric statements whose values are not present in narrative evidence.
+
+    This is used for ``metric_status=found_table`` final prose. Structured
+    metric rows are rendered separately, so table facts must not support prose
+    claims; however, inline figures that are explicitly present in routed
+    narrative evidence can remain in the final answer.
+    """
+
+    support_text = _combined_text_evidence(evidence_items)
+    unsupported: list[str] = []
+    for statement in _metric_statements(answer):
+        tokens = _substantive_numeric_tokens(statement)
+        if not tokens:
+            continue
+        if not support_text:
+            unsupported.append(statement)
+            continue
+        missing = [
+            token
+            for token in tokens
+            if token not in support_text
+            and not (token == "0" and _supports_zero_absence_claim(support_text))
+        ]
+        if missing:
+            unsupported.append(statement)
+    return unsupported
+
+
 def salvage_unsupported_numeric_metric_claims(
     answer: str,
     metric_audit: dict[str, Any],
@@ -147,6 +179,12 @@ def _redact_metric_quantities(statement: str) -> str:
     # Reporting years and formal standard identifiers are narrative context,
     # not metric results. Preserve both full and abbreviated Korean years.
     value = re.sub(r"\bISO\s*\d{4,5}\b", protect, value, flags=re.IGNORECASE)
+    value = re.sub(r"(?<!\d)\d{1,2}\s*월\s*\d{1,2}\s*일", protect, value)
+    value = re.sub(
+        r"(?:연|매년|반기|분기)\s*\d+(?:\.\d+)?\s*회(?:\s*이상)?",
+        protect,
+        value,
+    )
     value = re.sub(r"(?<!\d)(?:19|20)\d{2}\s*년", protect, value)
     value = re.sub(r"(?<!\d)\d{2}\s*년", protect, value)
 
@@ -163,10 +201,15 @@ def _redact_metric_quantities(statement: str) -> str:
         "인권 관련 고충이 접수되었으며",
         value,
     )
+    value = re.sub(
+        r"(?:해당\s*위원회에서는\s*)?(?:총\s*)?"
+        r"\d+(?:,\d{3})*(?:\.\d+)?\s*개\s*\([^)]*\)\s*(?:의\s*)?안건",
+        "해당 위원회에서는 상·하반기에 걸쳐 여러 안건",
+        value,
+    )
     value = re.sub(r"\d+(?:\.\d+)?\s*분의\s*\d+(?:\.\d+)?", "일정 비율", value)
     value = re.sub(r"(?:총\s*)?\d+(?:,\d{3})*(?:\.\d+)?\s*(?:명|인)", "복수의 인원", value)
     value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개월(?:\s*이상)?", "일정 기간", value)
-    value = re.sub(r"(?:연|매년|반기)\s*\d+(?:\.\d+)?\s*회(?:\s*이상)?", "정기적으로", value)
     value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*회(?:\s*이상)?", "정기적인 횟수로", value)
     value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*건", "관련 건", value)
     value = re.sub(r"\d+(?:,\d{3})*(?:\.\d+)?\s*개(?:의)?", "여러 ", value)
@@ -189,8 +232,10 @@ def _redact_metric_quantities(statement: str) -> str:
     for index, original in enumerate(protected):
         value = value.replace(f"__METRIC_ALLOWED_{chr(0xE000 + index)}__", original)
     value = re.sub(r"\b총\s+(?=복수의|여러|관련)", "", value)
-    value = re.sub(r"(?:연|반기)\s+(?=정기적으로)", "", value)
     value = re.sub(r"(?:정기적으로\s*){2,}", "정기적으로 ", value)
+    value = re.sub(r"여러\s*\([^)]*\)", "여러", value)
+    value = re.sub(r"여러\s+(?:의\s*)?안건", "여러 안건", value)
+    value = re.sub(r"상·하반기에\s*걸쳐\s*여러\s*안건", "상·하반기에 걸쳐 여러 안건", value)
     value = re.sub(
         r"회사의\s*이사는\s*복수의\s*인원\s*이상\s*복수의\s*인원\s*이내로\s*하고",
         "회사의 이사는 정관상 정해진 범위 내에서 구성하고",
@@ -266,23 +311,32 @@ def _metric_statements(answer: str) -> list[str]:
 
 
 def _has_substantive_numeric_claim(statement: str) -> bool:
+    return bool(_substantive_numeric_tokens(statement))
+
+
+def _substantive_numeric_tokens(statement: str) -> list[str]:
     normalized = unicodedata.normalize("NFKC", statement or "")
     lower = normalized.casefold()
     # Formulas explain methodology rather than report a result. Preserve them
     # in narrative answers even when they contain constants such as x 100.
     if re.search(r"(?:=|×|÷).*(?:/|×|÷)|(?:/|×|÷).*(?:=|×|÷)", normalized):
-        return False
+        return []
     if re.search(
         r"(?:해당\s*사항\s*없음|미발생|발생하지\s*않|no\s+incidents?|none|zero)",
         lower,
     ):
-        return True
+        return ["0"]
+    tokens: list[str] = []
     for match in re.finditer(r"[+-]?\d+(?:,\d{3})*(?:\.\d+)?%?", normalized):
         token = match.group(0)
         plain = token.replace(",", "").removesuffix("%")
         before = lower[max(0, match.start() - 8):match.start()]
         after = lower[match.end():match.end() + 6]
         if re.search(r"iso\s*$", before):
+            continue
+        if after.startswith(("월", "일")):
+            continue
+        if re.search(r"(?:연|매년|반기|분기)\s*$", before) and after.startswith("회"):
             continue
         if re.fullmatch(r"(?:19|20)\d{2}", plain) and (
             after.startswith("년")
@@ -291,8 +345,51 @@ def _has_substantive_numeric_claim(statement: str) -> bool:
             continue
         if re.fullmatch(r"\d{2}", plain) and after.startswith("년"):
             continue
-        return True
-    return False
+        tokens.append(_numeric_text_token(token))
+    return tokens
+
+
+def _numeric_text_token(value: str) -> str:
+    return re.sub(
+        r"\s+",
+        "",
+        unicodedata.normalize("NFKC", str(value or "")).replace(",", "").casefold(),
+    )
+
+
+def _combined_text_evidence(evidence_items: list[Any]) -> str:
+    parts: list[str] = []
+    for item in evidence_items or []:
+        if isinstance(item, str):
+            raw = item
+            semantic_label = ""
+        elif isinstance(item, dict):
+            raw = str(
+                item.get("raw_evidence_ko")
+                or item.get("text")
+                or item.get("content")
+                or item.get("evidence")
+                or ""
+            )
+            semantic_label = str(item.get("semantic_label") or "")
+        else:
+            raw = str(getattr(item, "raw_evidence_ko", "") or "")
+            semantic_label = str(getattr(item, "semantic_label", "") or "")
+        if semantic_label.strip().casefold() == "metric_row":
+            continue
+        if raw.strip():
+            parts.append(raw)
+    return _numeric_text_token(" ".join(parts))
+
+
+def _supports_zero_absence_claim(normalized_support_text: str) -> bool:
+    return bool(
+        re.search(
+            r"(?:해당사항없음|미발생|발생하지않|noincidents?|none|zero)",
+            normalized_support_text,
+            flags=re.IGNORECASE,
+        )
+    )
 
 
 def resolve_metric_facts(items: list[EvidenceItem]) -> dict[str, Any]:

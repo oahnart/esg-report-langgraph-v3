@@ -112,6 +112,29 @@ def test_metric_final_narrative_redacts_values_but_keeps_full_and_short_years():
     assert actions
 
 
+def test_metric_final_narrative_keeps_context_dates_and_cadence_without_metric_values():
+    answer = (
+        "2025년에는 상반기 3월 20일, 하반기 10월 22일에 진행하였습니다. "
+        "해당 위원회에서는 총 23개(상반기 11개, 하반기 12개)의 안건을 논의하였습니다. "
+        "용수 재사용률은 2025년 9.34%를 달성했습니다."
+    )
+
+    salvaged, actions = salvage_metric_narrative_without_values(
+        answer,
+        {"accepted_facts": [{"value": "23"}, {"value": "9.34"}]},
+    )
+
+    assert "3월 20일" in salvaged
+    assert "10월 22일" in salvaged
+    assert "상·하반기에 걸쳐 여러 안건" in salvaged
+    assert "23개" not in salvaged
+    assert "11개" not in salvaged
+    assert "12개" not in salvaged
+    assert "9.34" not in salvaged
+    assert "여러 (" not in salvaged
+    assert actions
+
+
 @pytest.mark.parametrize(
     ("first", "second"),
     [
@@ -709,6 +732,49 @@ def test_not_found_writer_uses_items_and_ignores_narrative_evidence():
 
     assert result["final_answers"][qid] == item_evidence.raw_evidence_ko
     assert "37" not in result["final_answers"][qid]
+    assert "metric_not_found" in result["quality_flags"][qid]
+
+
+def test_not_found_writer_preserves_inline_number_from_items_prose():
+    config = load_config({"agent_mode": "offline"})
+    qid = "Q011"
+    item_evidence = _narrative(
+        "2025년 내부 이해관계자 인권 관련 접수된 고충처리는 "
+        "63건으로 확인되었으며 63건 모두 처리가 완료되었습니다."
+    )
+    rag = RagQuestionResult(
+        question_id=qid,
+        answer_status="medium_confidence",
+        metric_expected=True,
+        metric_status="not_found",
+        metric_absence={"reason": "below_threshold"},
+        items=[item_evidence],
+    )
+    normalized = EvidenceNormalizerAgent(config).run(
+        {"rag_results": {qid: rag}}
+    )["normalized_evidence"][qid]
+    planned = _planned(qid)
+
+    result = SkillWriterAgent({"agent_mode": "offline"}, None).run(
+        {
+            "planned_questions": [planned],
+            "skill_contexts": {
+                qid: {
+                    "accepted": True,
+                    "metric_audit": normalized["metric_audit"],
+                    "metric_absence": normalized["metric_audit"]["metric_absence"],
+                    "evidence_items": normalized["narrative_items"],
+                    "output_language": "Korean",
+                }
+            },
+            "evidence_gate": {qid: {"accepted": True, "reason": "accepted"}},
+            "rag_results": {qid: rag},
+            "normalized_evidence": {qid: normalized},
+        }
+    )
+
+    assert "63건" in result["final_answers"][qid]
+    assert "처리가 완료" in result["final_answers"][qid]
     assert "metric_not_found" in result["quality_flags"][qid]
 
 
