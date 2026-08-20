@@ -6,6 +6,11 @@ from typing import Any
 
 from esgagents.schemas import EvidenceFact, EvidenceItem, MetricEvidenceItem, model_to_dict
 
+from esgagents.agents.answering.question_contracts import (
+    QuestionContract,
+    build_question_contract,
+)
+
 from .metric_facts import resolve_metric_facts
 from .metric_routing import (
     has_metric_contract,
@@ -18,6 +23,11 @@ from .metric_routing import (
     valid_primary_metric_items,
 )
 from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
+from .upstream_audit import (
+    excluded_topic_dimensions,
+    substituted_topic_dimensions,
+    verify_upstream_facets,
+)
 from .source_policy import (
     TIER_RANK,
     classify_source,
@@ -47,10 +57,13 @@ class EvidenceNormalizerAgent:
             str(label).strip().lower() for label in config["rejected_semantic_labels"]
         }
         self.source_policy_enabled = bool(config.get("source_policy_enabled", True))
+        self.topic_isolation_enabled = bool(config.get("topic_isolation_enabled", True))
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         normalized: dict[str, dict[str, Any]] = {}
+        contracts = self._question_contracts(state)
         for qid, rag in state["rag_results"].items():
+            contract = contracts.get(qid)
             deduped: OrderedDict[str, EvidenceItem] = OrderedDict()
             for item in routed_writer_items(rag):
                 if not is_usable_evidence(item, self.rejected_labels):
@@ -95,6 +108,8 @@ class EvidenceNormalizerAgent:
                 key=self._rank_key,
                 reverse=True,
             )
+            ranked, duplicate_evidence_dropped = self._collapse_repeated_evidence(ranked)
+            ranked, off_topic_evidence_dropped = self._drop_substituted_topics(ranked, contract)
             withheld_assessment_criteria = [
                 item for item in ranked if is_unanswered_assessment_criteria(item)
             ]
@@ -133,6 +148,11 @@ class EvidenceNormalizerAgent:
                                 update={"canonical_source_id": upstream_canonical_id}
                             )
                     primary_rows.append(normalized_metric_item)
+                primary_rows, off_topic_metric_rows = self._drop_substituted_topics(
+                    primary_rows,
+                    contract,
+                )
+                off_topic_evidence_dropped.extend(off_topic_metric_rows)
                 metric_audit = resolve_metric_facts(primary_rows)
                 if is_low_metric_confidence(rag):
                     metric_audit["withheld_facts"] = list(metric_audit.get("accepted_facts", []))
@@ -171,6 +191,19 @@ class EvidenceNormalizerAgent:
                         item.block_role == "denominator" for item in rag.metric_evidence
                     ),
                 }
+            )
+            # A metric question grounds metric_result in the metric lane, so the
+            # facet check has to see both lanes the writer will see.
+            facet_verification = verify_upstream_facets(
+                covered_facets=rag.covered_facets,
+                missing_facets=rag.missing_facets,
+                contract_facets=(
+                    (*contract.required_facets, *contract.expected_facets) if contract else ()
+                ),
+                items=[
+                    *(primary_rows if rag.metric_status == "found_table" else []),
+                    *ranked,
+                ],
             )
             sources = []
             for item in ranked[:5]:
@@ -248,8 +281,91 @@ class EvidenceNormalizerAgent:
                 "metric_evidence": all_metric_evidence,
                 "narrative_evidence": list(rag.narrative_evidence),
                 "withheld_assessment_criteria": withheld_assessment_criteria,
+                "duplicate_evidence_dropped": duplicate_evidence_dropped,
+                "off_topic_evidence_dropped": off_topic_evidence_dropped,
+                "facet_verification": facet_verification,
             }
         return {"normalized_evidence": normalized}
+
+    @staticmethod
+    def _question_contracts(state: dict[str, Any]) -> dict[str, QuestionContract]:
+        return {
+            str(getattr(planned, "id", "") or ""): build_question_contract(planned)
+            for planned in state.get("planned_questions", [])
+            if str(getattr(planned, "id", "") or "")
+        }
+
+    def _drop_substituted_topics(
+        self,
+        items: list[EvidenceItem],
+        contract: QuestionContract | None,
+    ) -> tuple[list[EvidenceItem], list[dict[str, Any]]]:
+        # Spec §13: an excerpt about a mutually exclusive topic must not stand in
+        # for the requested one. The producer no longer drops those, and its own
+        # topic labels come back as "misc", so the question contract is the only
+        # usable signal.
+        if not self.topic_isolation_enabled or contract is None:
+            return items, []
+        own = tuple(contract.metric_dimensions)
+        excluded = excluded_topic_dimensions(own)
+        if not excluded:
+            return items, []
+        kept: list[EvidenceItem] = []
+        dropped: list[dict[str, Any]] = []
+        for item in items:
+            substituted = substituted_topic_dimensions(item.raw_evidence_ko, own, excluded)
+            if not substituted:
+                kept.append(item)
+                continue
+            dropped.append(
+                {
+                    "chunk_id": item.chunk_id,
+                    "canonical_source_id": item.canonical_source_id,
+                    "source_name": item.source_name,
+                    "semantic_label": item.semantic_label,
+                    "requested_dimensions": list(own),
+                    "substituted_dimensions": list(substituted),
+                }
+            )
+        return kept, dropped
+
+    @staticmethod
+    def _collapse_repeated_evidence(
+        items: list[EvidenceItem],
+    ) -> tuple[list[EvidenceItem], list[dict[str, Any]]]:
+        # Team RAG dedupes only by canonical_source_id + chunk_id, so an excerpt
+        # stored in several source documents comes back once per document with a
+        # different chunk_id. The list is already ranked, so the first copy is
+        # the strongest one and the later copies only inflate the citations.
+        # Metric rows keep their own dedup key because a primary row and a
+        # scope_variant row may legitimately carry the same text.
+        kept: list[EvidenceItem] = []
+        winners: dict[str, EvidenceItem] = {}
+        dropped: list[dict[str, Any]] = []
+        for item in items:
+            if is_metric_row(item):
+                kept.append(item)
+                continue
+            fingerprint = evidence_fingerprint(item.raw_evidence_ko)
+            winner = winners.get(fingerprint)
+            if winner is None:
+                winners[fingerprint] = item
+                kept.append(item)
+                continue
+            dropped.append(
+                {
+                    "evidence_fingerprint": fingerprint,
+                    "kept_canonical_source_id": winner.canonical_source_id,
+                    "kept_chunk_id": winner.chunk_id,
+                    "kept_source_name": winner.source_name,
+                    "kept_semantic_label": winner.semantic_label,
+                    "dropped_canonical_source_id": item.canonical_source_id,
+                    "dropped_chunk_id": item.chunk_id,
+                    "dropped_source_name": item.source_name,
+                    "dropped_semantic_label": item.semantic_label,
+                }
+            )
+        return kept, dropped
 
     @staticmethod
     def _rank_key(item: EvidenceItem) -> tuple[int, float, int, int, float, float, float, int]:

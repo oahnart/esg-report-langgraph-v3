@@ -5,6 +5,7 @@ from typing import Any
 
 from .policy import has_accepted_label, has_evidence_text, has_stable_provenance
 from .source_policy import classify_source
+from .upstream_audit import excluded_topic_dimensions, substituted_topic_dimensions
 from .metric_routing import (
     has_metric_contract,
     is_metric_row,
@@ -79,6 +80,30 @@ class EvidenceGateAgent:
             )
             upstream_coverage_mismatches[planned.id] = mismatch
             routed_items = routed_gate_items(rag)
+            # Spec §13: evidence about a mutually exclusive topic cannot answer
+            # this question. Filtering here as well as in the normalizer keeps a
+            # question whose only evidence is off topic accounted as an evidence
+            # gap instead of a downstream writer failure.
+            if routed_items and self.config.get("topic_isolation_enabled", True):
+                own_dimensions = build_question_contract(planned).metric_dimensions
+                excluded_dimensions = excluded_topic_dimensions(own_dimensions)
+                if excluded_dimensions:
+                    on_topic_items = [
+                        item
+                        for item in routed_items
+                        if not substituted_topic_dimensions(
+                            item.raw_evidence_ko,
+                            own_dimensions,
+                            excluded_dimensions,
+                        )
+                    ]
+                    if not on_topic_items:
+                        gate[planned.id] = {
+                            "accepted": False,
+                            "reason": "off_topic_evidence_only",
+                        }
+                        continue
+                    routed_items = on_topic_items
             if rag.metric_status == "found_table" and not routed_items:
                 gate[planned.id] = {
                     "accepted": False,

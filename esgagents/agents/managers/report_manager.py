@@ -84,6 +84,16 @@ class ReportManagerAgent:
                 quality_flags = sorted(
                     set([*quality_flags, "local_partial_evidence", "partial_answer"])
                 )
+            facet_verification = dict(normalized.get("facet_verification", {}) or {})
+            off_topic_dropped = list(normalized.get("off_topic_evidence_dropped", []) or [])
+            if off_topic_dropped:
+                quality_flags = sorted(
+                    set([*quality_flags, "off_topic_evidence_dropped", "human_review_required"])
+                )
+            if facet_verification.get("overclaimed_facets"):
+                quality_flags = sorted(
+                    set([*quality_flags, "upstream_facet_overclaim", "human_review_required"])
+                )
             consumer_decision = self._consumer_decision(
                 final_answer=final_answer,
                 answer_status=rag.answer_status if rag else "",
@@ -121,7 +131,12 @@ class ReportManagerAgent:
                 ],
                 rag_narrative_evidence=[model_to_dict(item) for item in rag.narrative_evidence] if rag else [],
                 consumer_decision=consumer_decision,
-                upstream_hints=dict(state.get("upstream_hints", {}).get(planned.id, {})),
+                upstream_hints=self._upstream_hints(
+                    state.get("upstream_hints", {}).get(planned.id, {}),
+                    facet_verification=facet_verification,
+                    off_topic_dropped=off_topic_dropped,
+                    duplicate_dropped=list(normalized.get("duplicate_evidence_dropped", []) or []),
+                ),
                 upstream_coverage_mismatch=bool(
                     state.get("upstream_coverage_mismatches", {}).get(planned.id, False)
                 ),
@@ -192,6 +207,25 @@ class ReportManagerAgent:
             rag_request_traces=list(state.get("rag_request_traces", [])),
         )
         return {"artifacts": artifacts}
+
+    @staticmethod
+    def _upstream_hints(
+        hints: dict[str, Any],
+        *,
+        facet_verification: dict[str, Any],
+        off_topic_dropped: list[dict[str, Any]],
+        duplicate_dropped: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        # The producer's own hints stay untouched; what the client verified
+        # locally sits beside them so the audit sheet shows both sides.
+        merged = dict(hints)
+        if facet_verification:
+            merged["facet_verification"] = facet_verification
+        if off_topic_dropped:
+            merged["off_topic_evidence_dropped"] = off_topic_dropped
+        if duplicate_dropped:
+            merged["duplicate_evidence_dropped"] = duplicate_dropped
+        return merged
 
     @staticmethod
     def _writer_original_evidence(normalized: dict[str, Any]) -> str:

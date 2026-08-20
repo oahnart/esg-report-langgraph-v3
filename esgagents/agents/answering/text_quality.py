@@ -11,6 +11,9 @@ RAW_TABLE_TERMS = (
     "연간출고량",
     "parsed facts",
     "table block",
+    # A column-header row: "구분 | 기능 | 실적" flattened into running text. Bare
+    # consecutive header nouns never occur in a written sentence.
+    "구분 기능 실적",
 )
 HEADER_TERMS = (
     "단순화 전",
@@ -52,7 +55,17 @@ EDITORIAL_CUE_TERMS = (
     "원본 sr",
     "참고 부탁드립니다",
 )
-START_CONNECTOR_RE = re.compile(r"^(?:또한|이에 따라|그리고|아울러|이를 위해|하지만)[,，]?\s*")
+START_CONNECTOR_RE = re.compile(
+    r"^(?:또한|이에 따라|그리고|아울러|이를 위해|하지만|그\s*결과|이\s*결과|그리하여)[,，]?\s*"
+)
+# A polite ending running straight into the next clause means the source lost the
+# sentence boundary. Only a clause opener is accepted as the follower, so wording
+# such as "...라고 합니다 만" is left alone.
+MISSING_SENTENCE_STOP_RE = re.compile(
+    r"(습니다|합니다|입니다|됩니다)\s+"
+    r"(?=(?:그\s*결과|이\s*결과|그리하여|또한|그리고|아울러|하지만|그러나|따라서|이에\s|이러한|"
+    r"대웅제약은|대웅그룹은|회사는|당사는))"
+)
 ATTRIBUTION_PHRASES = (
     "제안/검토 자료에 따르면,",
     "평가 자료에 따르면,",
@@ -133,6 +146,34 @@ LEADING_EXAMPLE_RE = re.compile(
 INTRO_ONLY_RE = re.compile(
     r"(?:다음과\s*같습니다|다음과\s*같다|as\s+follows)\s*[:.]?\s*(?:\d+[.)]?)?\s*$",
     flags=re.IGNORECASE,
+)
+# Text sitting between a report cover/title-or-contents marker and the first
+# narrative clause is navigation, section headings or an internal working note --
+# never prose worth keeping. The working-note markers exclude their polite and
+# connective forms, which do occur in real sentences ("...전달 예정입니다").
+DOCUMENT_TITLE_PREFIX_RE = re.compile(
+    r"지속가능경영보고서|보고서\s*개요|SUSTAINABILITY\s+REPORT|ESG\s+DATA\s+REPORT"
+    r"|CEO\s*메시지|CompanyProfile|Company\s+Profile|BusinessPerformance"
+    r"|ESG경영\s*Framework|\[\s*E\s*\]\s*\[\s*S\s*\]\s*\[\s*G\s*\]"
+    r"|(?:취합|전달|작성|검토)\s*예정(?!입니다|이며|이고|이나)"
+    r"|사진\s*[가-힣]{2,10}팀",
+    flags=re.IGNORECASE,
+)
+# A Korean statute/regulation clause heading is document structure, not prose.
+# The bare-index form covers a clause number split from its text ("3 2인 이상의 ...").
+STATUTE_CLAUSE_HEADING_RE = re.compile(
+    r"^(?:제\s*\d+\s*[장절조](?:의\s*\d+)?|\d{1,2}\s+(?=[가-힣\d]))"
+)
+# Source regulations and policies are written in the plain declarative register
+# (``~한다``/``~할 수 있다``); the customer answer is written in the polite register
+# (``~합니다``). A plain-register sentence in the answer is pasted source text.
+PLAIN_REGISTER_SENTENCE_RE = re.compile(
+    r"(?:한다|한다고\s*한다|할\s*수\s*있다|될\s*수\s*있다|된다|아니다|이다)\s*[.。]?\s*$"
+)
+ENUMERATION_PROMISE_RE = re.compile(
+    r"\ub2e4\uc74c\uacfc\s*\uac19\uc740\s*[^.!?\u3002\uff01\uff1f]{0,40}?"
+    r"(?:\uacc4\ud68d|\ud56d\ubaa9|\ub0b4\uc6a9|\ud65c\ub3d9|\uc815\ucc45|\uae30\uc900|\uc808\ucc28|\uc0ac\ud56d|\uacfc\uc81c|\uc870\uce58|\ud504\ub85c\uadf8\ub7a8|\uc81c\ub3c4|\uccb4\uacc4)\s*(?:\uc744|\ub97c)\s*"
+    r"[^.!?\u3002\uff01\uff1f]{0,24}(?:\ud569\ub2c8\ub2e4|\uc788\uc2b5\ub2c8\ub2e4|\ud558\uc600\uc2b5\ub2c8\ub2e4)\s*[.\u3002]?\s*$"
 )
 ARROW_EDITORIAL_RE = re.compile(r"[\u25c0\u25b6]\s*[^.!?\u3002\uff01\uff1f]{0,700}?[\u25c0\u25b6]")
 NAME_TAG_PREFIX_RE = re.compile(
@@ -266,11 +307,21 @@ def remove_intro_only_sentences(text: str) -> tuple[str, bool]:
     retained: list[str] = []
     removed = False
     for index, part in enumerate(parts):
-        if index < len(parts) - 1 and INTRO_ONLY_RE.search(part.strip()):
+        stripped = part.strip()
+        is_last = index == len(parts) - 1
+        if not is_last and INTRO_ONLY_RE.search(stripped):
+            removed = True
+            continue
+        # A trailing sentence that announces a list nothing follows is an
+        # unfulfilled promise: the enumeration it introduced was dropped
+        # upstream, so the announcement reads as a truncated answer.
+        if is_last and index > 0 and (
+            INTRO_ONLY_RE.search(stripped) or ENUMERATION_PROMISE_RE.search(stripped)
+        ):
             removed = True
             continue
         retained.append(part)
-    if not removed:
+    if not removed or not retained:
         return text, False
     return " ".join(retained).strip(), True
 
@@ -346,8 +397,13 @@ def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
     """Normalize and validate the final customer answer in one idempotent pass."""
 
     original = str(text or "").strip()
+    without_title_run, removed_title_run = strip_leading_document_title_run(original)
+    if removed_title_run:
+        original = without_title_run
     initial_reason = final_answer_block_reason(original)
     cleaned, actions = normalize_final_answer_text(original)
+    if removed_title_run:
+        actions.append("removed_leading_document_title_run")
     without_source_attribution = SOURCE_ATTRIBUTION_RE.sub("", cleaned).strip()
     if without_source_attribution != cleaned:
         cleaned = _capitalize_initial_ascii(without_source_attribution)
@@ -369,6 +425,146 @@ def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
     if salvaged and not cleaned_reason:
         final_reason = ""
     return cleaned, final_reason, actions
+
+
+# Sentence-final plain/journalistic endings mapped to the polite register the
+# customer answer is written in. Every entry is a sentence-final verb ending, so
+# the substitution is anchored at the end of a sentence and cannot alter wording
+# mid-clause. Order matters: 아니다 must be matched before the shorter 이다.
+POLITE_REGISTER_ENDINGS = (
+    ("아니다", "아닙니다"),
+    ("이다", "입니다"),
+    ("한다", "합니다"),
+    ("있다", "있습니다"),
+    ("없다", "없습니다"),
+    ("된다", "됩니다"),
+    ("했다", "했습니다"),
+    ("됐다", "됐습니다"),
+    ("였다", "였습니다"),
+    ("웠다", "웠습니다"),
+)
+POLITE_REGISTER_RE = re.compile(
+    r"(" + "|".join(plain for plain, _ in POLITE_REGISTER_ENDINGS) + r")(\s*[.。]?)\s*$"
+)
+POLITE_REGISTER_MAP = dict(POLITE_REGISTER_ENDINGS)
+
+
+def normalize_to_polite_register(text: str) -> tuple[str, list[str]]:
+    """Restate source-register sentences in the answer's polite register.
+
+    Regulations, policies and press copy are written in the plain or journalistic
+    register (``관리한다``, ``요청할 수 있다``, ``진행됐다``) while the customer answer uses
+    the polite one (``관리합니다``). Dropping such a sentence loses real disclosure, so
+    convert it instead. Only the sentence-final ending is rewritten, which keeps
+    the clause structure -- and therefore the meaning -- untouched.
+    """
+
+    sentences = re.split(r"((?<=[.!?。！？])\s+|\n+)", str(text or ""))
+    converted: list[str] = []
+    actions: list[str] = []
+    for index, chunk in enumerate(sentences):
+        if index % 2 or not chunk.strip():
+            converted.append(chunk)
+            continue
+        match = POLITE_REGISTER_RE.search(chunk.rstrip())
+        if match is None:
+            converted.append(chunk)
+            continue
+        trailing = chunk[len(chunk.rstrip()):]
+        replacement = POLITE_REGISTER_MAP[match.group(1)] + (match.group(2) or "")
+        converted.append(
+            chunk.rstrip()[: match.start()] + replacement + trailing
+        )
+        actions.append("normalized_to_polite_register")
+    return "".join(converted), list(dict.fromkeys(actions))
+
+
+def plain_register_sentences(text: str) -> list[str]:
+    """Return answer sentences written in the source register rather than prose.
+
+    Regulations and internal policies use the plain declarative form (``~한다``),
+    while the customer answer uses the polite form (``~합니다``). A plain-register
+    sentence therefore signals source text quoted verbatim, which both breaks the
+    register and states a rule as if it described practice. Rewriting Korean verb
+    endings mechanically risks ungrammatical output, so this only reports.
+    """
+
+    sentences = [
+        part.strip()
+        for part in re.split(r"(?<=[.!?。！？])\s+|\n+", str(text or ""))
+        if part.strip()
+    ]
+    return [part for part in sentences if PLAIN_REGISTER_SENTENCE_RE.search(part)]
+
+
+def _leading_structural_run_end(value: str) -> int | None:
+    """End offset of a leading cover/heading or timeline run, if the answer has one.
+
+    Both shapes are document structure that a table extractor glued in front of real
+    prose, and both must sit before any sentence break to qualify -- otherwise an
+    ordinary sentence mentioning a report or a set of years would be truncated.
+    """
+
+    head = value[:220]
+    match = DOCUMENT_TITLE_PREFIX_RE.search(head[:80])
+    if match is not None and not re.search(r"[.!?。！？]", value[: match.start()]):
+        return match.end()
+    # A curated raw-table marker means the rows that follow it are table content;
+    # any prose after them is worth keeping on its own.
+    for term in RAW_TABLE_TERMS:
+        position = head.casefold().find(term.casefold())
+        if position >= 0 and not re.search(r"[.!?。！？]", value[:position]):
+            return position + len(term)
+    # A roadmap or milestone table arrives as bare years with no predicate between
+    # them. Years written as "2025년" belong to prose and are excluded.
+    years = list(re.finditer(r"(?<!\d)(?:19|20)\d{2}(?!\s*년|\s*\.|\d)", head))
+    if len(years) >= 3 and not re.search(r"[.!?。！？]", value[: years[-1].end()]):
+        return years[-1].end()
+    return None
+
+
+def strip_leading_document_title_run(text: str) -> tuple[str, bool]:
+    """Drop a leading report title plus the section headings that follow it.
+
+    A grammatical sentence can arrive with a cover/heading run glued to its
+    front -- ``"대웅제약 2025 지속가능경영보고서 약물감시 활동 및 성과 약물감시 조직 및 매뉴얼
+    고도화 대웅제약의 약물감시는 ... 준수합니다."``. The sentence itself is valid, so no
+    structural gate rejects it; only the prefix has to go. The marker must sit at
+    the start of the answer, before any sentence break, so an in-sentence mention
+    such as ``"지속가능경영보고서 발간"`` is untouched. A roadmap or timeline table
+    reaches the answer the same way, recognised instead by its run of bare years.
+    """
+
+    value = " ".join(str(text or "").split())
+    if not value:
+        return text, False
+    parts = re.split(r"(?<=[.!?。！？])\s+", value)
+    stripped = [_strip_structural_run_from_sentence(part) for part in parts]
+    if stripped == parts:
+        return text, False
+    return " ".join(part for part in stripped if part).strip(), True
+
+
+def _strip_structural_run_from_sentence(sentence: str) -> str:
+    """Remove a cover/heading or timeline run glued to the front of one sentence.
+
+    A table extractor can attach the run to any sentence, not only the first, so a
+    roadmap block reaches the middle of an answer just as readily as its start.
+    """
+
+    value = sentence.strip()
+    if not value:
+        return sentence
+    run_end = _leading_structural_run_end(value)
+    if run_end is None:
+        return sentence
+    narrative = KOREAN_NARRATIVE_START_RE.search(value, run_end)
+    if narrative is None or narrative.start() <= run_end:
+        return sentence
+    remainder = value[narrative.start():].strip(" ,;:-·|")
+    if not _has_salvage_substance(remainder) or final_answer_block_reason(remainder):
+        return sentence
+    return remainder
 
 
 def salvage_final_answer_narrative(text: str, reason: str) -> tuple[str, list[str]]:
@@ -421,6 +617,26 @@ def _salvage_candidate_segments(value: str, reason: str) -> list[str]:
     return segments
 
 
+def _is_droppable_salvage_prefix(prefix: str) -> bool:
+    """Allow the narrative-start cut only when nothing substantive precedes it.
+
+    ``KOREAN_NARRATIVE_START_RE`` matches the topic particle ``은/는``, which also
+    ends adnominal verb forms and appears mid-sentence constantly. Cutting on the
+    leftmost match beheads a complete sentence and silently drops whatever came
+    before it -- typically the metric name and its measured values, e.g.
+    ``"27개 항목의 이행조치를 완료하고 39개 항목은 이행조치 중에 있습니다."`` collapsing to
+    ``"항목은 이행조치 중에 있습니다."``. Only a marker/numbering prefix, or a run of
+    report cover and section-heading text, is droppable.
+    """
+
+    value = str(prefix or "").strip()
+    if not value:
+        return False
+    if not KOREAN_CHAR_RE.search(value) and not re.search(r"[A-Za-z]", value):
+        return True
+    return bool(DOCUMENT_TITLE_PREFIX_RE.search(value))
+
+
 def _clean_salvage_candidate(segment: str) -> str:
     value = str(segment or "").strip(" \t\r\n,;:-/\\|")
     value = LEADING_PARENTHETICAL_HEADING_RE.sub("", value, count=1).strip()
@@ -438,7 +654,11 @@ def _clean_salvage_candidate(segment: str) -> str:
             value = value[explicit_start.start():].strip(" ,;:-")
         else:
             narrative_start = KOREAN_NARRATIVE_START_RE.search(value)
-            if narrative_start and narrative_start.start() > 0:
+            if (
+                narrative_start
+                and narrative_start.start() > 0
+                and _is_droppable_salvage_prefix(value[: narrative_start.start()])
+            ):
                 value = value[narrative_start.start():].strip(" ,;:-")
     if ANY_LIST_MARKER_RE.search(value):
         return ""
@@ -463,6 +683,8 @@ def non_narrative_reason(text: str) -> str:
         return "document_boilerplate_output"
     if LEADING_PROCEDURE_HEADING_FRAGMENT_RE.search(value):
         return "procedure_heading_fragment_output"
+    if STATUTE_CLAUSE_HEADING_RE.search(value):
+        return "statute_clause_output"
     if any(term.casefold() in lower for term in RAW_TABLE_TERMS):
         return "raw_table_output"
     if LEADING_NUMBERED_BLOCK_RE.search(value):
@@ -540,6 +762,11 @@ def has_substantive_answer(text: str) -> bool:
 def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
     value = str(text or "").strip()
     actions: list[str] = []
+    with_stops = MISSING_SENTENCE_STOP_RE.sub(r"\1. ", value)
+    if with_stops != value:
+        value = with_stops
+        actions.append("restored_sentence_boundary")
+
     without_connector = START_CONNECTOR_RE.sub("", value, count=1).strip()
     if without_connector != value:
         value = without_connector
@@ -634,12 +861,16 @@ def deduplicate_repeated_sentences(text: str) -> tuple[str, bool]:
     ]
     if len(parts) < 2:
         return text, False
+    keys = [_sentence_identity_key(part) for part in parts]
     seen: set[str] = set()
     retained: list[str] = []
     removed = False
-    for part in parts:
-        key = re.sub(r"\s+", " ", part.rstrip(".!?\u3002\uff01\uff1f").strip()).casefold()
+    for index, part in enumerate(parts):
+        key = keys[index]
         if len(key) >= 30 and key in seen:
+            removed = True
+            continue
+        if _is_redundant_sentence_fragment(key, index, keys):
             removed = True
             continue
         seen.add(key)
@@ -647,6 +878,41 @@ def deduplicate_repeated_sentences(text: str) -> tuple[str, bool]:
     if not removed:
         return text, False
     return " ".join(retained).strip(), True
+
+
+def _sentence_identity_key(part: str) -> str:
+    """Collapse spacing and separator noise so re-typed repeats compare equal.
+
+    Writers restate the same evidence sentence with different word spacing or
+    with ``\u00b7`` swapped for a space (``\uacfc\ud559\uc801\uc73c\ub85c``/``\uacfc\ud559\uc801 \uc73c\ub85c``,
+    ``\ud0d0\uc9c0\u00b7\ud3c9\uac00``/``\ud0d0\uc9c0 \ud3c9\uac00``), which an exact-string check treats as distinct.
+    """
+
+    value = unicodedata.normalize("NFKC", str(part or ""))
+    value = value.rstrip(".!?\u3002\uff01\uff1f").strip()
+    return re.sub(r"[\s\u00b7\u2027\u30fb,;:()\[\]/\\|\-\u2013\u2014]+", "", value).casefold()
+
+
+def _is_redundant_sentence_fragment(key: str, index: int, keys: list[str]) -> bool:
+    """Drop a sentence that another sentence already states in full.
+
+    A beheaded copy of a sentence can survive next to the intact one -- e.g.
+    ``"\uc9c0\uc6d0\ud558\ub294 \ubc29\uc548\uc744 \uac80\ud1a0 \uc911\uc5d0 \uc788\uc2b5\ub2c8\ub2e4."`` alongside the complete
+    ``"\ub610\ud55c, \uacf5\uae09\ub9dd \ub0b4\uc5d0 ... \ub179\uc0c9\uc81c\ud488 \uacf5\uae09\uc744 \uc9c0\uc6d0\ud558\ub294 \ubc29\uc548\uc744 \uac80\ud1a0 \uc911\uc5d0 \uc788\uc2b5\ub2c8\ub2e4."``. The
+    fragment adds nothing and reads as a truncation defect, so keep the longer
+    sentence only. Matching is restricted to a suffix: an arbitrary substring can
+    be a legitimate shorter statement, but a tail that another sentence completes
+    is the beheading signature.
+    """
+
+    if len(key) < 12:
+        return False
+    for other_index, other in enumerate(keys):
+        if other_index == index or len(other) <= len(key):
+            continue
+        if other.endswith(key):
+            return True
+    return False
 
 
 def clean_customer_evidence_text(text: str) -> tuple[str, list[str]]:

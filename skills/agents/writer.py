@@ -17,8 +17,10 @@ from esgagents.schemas import SkillDraft
 from esgagents.agents.answering.question_contracts import build_question_contract
 from esgagents.agents.answering.text_quality import (
     clean_customer_evidence_text,
+    final_answer_block_reason,
     has_substantive_answer,
     non_substantive_reason,
+    normalize_to_polite_register,
     safe_narrative_text,
 )
 from esgagents.agents.evidence.metric_facts import (
@@ -28,6 +30,31 @@ from esgagents.agents.evidence.metric_facts import (
 )
 
 logger = logging.getLogger(__name__)
+
+# A claim opening with a back-reference has no antecedent when it leads the answer.
+ANAPHORIC_OPENING_RE = re.compile(
+    r"^\s*(?:이러한|이와\s|이를|이에\s|이는\s|그러한|이\s+덕분에|이\s+경우|"
+    r"또한|아울러|하지만|그러나|따라서|반면|다만|한편)"
+)
+
+
+def _lead_with_self_contained_claim(claims: list[str]) -> list[str]:
+    """Keep the ranked order but never open with a claim that refers backwards.
+
+    Relevance ranking deliberately promotes the claim that answers the question
+    -- for an organization question, the one naming the accountable body -- so the
+    order must be preserved. It can still put a back-referencing claim first
+    ("이러한 노력의 결과, ..."), which then has no antecedent to refer to; in that
+    case the first self-contained claim leads and the rest follow unchanged.
+    """
+
+    if len(claims) < 2 or not ANAPHORIC_OPENING_RE.match(claims[0]):
+        return claims
+    for index, claim in enumerate(claims):
+        if not ANAPHORIC_OPENING_RE.match(claim):
+            return [claim, *claims[:index], *claims[index + 1:]]
+    return claims
+
 
 FACET_AUGMENT_TERMS = {
     "target": ("목표", "달성", "감축", "target", "goal"),
@@ -319,7 +346,7 @@ class SkillWriterAgent:
             return metric_fallback or fallback or evidence_fallback, ["llm_error_fallback"]
 
     @staticmethod
-    def _evidence_fallback(context: dict[str, Any]) -> str:
+    def _ranked_evidence_claims(context: dict[str, Any]) -> list[tuple[int, int, str]]:
         ranked_claims: list[tuple[int, int, str]] = []
         question_terms = SkillWriterAgent._fallback_search_terms(
             " ".join(
@@ -373,6 +400,17 @@ class SkillWriterAgent:
                 safe_claim = safe_narrative_text(claim[:700])
                 if not safe_claim:
                     continue
+                # The fallback pastes raw evidence straight into the customer
+                # answer, so each candidate has to clear the same structural gate
+                # a written answer does. Without this, report tables of contents
+                # ("// 00 CEO 메시지 00 CompanyProfile ..."), cover/heading runs and
+                # numbered regulation clauses ship as prose.
+                if final_answer_block_reason(safe_claim):
+                    continue
+                # Regulation and policy text is written in the plain register while
+                # the answer uses the polite one. Restate it rather than drop it --
+                # the clause carries real disclosure, only its ending is wrong.
+                safe_claim, _ = normalize_to_polite_register(safe_claim)
                 normalized_claim = safe_claim.casefold()
                 relevance = sum(
                     1 for term in question_terms if term in normalized_claim
@@ -399,11 +437,17 @@ class SkillWriterAgent:
                 sequence += 1
 
         if not ranked_claims:
-            return ""
+            return []
         if question_terms and any(score > 0 for score, _, _ in ranked_claims):
             ranked_claims = [row for row in ranked_claims if row[0] > 0]
         ranked_claims.sort(key=lambda row: (-row[0], row[1]))
-        return compact(" ".join(claim for _, _, claim in ranked_claims[:3]))
+        return ranked_claims
+
+    @staticmethod
+    def _evidence_fallback(context: dict[str, Any]) -> str:
+        ranked = SkillWriterAgent._ranked_evidence_claims(context)
+        selected = [claim for _, _, claim in ranked[:3]]
+        return compact(" ".join(_lead_with_self_contained_claim(selected)))
 
     @classmethod
     def _metric_narrative_fallback(

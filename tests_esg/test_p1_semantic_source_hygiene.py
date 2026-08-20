@@ -2,8 +2,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from esgagents.agents.answering.output_hygiene import OutputHygieneAgent, normalize_markdown
-from esgagents.agents.answering.question_contracts import METRIC_DIMENSIONS_BY_QID
+from esgagents.agents.answering.output_hygiene import (
+    OutputHygieneAgent,
+    normalize_markdown,
+    sanitize_person_names,
+)
+from esgagents.agents.answering.question_contracts import (
+    METRIC_DIMENSIONS_BY_QID,
+    build_question_contract,
+)
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
 from esgagents.agents.answering.text_quality import (
     non_narrative_reason,
@@ -13,6 +20,10 @@ from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgen
 from esgagents.agents.evidence.source_policy import classify_source
 from esgagents.quality_flags import CANONICAL_FLAGS
 from esgagents.schemas import EvidenceItem, QAResult, RagQuestionResult, SemanticReview
+
+METRIC_CONTRACT_FOR_TESTS = build_question_contract(
+    SimpleNamespace(id="Q019", pillar="Metrics", item_ko="개인정보 침해 현황", description_ko="")
+)
 
 
 def _planned(qid="Q999", pillar="Metrics", item="Waste KPI", description="Disclose performance"):
@@ -1810,12 +1821,87 @@ def test_output_hygiene_salvages_valid_answer_after_parenthetical_heading():
         }
     )
 
-    assert result["final_answers"][qid].endswith("보안사고 예방 활동을 수행한다.")
+    # The heading is stripped; the plain-register ending of the salvaged clause is
+    # additionally restated in the answer's polite register.
+    assert result["final_answers"][qid].endswith("보안사고 예방 활동을 수행합니다.")
     assert not result["final_answers"][qid].startswith("(")
     assert result["qa_results"][qid].status == "passed"
     assert "non_narrative_output" not in result["quality_flags"][qid]
     assert "salvaged_narrative_after_list_or_heading" in result["sanitizer_actions"][qid]
+    assert "normalized_to_polite_register" in result["sanitizer_actions"][qid]
 
 
 def test_markdown_normalization_does_not_add_claims():
     assert normalize_markdown("## Heading\n1. `Fact`\n[Policy](https://example.test)") == "Heading\n• Fact\nPolicy"
+
+
+def test_attributive_modifier_before_a_role_is_not_redacted_as_a_person_name():
+    """Regression for Q061: ``여성``/``남성``/``신규`` share the shape of a Korean
+    given name, and redacting them deletes the diversity qualifier itself."""
+
+    kept, actions = sanitize_person_names(
+        "제약업계 최초의 30대 여성 임원이 수상하였으며, 여성 이사 비율과 "
+        "남성 임원 비율을 관리하고 신규 임원 교육을 실시하고 있습니다."
+    )
+
+    assert "여성 임원" in kept
+    assert "여성 이사 비율" in kept
+    assert "남성 임원 비율" in kept
+    assert "신규 임원 교육" in kept
+    assert actions == []
+
+
+def test_person_name_before_a_role_is_still_redacted():
+    redacted, actions = sanitize_person_names("김철수 대표이사가 이사회에 참석하였습니다.")
+
+    assert "김철수" not in redacted
+    assert redacted.startswith("대표이사가")
+    assert "redacted_person_name" in actions
+
+
+def test_metrics_coverage_shortfall_keeps_the_on_topic_narrative():
+    """Regression for Q019: the figure was withheld for low metric confidence, and
+    the critic discarded the sourced qualitative prose along with it."""
+
+    review = SemanticReview(
+        alignment="insufficient",
+        source_usage="appropriate",
+        covered_facets=["qualitative_narrative"],
+        missing_facets=["metric_result", "reporting_period"],
+        notes=["missing facet: metric_result"],
+    )
+    contract = METRIC_CONTRACT_FOR_TESTS
+
+    assert not SemanticCompletenessCriticAgent._hard_failure(review, contract)
+    assert SemanticCompletenessCriticAgent._coverage_shortfall(review)
+
+
+@pytest.mark.parametrize(
+    "review",
+    [
+        SemanticReview(alignment="misaligned", source_usage="appropriate", covered_facets=["qualitative_narrative"]),
+        SemanticReview(alignment="insufficient", source_usage="overstated", covered_facets=["qualitative_narrative"]),
+        SemanticReview(
+            alignment="insufficient",
+            source_usage="appropriate",
+            covered_facets=["qualitative_narrative"],
+            notes=["semantic thematic mismatch"],
+        ),
+        SemanticReview(
+            alignment="insufficient",
+            source_usage="appropriate",
+            covered_facets=["reporting_period"],
+            missing_facets=["metric_result"],
+            notes=["missing data disclosed"],
+        ),
+        SemanticReview(
+            alignment="insufficient",
+            source_usage="appropriate",
+            covered_facets=["reporting_period"],
+            missing_facets=["metric_result"],
+        ),
+    ],
+)
+def test_wrong_topic_and_gap_only_answers_are_still_discarded(review):
+    assert SemanticCompletenessCriticAgent._hard_failure(review, METRIC_CONTRACT_FOR_TESTS)
+    assert not SemanticCompletenessCriticAgent._coverage_shortfall(review)

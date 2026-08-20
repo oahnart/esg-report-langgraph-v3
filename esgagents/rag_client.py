@@ -172,21 +172,15 @@ class TeamRagClient:
         top_k: int,
         year: int,
     ) -> RagResponse:
+        # Contract "new" lets an empty item_ids mean "every question"; "legacy" short-circuits.
         if not item_ids and self.request_contract == "legacy":
             return RagResponse(company_id=company_id, results=[])
-        if self.request_contract == "new":
-            payload = {
-                "company_id": company_id,
-                "question_ids": item_ids,
-                "top_k": top_k,
-            }
-        else:
-            payload = {
-                "company_id": company_id,
-                "item_ids": item_ids,
-                "top_k": top_k,
-                "year": year,
-            }
+        payload = {
+            "company_id": company_id,
+            "item_ids": item_ids,
+            "year": year,
+            "top_k": top_k,
+        }
         data = self._post(payload)
         if self.is_v3:
             return self._parse_v3_response(data, company_id=company_id, item_ids=item_ids)
@@ -538,7 +532,7 @@ class TeamRagClient:
             if len(body) > 1000:
                 body = f"{body[:1000]}..."
 
-        item_ids = payload.get("question_ids") or payload.get("item_ids") or []
+        item_ids = payload.get("item_ids") or []
         payload_summary = {
             "company_id": payload.get("company_id"),
             "item_id_count": len(item_ids) if isinstance(item_ids, list) else "unknown",

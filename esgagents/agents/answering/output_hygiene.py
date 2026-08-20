@@ -11,6 +11,7 @@ from .text_quality import (
     clean_customer_evidence_text,
     customer_source_attribution_reason,
     normalize_answer_coherence,
+    normalize_to_polite_register,
 )
 
 
@@ -27,12 +28,35 @@ KOREAN_NAME_ROLE_RE = re.compile(
     rf"(?<![가-힣A-Za-z])([{KOREAN_SURNAMES}][가-힣]{{1,2}})\s+"
     rf"({ROLE_PATTERN})(?=\s|,|\)|\.|과|와|이|가|을|를|은|는|$)"
 )
+# A real given name is indistinguishable by shape from an attributive modifier
+# whose first syllable happens to be a surname (여/남/신/전/고/기 ...). Redacting
+# those deletes the very qualifier that carries the disclosure -- "30대 여성 임원"
+# becomes "30대 임원", and "여성 이사 비율" becomes "이사 비율", erasing the gender
+# diversity figure the report is required to state.
 KOREAN_NAME_FALSE_POSITIVES = {
     "정관상",
     "구성된",
     "고려한",
     "선임된",
     "포함한",
+    "여성",
+    "남성",
+    "신규",
+    "신임",
+    "전임",
+    "현직",
+    "전담",
+    "상근",
+    "비상근",
+    "독립",
+    "사내",
+    "사외",
+    "기타",
+    "고위",
+    "주요",
+    "해당",
+    "총괄",
+    "담당",
 }
 ENGLISH_NAME_ROLE_RE = re.compile(
     r"\b(?:[A-Z][a-z]+\s+){2,3}(CEO|Director|Manager|Officer|Chair|President)\b"
@@ -131,6 +155,10 @@ class OutputHygieneAgent:
                 actions.extend(final_cleanup_actions)
                 flags.append("final_answer_normalized")
             redacted = cleaned_answer
+            redacted, register_actions = normalize_to_polite_register(redacted)
+            if register_actions:
+                actions.extend(register_actions)
+                flags.append("plain_register_sentence")
             source_reason = customer_source_attribution_reason(redacted)
             source_limited = any(
                 str(flag or "").casefold()

@@ -1237,3 +1237,134 @@ def test_source_overstatement_salvage_keeps_attributed_draft_plan_claim():
 
     assert "하반기 EHS 위원회" in answer
     assert actions == []
+
+
+def test_evidence_fallback_does_not_open_with_a_back_referencing_claim():
+    """Regression for Q057: relevance ranking put "이러한 노력의 결과, ..." first, so
+    the answer opened by referring back to efforts it had not yet described."""
+
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "question": "인적 자본 관리 조직 및 체계",
+            "description": "인적 자본 관리 조직과 운영 체계를 기술",
+            "evidence_items": [
+                _item(
+                    "대웅제약은 자율과 성장 중심의 조직문화를 기반으로 근무환경을 지속 강화하고 있습니다. "
+                    "이러한 노력의 결과, 인적자원개발 우수기관(Best HRD) 등 다양한 대외 인증을 통해 "
+                    "조직문화 및 근무환경 경쟁력을 인정받고 있습니다.",
+                    semantic_label="useful",
+                )
+            ],
+        }
+    )
+
+    assert not answer.startswith("이러한 노력의 결과")
+    assert answer.index("자율과 성장") < answer.index("이러한 노력의 결과")
+    assert "Best HRD" in answer
+
+
+def test_evidence_fallback_keeps_ranked_order_when_the_lead_is_self_contained():
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "question": "컴플라이언스 관리 조직 및 체계",
+            "description": "전담 조직과 역할을 설명합니다",
+            "evidence_items": [
+                _item("국제 표준 인증(ISO) 유지와 컴플라이언스 대응을 통해 신뢰를 확보하고 있습니다.", semantic_label="useful"),
+                _item("대웅그룹 정보보호팀은 보안 기준과 원칙을 수립하는 전담 조직입니다.", semantic_label="useful"),
+            ],
+        }
+    )
+
+    assert answer.startswith("대웅그룹 정보보호팀은")
+
+
+def test_same_excerpt_from_two_documents_is_collapsed_to_the_strongest_copy():
+    # Team RAG dedupes only by canonical_source_id + chunk_id, so an excerpt that
+    # exists in several source files returns once per file with its own chunk_id
+    # and its own semantic label.
+    shared_text = "대웅제약은 인권경영 정책을 수립하고 인권영향평가를 실시하고 있습니다."
+    rag = RagQuestionResult(
+        question_id="Q028",
+        answer_status="thin_but_usable",
+        coverage_status="partial",
+        answerable=True,
+        metric_expected=False,
+        items=[
+            _item(
+                shared_text,
+                semantic_label="partial",
+                semantic_score=0.7,
+                canonical_source_id="src_report",
+                chunk_id="doc_report_c1",
+                source_name="business_report.pdf",
+                source_path="ESG/business_report.pdf",
+            ),
+            _item(
+                shared_text,
+                semantic_label="useful",
+                semantic_score=0.9,
+                canonical_source_id="src_ungc",
+                chunk_id="doc_ungc_c7",
+                source_name="ungc.xlsx",
+                source_path="ESG/ungc.xlsx",
+            ),
+            _item(
+                "인권 고충처리 채널을 운영하고 접수된 사안을 규정에 따라 조치합니다.",
+                semantic_label="useful",
+                semantic_score=0.85,
+                canonical_source_id="src_policy",
+                chunk_id="doc_policy_c2",
+                source_name="policy.pdf",
+                source_path="ESG/policy.pdf",
+            ),
+        ],
+    )
+
+    normalized = EvidenceNormalizerAgent(load_config({"agent_mode": "offline"})).run(
+        {"rag_results": {"Q028": rag}}
+    )["normalized_evidence"]["Q028"]
+
+    texts = [item.raw_evidence_ko for item in normalized["items"]]
+    assert texts.count(shared_text) == 1
+    assert len(normalized["items"]) == 2
+    assert len(normalized["sources"]) == 2
+    kept = next(item for item in normalized["items"] if item.raw_evidence_ko == shared_text)
+    assert kept.semantic_label == "useful"
+    assert kept.chunk_id == "doc_ungc_c7"
+    assert [
+        (entry["kept_chunk_id"], entry["dropped_chunk_id"])
+        for entry in normalized["duplicate_evidence_dropped"]
+    ] == [("doc_ungc_c7", "doc_report_c1")]
+
+
+def test_metric_rows_are_not_collapsed_by_repeated_row_text():
+    rag = RagQuestionResult(
+        question_id="Q079",
+        answer_status="high_confidence",
+        coverage_status="complete",
+        answerable=True,
+        metric_expected=True,
+        items=[
+            _item(
+                "이사회 인원 | 명 | 2025=7.0",
+                semantic_label="metric_row",
+                canonical_source_id="metric_lane::governance.xlsx",
+                chunk_id="b1::sheet::48",
+            ),
+            _item(
+                "이사회 인원 | 명 | 2025=7.0",
+                semantic_label="metric_row",
+                canonical_source_id="metric_lane::governance.xlsx",
+                chunk_id="b1::sheet::49",
+            ),
+        ],
+    )
+
+    normalized = EvidenceNormalizerAgent(load_config({"agent_mode": "offline"})).run(
+        {"rag_results": {"Q079": rag}}
+    )["normalized_evidence"]["Q079"]
+
+    # A primary row and a scope_variant row may carry the same text, so the
+    # metric lane keeps its own dedup key instead of collapsing on text.
+    assert len(normalized["items"]) == 2
+    assert normalized["duplicate_evidence_dropped"] == []

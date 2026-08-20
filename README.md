@@ -74,8 +74,9 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | --------------------------------- | --------------------------------------------: | ------------------------------------------------------------------------------------------------------- |
 | `TEAM_RAG_BASE_URL`               |                                          rong | Base URL cua Team RAG. Bat buoc khi goi RAG live.                                                       |
 | `TEAM_RAG_QUALITATIVE_PATH`       |                    `/qualitative/evidence/v3` | Endpoint qualitative. Dat `/qualitative/evidence/v2` de rollback; khong co fallback tu dong.            |
-| `TEAM_RAG_REQUEST_CONTRACT`       |                                         `new` | `new` gui `question_ids`; dat `legacy` de rollback ve `item_ids + year`.                                |
+| `TEAM_RAG_REQUEST_CONTRACT`       |                                         `new` | Body luon la `company_id + item_ids + year + top_k`; `new` cho phep `item_ids` rong (lay het cau), `legacy` tra ve rong ngay.                                |
 | `TEAM_RAG_TIMEOUT_SECONDS`        |                                          `30` | Timeout moi request RAG.                                                                                |
+| `ESG_TOPIC_ISOLATION_ENABLED`     |                                        `true` | Bo evidence bi thay the chu de theo spec §13 (GHG vs o nhiem, nuoc su dung vs nuoc thai, co dong vs giao dich noi bo). Dat `false` de tat.                                                                                |
 | `TEAM_RAG_TOP_K`                  |                                           `5` | Voi metric la so block `primary`; voi cau khac la ngan sach evidence.                                   |
 | `ESG_TEAM_RAG_RETRY_TOP_K`        |                                           `0` | Neu > `TEAM_RAG_TOP_K`, retry QID evidence rong/yeu voi top_k cao hon.                                  |
 | `TEAM_RAG_BATCH_SIZE`             |                                          `20` | So QID trong moi batch RAG.                                                                             |
@@ -421,7 +422,8 @@ Request body:
 ```json
 {
   "company_id": "samsung_electronics",
-  "question_ids": ["Q001", "Q016"],
+  "item_ids": ["Q001", "Q016"],
+  "year": 2025,
   "top_k": 5
 }
 ```
@@ -498,6 +500,16 @@ Rollback thu cong khi can:
 $env:TEAM_RAG_QUALITATIVE_PATH="/qualitative/evidence/v2"
 $env:TEAM_RAG_REQUEST_CONTRACT="legacy"
 ```
+
+`legacy` chi khac o cho: `item_ids` rong se tra ket qua rong thay vi goi API de lay toan bo cau.
+
+### Kiem tra phia client
+
+Index v3 dang tra ve nhan/status nhung khong loc (`retrieval_notes`: "no overlay/dedupe/noise-drop, labels/status only"), nen client tu kiem 3 thu:
+
+- **Dedupe xuyen document**: cung mot doan text nam trong nhieu file nguon se bi collapse, giu ban rank cao nhat. Ghi vao `normalized_evidence[qid]["duplicate_evidence_dropped"]`.
+- **Topic isolation (§13)**: evidence noi ve chu de loai tru nhau va khong noi gi ve chu de duoc hoi thi bi bo. Neu ca cau chi con evidence lech chu de, `evidence_gate` tra `reason=off_topic_evidence_only` va dat flag `off_topic_evidence_dropped` + `human_review_required`.
+- **Facet grounding (§7/§8)**: `covered_facets` la loi khai cua producer, duoc doi chieu voi text evidence thuc nhan. Sai lech ghi vao `upstream_hints.facet_verification` va dat flag `upstream_facet_overclaim`.
 
 V2 tiep tuc dung logic `answer_status`/semantic label cu. Cau hinh quantitative khong bi anh huong.
 

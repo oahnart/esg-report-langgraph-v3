@@ -92,7 +92,8 @@ def test_rag_client_posts_expected_batch_payload():
     assert seen["endpoint"] == "https://rag.example/qualitative/evidence/v3"
     assert seen["payload"] == {
         "company_id": "iljinhysolus",
-        "question_ids": ["Q016", "Q003"],
+        "item_ids": ["Q016", "Q003"],
+        "year": 2025,
         "top_k": 5,
     }
     assert seen["timeout"] == 12
@@ -116,12 +117,12 @@ def test_rag_client_legacy_request_contract_keeps_item_ids_and_year():
     assert seen["payload"] == {
         "company_id": "iljinhysolus",
         "item_ids": ["Q016"],
-        "top_k": 5,
         "year": 2025,
+        "top_k": 5,
     }
 
 
-def test_new_request_contract_sends_empty_question_ids_and_accepts_all_results():
+def test_new_request_contract_sends_empty_item_ids_and_accepts_all_results():
     seen = {}
 
     def transport(endpoint, payload, timeout):
@@ -133,7 +134,8 @@ def test_new_request_contract_sends_empty_question_ids_and_accepts_all_results()
 
     assert seen["payload"] == {
         "company_id": "iljinhysolus",
-        "question_ids": [],
+        "item_ids": [],
+        "year": 2025,
         "top_k": 5,
     }
     assert [result.question_id for result in response.results] == ["Q016", "Q003"]

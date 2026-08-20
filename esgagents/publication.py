@@ -34,6 +34,7 @@ REVIEW_FLAGS = {
     "metric_numeric_withheld",
     "metric_summary_mismatch",
     "partial_answer",
+    "plain_register_sentence",
     "rag_partial_coverage",
     "provenance_fallback",
     "source_path_invalid",
@@ -215,6 +216,8 @@ def _claim_support_issues(answer: Any) -> tuple[set[str], set[str]]:
             review.add("unknown_source_tier")
         if status in {"grounded", "partial"} and tier == "tier_4_draft":
             review.add("draft_evidence")
+        if status == "partial":
+            review.add(f"claim_partial_support:{claim_id}")
     return blocking, review
 
 

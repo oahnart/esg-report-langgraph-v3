@@ -50,6 +50,11 @@ STOPWORDS = {
     "recorded",
     "according",
 }
+INTENT_STEM_RE = re.compile(
+    r"([가-힣]{2,12})(?:하고자\s*(?:합니다|하며|하고)|할\s*(?:계획|예정)(?:입니다|이며|이고)?)"
+)
+PRACTICE_ENDINGS = ("하며", "합니다", "하고 있습니다", "하고 있으며", "하여", "하였습니다", "한다")
+EVIDENCE_PRACTICE_ENDINGS = (*PRACTICE_ENDINGS, "하고 있", "하였", "했")
 TIER_RANK = {
     "tier_1_governing": 5,
     "tier_2_operational": 4,
@@ -112,12 +117,51 @@ def build_claim_support(answer: str, evidence_items: list[Any]) -> list[ClaimSup
                 claim_text=claim,
                 source_ids=source_ids,
                 support_tier=strongest_tier,
-                support_status="grounded",
+                support_status=(
+                    "partial"
+                    if overstates_evidence_intent(claim, evidence_items)
+                    else "grounded"
+                ),
                 reporting_period=period_match.group(0) if period_match else "",
                 attribution_required=False,
             )
         )
     return result
+
+
+def overstates_evidence_intent(claim: str, evidence_items: list[Any]) -> bool:
+    """Detect a claim stating as current practice what evidence only intends.
+
+    Source text routinely commits to a future action (``적용하고자 합니다``,
+    ``확대할 예정입니다``) and the writer renders it as an operating control
+    (``적용하며``, ``확대하여``). For an ESG disclosure that difference is material,
+    so the claim is only partially supported. Evidence that states the same action
+    in a realis form somewhere clears it -- the plan is then also a practice.
+    """
+
+    claim_text = unicodedata.normalize("NFKC", claim or "")
+    evidence_text = unicodedata.normalize(
+        "NFKC",
+        " ".join(_evidence_text(item) for item in evidence_items or []),
+    )
+    if not claim_text or not evidence_text:
+        return False
+    for match in INTENT_STEM_RE.finditer(evidence_text):
+        stem = match.group(1)
+        if not any(f"{stem}{ending}" in claim_text for ending in PRACTICE_ENDINGS):
+            continue
+        if any(f"{stem}{ending}" in evidence_text for ending in EVIDENCE_PRACTICE_ENDINGS):
+            continue
+        return True
+    return False
+
+
+def _evidence_text(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        return str(item.get("raw_evidence_ko") or item.get("text") or "")
+    return str(getattr(item, "raw_evidence_ko", "") or "")
 
 
 def _split_claims(answer: str) -> list[str]:

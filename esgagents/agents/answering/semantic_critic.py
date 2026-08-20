@@ -595,6 +595,20 @@ class SemanticCompletenessCriticAgent:
                 qa_failure_stages[qid] = "semantic_critic"
                 final_answers[qid] = ""
                 continue
+            if self._coverage_shortfall(review):
+                # A coverage shortfall is not a wrong-topic answer: the prose is on
+                # subject and sourced, it just does not reach every facet. Keeping it
+                # under review preserves real disclosure -- discarding it loses the
+                # qualitative answer as well as the figure that was missing.
+                flags.append("partial_answer")
+                flags.append("human_review_required")
+                flags.extend(f"missing_facet:{facet}" for facet in review.missing_facets)
+                qa_results[qid] = QAResult(
+                    status="passed",
+                    notes=self._failure_notes(review, contract),
+                )
+                quality_flags[qid] = sorted(set(flags))
+                continue
             if (
                 review.alignment == "partial"
                 or review.missing_facets
@@ -1461,11 +1475,39 @@ class SemanticCompletenessCriticAgent:
 
     @staticmethod
     def _hard_failure(review: SemanticReview, contract: QuestionContract) -> bool:
+        if SemanticCompletenessCriticAgent._coverage_shortfall(review):
+            return False
         return (
             review.alignment in {"misaligned", "insufficient"}
             or review.source_usage == "overstated"
             or SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(review.notes)
         )
+
+    @staticmethod
+    def _coverage_shortfall(review: SemanticReview) -> bool:
+        """An ``insufficient`` verdict that is a missing facet, not a wrong topic.
+
+        The deterministic metrics path reports ``insufficient`` whenever a required
+        facet is absent -- including when the figure was withheld for low metric
+        confidence, which says nothing about the surrounding prose. Treating that as
+        a hard failure discards an on-topic, sourced narrative along with the number,
+        so the answer is kept for review instead. A genuine wrong-topic answer still
+        reports ``misaligned`` or a thematic-mismatch note and is discarded.
+        """
+
+        if review.alignment != "insufficient":
+            return False
+        if review.source_usage == "overstated":
+            return False
+        if SemanticCompletenessCriticAgent._notes_indicate_thematic_mismatch(review.notes):
+            return False
+        # An answer whose content is the absence of the figure is not a shortfall to
+        # keep -- it discloses nothing the report can publish.
+        if "missing data disclosed" in review.notes:
+            return False
+        # A reporting period on its own is bookkeeping, not disclosure; there has to
+        # be substantive covered content for the answer to be worth keeping.
+        return bool(set(review.covered_facets) - {"reporting_period", "metric_result"})
 
     @staticmethod
     def _failure_notes(review: SemanticReview, contract: QuestionContract) -> list[str]:

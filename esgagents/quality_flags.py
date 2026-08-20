@@ -35,6 +35,7 @@ CANONICAL_FLAGS = {
     "missing_data_flag",
     "partial_answer",
     "pii_redacted",
+    "plain_register_sentence",
     "quantitative_metric_bridge",
     "rag_assessment_only",
     "rag_draft_only",
@@ -52,6 +53,7 @@ CANONICAL_FLAGS = {
     "provenance_fallback",
     "thin_evidence",
     "non_narrative_output",
+    "off_topic_evidence_dropped",
     "non_substantive_llm_output",
     "enumeration_stub_output",
     "short_fragment_output",
@@ -59,6 +61,7 @@ CANONICAL_FLAGS = {
     "unsupported_metric_llm_output",
     "deterministic_narrative_fallback",
     "upstream_coverage_mismatch",
+    "upstream_facet_overclaim",
     "qa_invariant_violation",
     "writer_empty",
 }

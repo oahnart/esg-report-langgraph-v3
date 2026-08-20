@@ -83,6 +83,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "semantic_qa_concurrency": 4,
     "semantic_qa_incremental": True,
     "source_policy_enabled": True,
+    "topic_isolation_enabled": True,
     "output_hygiene_enabled": True,
 }
 
@@ -90,6 +91,7 @@ _ENV_OVERRIDES = {
     "TEAM_RAG_BASE_URL": "team_rag_base_url",
     "TEAM_RAG_QUALITATIVE_PATH": "team_rag_qualitative_path",
     "TEAM_RAG_REQUEST_CONTRACT": "team_rag_request_contract",
+    "ESG_TOPIC_ISOLATION_ENABLED": "topic_isolation_enabled",
     "TEAM_RAG_TIMEOUT_SECONDS": "team_rag_timeout_seconds",
     "TEAM_RAG_TOP_K": "team_rag_top_k",
     "ESG_TEAM_RAG_RETRY_TOP_K": "team_rag_retry_top_k",
