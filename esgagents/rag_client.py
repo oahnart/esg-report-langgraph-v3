@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import re
 from typing import Any, Callable
+from urllib.parse import parse_qsl, urlencode
 
 import requests
 from pydantic import ValidationError
@@ -31,6 +32,8 @@ class TeamRagError(RuntimeError):
 Transport = Callable[[str, dict[str, Any], float], dict[str, Any]]
 
 _RETRYABLE_HTTP_STATUSES = {429, 500, 503, 504}
+# Query params always sent on the v3 qualitative endpoint unless the configured path overrides them.
+_DEFAULT_QUALITATIVE_QUERY = {"semantic_mode": "selective"}
 _REQUIRED_V3_RESPONSE_FIELDS = {
     "company_id",
     "request_id",
@@ -150,7 +153,12 @@ class TeamRagClient:
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.transport = transport
-        self.qualitative_path = f"/{qualitative_path.strip('/')}"
+        raw_path, _, raw_query = str(qualitative_path).partition("?")
+        self.qualitative_path = f"/{raw_path.strip('/')}"
+        # Defaults only apply to the v3 endpoint; the v2 rollback path takes no such params.
+        query = dict(_DEFAULT_QUALITATIVE_QUERY) if self.is_v3 else {}
+        query.update(parse_qsl(raw_query, keep_blank_values=True))
+        self.qualitative_query = query
         normalized_contract = str(request_contract or "new").strip().casefold()
         if normalized_contract not in {"new", "legacy"}:
             raise ValueError("request_contract must be 'new' or 'legacy'")
@@ -159,7 +167,9 @@ class TeamRagClient:
 
     @property
     def endpoint(self) -> str:
-        return f"{self.base_url}{self.qualitative_path}"
+        query = urlencode(self.qualitative_query)
+        suffix = f"?{query}" if query else ""
+        return f"{self.base_url}{self.qualitative_path}{suffix}"
 
     @property
     def is_v3(self) -> bool:

@@ -89,7 +89,7 @@ def test_rag_client_posts_expected_batch_payload():
     client = TeamRagClient("https://rag.example", timeout_seconds=12, transport=transport)
     response = client.fetch_evidence("iljinhysolus", ["Q016", "Q003"], 5, 2025)
 
-    assert seen["endpoint"] == "https://rag.example/qualitative/evidence/v3"
+    assert seen["endpoint"] == "https://rag.example/qualitative/evidence/v3?semantic_mode=selective"
     assert seen["payload"] == {
         "company_id": "iljinhysolus",
         "item_ids": ["Q016", "Q003"],
@@ -878,3 +878,15 @@ def test_rag_batch_v3_only_replaces_metadata_when_coverage_improves_and_keeps_tr
     assert len(result["rag_results"]["Q001"].items) == 1
     assert [trace.request_id for trace in result["rag_request_traces"]] == ["req-5", "req-12"]
     assert [trace.phase for trace in result["rag_request_traces"]] == ["initial", "retry"]
+
+
+def test_qualitative_path_query_defaults_and_override():
+    client = TeamRagClient("https://rag.example")
+    assert client.endpoint == "https://rag.example/qualitative/evidence/v3?semantic_mode=selective"
+
+    override = TeamRagClient(
+        "https://rag.example",
+        qualitative_path="/qualitative/evidence/v3?semantic_mode=full&debug=1",
+    )
+    assert override.is_v3
+    assert override.qualitative_query == {"semantic_mode": "full", "debug": "1"}
