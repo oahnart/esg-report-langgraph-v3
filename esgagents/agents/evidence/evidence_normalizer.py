@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 import re
 from typing import Any
 
@@ -51,6 +51,55 @@ STATUS_RANK = {
 }
 
 
+ENTITY_PARTICLE_RE = re.compile(r"(?:은|는|이|가|의)$")
+# A legal entity is written either with its legal-form prefix ("㈜ 대웅제약") or with a
+# corporate suffix. Document-type words ("취업규칙", "이사회운영 규정") must not match.
+BODY_ENTITY_RE = re.compile(
+    r"(?:㈜|\(주\))\s*([가-힣]{2,12})"
+    r"|([가-힣]{2,12}(?:그룹|제약|바이오|파마|홀딩스))(?=은|는|이|가|의|\s|,|\)|$)"
+)
+SOURCE_ENTITY_RE = re.compile(
+    r"(?:^|[\s_\-])((?:㈜|\(주\))?\s*[가-힣]{2,12}(?:그룹|제약|바이오|파마|홀딩스))"
+)
+ENTITY_SCAN_LIMIT = 260
+
+
+def evidence_entity(item: Any) -> str:
+    """Legal entity an evidence item speaks for, from its text or its source name."""
+
+    body = " ".join(str(getattr(item, "raw_evidence_ko", "") or "").split())
+    match = BODY_ENTITY_RE.search(body[:ENTITY_SCAN_LIMIT])
+    if match:
+        return ENTITY_PARTICLE_RE.sub("", (match.group(1) or match.group(2)).strip())
+    name = str(
+        getattr(item, "source_name", "") or getattr(item, "source_path", "") or ""
+    ).replace("\\", "/").rsplit("/", 1)[-1]
+    hits = SOURCE_ENTITY_RE.findall(name)
+    if hits:
+        return ENTITY_PARTICLE_RE.sub(
+            "", max(hits, key=len).replace("㈜", "").replace("(주)", "").strip()
+        )
+    return ""
+
+
+def dominant_entity(items: Any) -> str:
+    """The entity the corpus overwhelmingly speaks for, i.e. the reporting company.
+
+    Derived from the evidence rather than configuration so it needs no per-company
+    setup, and required to be a clear majority so a mixed corpus yields no preference.
+    """
+
+    counts: Counter[str] = Counter()
+    for item in items:
+        entity = evidence_entity(item)
+        if entity:
+            counts[entity] += 1
+    if not counts:
+        return ""
+    entity, count = counts.most_common(1)[0]
+    return entity if count >= max(3, 0.6 * sum(counts.values())) else ""
+
+
 class EvidenceNormalizerAgent:
     def __init__(self, config: dict[str, Any]):
         self.rejected_labels = {
@@ -58,10 +107,24 @@ class EvidenceNormalizerAgent:
         }
         self.source_policy_enabled = bool(config.get("source_policy_enabled", True))
         self.topic_isolation_enabled = bool(config.get("topic_isolation_enabled", True))
+        self.entity_preference_enabled = bool(
+            config.get("entity_preference_enabled", True)
+        )
+        self.reporting_entity = ""
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         normalized: dict[str, dict[str, Any]] = {}
         contracts = self._question_contracts(state)
+        self.reporting_entity = (
+            dominant_entity(
+                item
+                for rag in state["rag_results"].values()
+                for item in routed_writer_items(rag)
+                if not is_metric_row(item)
+            )
+            if self.entity_preference_enabled
+            else ""
+        )
         for qid, rag in state["rag_results"].items():
             contract = contracts.get(qid)
             deduped: OrderedDict[str, EvidenceItem] = OrderedDict()
@@ -367,9 +430,11 @@ class EvidenceNormalizerAgent:
             )
         return kept, dropped
 
-    @staticmethod
-    def _rank_key(item: EvidenceItem) -> tuple[int, float, int, int, float, float, float, int]:
+    def _rank_key(
+        self, item: EvidenceItem
+    ) -> tuple[int, int, float, int, int, float, float, float, int]:
         return (
+            self._entity_band(item),
             relevance_band(item.semantic_label),
             item.semantic_score if item.semantic_score is not None else -1.0,
             TIER_RANK.get(item.source_tier, 0),
@@ -379,6 +444,24 @@ class EvidenceNormalizerAgent:
             float(item.score or 0),
             len(item.source_path or ""),
         )
+
+    def _entity_band(self, item: EvidenceItem) -> int:
+        """Rank the reporting entity's own evidence above another entity's.
+
+        Source documents come one per legal entity, near-identical but for the
+        subject and the figures -- a group paragraph and a subsidiary paragraph both
+        describing "폐기물 배출량 대비 재활용률". Retrieval scores them the same, so the
+        writer has no basis to choose and has been seen emitting both values side by
+        side. Preferring the reporting entity is a ranking tier, not a filter: another
+        entity's evidence stays available, it just stops outranking the company's own.
+        """
+
+        if not self.reporting_entity:
+            return 1
+        entity = evidence_entity(item)
+        if not entity:
+            return 1
+        return 2 if entity == self.reporting_entity else 0
 
     @staticmethod
     def _metric_order_key(item: EvidenceItem) -> tuple[int, int, int, str]:

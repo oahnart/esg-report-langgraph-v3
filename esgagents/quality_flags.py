@@ -55,6 +55,7 @@ CANONICAL_FLAGS = {
     "non_narrative_output",
     "off_topic_evidence_dropped",
     "non_substantive_llm_output",
+    "entity_misattributed_metric",
     "enumeration_stub_output",
     "short_fragment_output",
     "structured_metric_fallback",

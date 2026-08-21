@@ -847,3 +847,75 @@ def test_metric_narrative_rewrites_repeated_area_placeholder():
 
     assert "여러 영역 여러 세부 항목" not in result
     assert "운영, 환경, 인권·노동의 여러 영역의 세부 항목" in result
+
+
+def test_prose_figure_belonging_to_another_legal_entity_is_removed():
+    """Regression for Q023: source documents carry one paragraph per legal entity,
+    identical but for the subject and the numbers. The answer named the subsidiary
+    and quoted the group's recycling rate."""
+
+    from esgagents.agents.evidence.metric_facts import (
+        entity_misattributed_numeric_claims,
+        salvage_entity_misattributed_claims,
+    )
+
+    evidence = [
+        {
+            "raw_evidence_ko": (
+                "환경경영 성과 ㈜ 대웅그룹은 ISO14001 인증 취득 후 환경보호를 위해 노력하고 있습니다. "
+                "폐기물 배출량 대비 재활용률은 2024년 89.2%, 2025년 89.1%를 달성하였습니다."
+            )
+        },
+        {
+            "raw_evidence_ko": (
+                "환경경영 성과 ㈜ 대웅제약은 ISO14001 인증 취득 후 환경보호를 위해 노력하고 있습니다. "
+                "폐기물 배출량 대비 재활용률은 2023년 34.1%, 2024년 50.9%를 달성하였습니다."
+            )
+        },
+    ]
+    answer = (
+        "대웅제약은 ISO 14001 환경경영시스템 인증을 통해 환경 보호를 추진하고 있습니다. "
+        "폐기물 재활용률: 2024년 89.2%에서 2025년 89.1%를 달성하였습니다."
+    )
+
+    misattributed = entity_misattributed_numeric_claims(answer, evidence)
+    cleaned, actions = salvage_entity_misattributed_claims(answer, evidence)
+
+    assert len(misattributed) == 1
+    assert "89.2%" in misattributed[0]
+    assert "89.2%" not in cleaned
+    assert "89.1%" not in cleaned
+    assert cleaned.startswith("대웅제약은 ISO 14001")
+    assert any("entity_misattributed_metric" in action for action in actions)
+
+
+def test_prose_figure_matching_the_named_entity_is_kept():
+    from esgagents.agents.evidence.metric_facts import (
+        entity_misattributed_numeric_claims,
+        salvage_entity_misattributed_claims,
+    )
+
+    evidence = [
+        {
+            "raw_evidence_ko": (
+                "환경경영 성과 ㈜ 대웅그룹은 재활용률은 2024년 89.2%를 달성하였습니다."
+            )
+        },
+        {
+            "raw_evidence_ko": (
+                "환경경영 성과 ㈜ 대웅제약은 재활용률은 2024년 50.9%를 달성하였습니다."
+            )
+        },
+    ]
+    answer = "대웅제약은 폐기물 재활용률 2024년 50.9%를 달성하였습니다."
+
+    assert entity_misattributed_numeric_claims(answer, evidence) == []
+    assert salvage_entity_misattributed_claims(answer, evidence) == (answer, [])
+
+
+def test_answer_without_a_named_entity_is_not_flagged():
+    from esgagents.agents.evidence.metric_facts import entity_misattributed_numeric_claims
+
+    evidence = [{"raw_evidence_ko": "㈜ 대웅그룹은 재활용률은 2024년 89.2%를 달성하였습니다."}]
+
+    assert entity_misattributed_numeric_claims("재활용률은 2024년 89.2%입니다.", evidence) == []

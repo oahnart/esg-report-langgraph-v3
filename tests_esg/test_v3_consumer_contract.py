@@ -1368,3 +1368,148 @@ def test_metric_rows_are_not_collapsed_by_repeated_row_text():
     # metric lane keeps its own dedup key instead of collapsing on text.
     assert len(normalized["items"]) == 2
     assert normalized["duplicate_evidence_dropped"] == []
+
+
+def test_facet_augmentation_rejects_an_off_topic_source_repeating_the_facet_word():
+    """Regression for Q036: a CEO New Year address filled the water-target facet
+    because it says "높은 목표 설정". The facet keyword alone is not topical evidence."""
+
+    from skills.agents.writer import FACET_AUGMENT_TERMS
+
+    context = {
+        "qid": "Q036",
+        "question": "수자원 관리 정책 및 목표",
+        "description": "수자원의 효율적 사용과 수질 보전을 위한 물 관리 정책 및 목표를 설명합니다.",
+        "evidence_items": [
+            _item(
+                "대웅제약 신년사 직원 성장이 최우선 설레는 출근길과 디지털 헬스케어 비전 제시 "
+                "기존 경험과 지식을 넘어선 높은 목표 설정 성장을 위한 학습 실천 3원칙 제시",
+                semantic_label="useful",
+            )
+        ],
+    }
+    topic = SkillWriterAgent._question_topic_terms(
+        context, "target", FACET_AUGMENT_TERMS["target"]
+    )
+
+    assert "수자원" in topic
+    assert "목표" not in topic
+    assert not SkillWriterAgent._mentions_topic(
+        context["evidence_items"][0].raw_evidence_ko, topic
+    )
+    assert SkillWriterAgent._best_facet_claim(
+        context, "target", "", [], allow_draft=True
+    ) == ""
+
+
+def test_facet_augmentation_keeps_a_source_on_the_questions_own_subject():
+    from skills.agents.writer import FACET_AUGMENT_TERMS
+
+    context = {
+        "qid": "Q036",
+        "question": "수자원 관리 정책 및 목표",
+        "description": "수자원의 효율적 사용과 수질 보전을 위한 물 관리 정책 및 목표를 설명합니다.",
+        "evidence_items": [
+            _item(
+                "대웅제약은 수자원 사용 효율을 높이기 위해 2026년 용수 재이용률 목표를 "
+                "14.7%로 설정하였습니다.",
+                semantic_label="useful",
+            )
+        ],
+    }
+    claim = SkillWriterAgent._best_facet_claim(
+        context, "target", "", [], allow_draft=True
+    )
+
+    assert "14.7%" in claim
+
+
+def test_domain_facet_keeps_its_own_vocabulary_as_a_topical_link():
+    """A site-management question is *about* 사업장, so that word must still count."""
+
+    from skills.agents.writer import FACET_AUGMENT_TERMS
+
+    context = {
+        "qid": "Q021",
+        "question": "환경경영 관리 조직 및 책임",
+        "description": "환경경영 거버넌스, 운영조직, 사업장 관리체계",
+        "evidence_items": [],
+    }
+    topic = SkillWriterAgent._question_topic_terms(
+        context, "site_management_system", FACET_AUGMENT_TERMS["site_management_system"]
+    )
+
+    assert "사업장" in topic
+
+
+def test_dependent_clause_is_dropped_when_its_antecedent_was_rejected():
+    """Regression for Q053: the statute clause "제26조(감사의 실시) ① ..." was rejected
+    and its dependent tail "이 경우 피감사부서장은 ..." shipped alone, mixing an audit
+    regulation into a product-responsibility answer."""
+
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "qid": "Q053",
+            "question": "제품 책임 관리 조직 및 체계",
+            "description": "제품 책임 관리 조직과 체계를 기술",
+            "evidence_items": [
+                _item(
+                    "제26조(감사의 실시) ① 위원회는 감사직무를 수행함에 있어 피감사부서장에게 "
+                    "소속 직원의 업무 지원을 요청할 수 있다. 이 경우 피감사부서장은 이에 협조하여야 한다.",
+                    semantic_label="useful",
+                ),
+                _item(
+                    "품질경영(QM), 품질보증(QA), 품질관리(QC) 조직은 SOP 문서화, 밸리데이션, "
+                    "시험 감사 업무를 수행합니다.",
+                    semantic_label="useful",
+                ),
+            ],
+        }
+    )
+
+    assert "피감사부서장" not in answer
+    assert "품질경영(QM)" in answer
+
+
+def test_dependent_clause_is_kept_when_its_antecedent_is_kept():
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "qid": "Q057",
+            "question": "인적 자본 관리 조직 및 체계",
+            "description": "인적 자본 관리 조직과 운영 체계를 기술",
+            "evidence_items": [
+                _item(
+                    "대웅제약은 자율과 성장 중심의 조직문화를 기반으로 근무환경을 지속 강화하고 있습니다. "
+                    "이러한 노력의 결과, 인적자원개발 우수기관(Best HRD) 등 다양한 대외 인증을 통해 "
+                    "경쟁력을 인정받고 있습니다.",
+                    semantic_label="useful",
+                )
+            ],
+        }
+    )
+
+    assert "Best HRD" in answer
+    assert answer.index("자율과 성장") < answer.index("이러한 노력의 결과")
+
+
+def test_additive_connective_claim_stays_eligible_without_an_antecedent():
+    """"또한" only continues the discourse; it does not point at one clause, so the
+    sentence stands on its own -- Q048's green-procurement commitment must survive."""
+
+    answer = SkillWriterAgent._evidence_fallback(
+        {
+            "qid": "Q048",
+            "question": "친환경 제품 개발 정책 및 목표",
+            "description": "친환경 제품 개발 정책과 목표를 기술",
+            "evidence_items": [
+                _item(
+                    "1. 목적 본 정책은 녹색제품 구매의무 이행에 필요한 사항을 규정한다. "
+                    "또한, 공급망 내에 친환경성과 지속가능성이 확산될 수 있도록 협력업체의 "
+                    "안정적 녹색제품 공급을 지원하는 방안을 검토 중에 있습니다.",
+                    semantic_label="useful",
+                )
+            ],
+        }
+    )
+
+    assert "녹색제품 공급을 지원하는 방안" in answer

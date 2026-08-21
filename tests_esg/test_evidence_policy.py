@@ -786,3 +786,84 @@ def test_conditional_answer_statuses_can_be_overridden_from_env(monkeypatch):
     config = load_config()
 
     assert config["conditional_answer_statuses"] == {"thin_but_usable", "needs_review"}
+
+
+def test_evidence_entity_reads_the_legal_form_prefix_and_corporate_suffix():
+    from esgagents.agents.evidence.evidence_normalizer import evidence_entity
+    from esgagents.schemas import EvidenceItem
+
+    group = EvidenceItem(raw_evidence_ko="환경경영 성과 ㈜ 대웅그룹은 ISO14001 인증을 취득하였습니다.")
+    pharm = EvidenceItem(raw_evidence_ko="환경경영 성과 ㈜ 대웅제약은 ISO14001 인증을 취득하였습니다.")
+
+    assert evidence_entity(group) == "대웅그룹"
+    assert evidence_entity(pharm) == "대웅제약"
+
+
+def test_evidence_entity_falls_back_to_the_source_document_name():
+    from esgagents.agents.evidence.evidence_normalizer import evidence_entity
+    from esgagents.schemas import EvidenceItem
+
+    item = EvidenceItem(
+        raw_evidence_ko="① 이사회는 이사회 내에 위원회를 설치할 수 있다.",
+        source_name="2. 대웅제약_정관(26.3.26 개정).pdf",
+    )
+
+    assert evidence_entity(item) == "대웅제약"
+
+
+def test_document_type_words_are_not_read_as_an_entity():
+    from esgagents.agents.evidence.evidence_normalizer import evidence_entity
+    from esgagents.schemas import EvidenceItem
+
+    item = EvidenceItem(
+        raw_evidence_ko="제 2 장 구 성 제4조 (구성) ① 이사회는 이사 전원으로 구성한다.",
+        source_name="13) 이사회운영 규정_v260512.pdf",
+    )
+
+    assert evidence_entity(item) == ""
+
+
+def test_dominant_entity_needs_a_clear_majority():
+    from esgagents.agents.evidence.evidence_normalizer import dominant_entity
+    from esgagents.schemas import EvidenceItem
+
+    pharm = [EvidenceItem(raw_evidence_ko="㈜ 대웅제약은 관리하고 있습니다.")] * 8
+    group = [EvidenceItem(raw_evidence_ko="㈜ 대웅그룹은 관리하고 있습니다.")] * 2
+
+    assert dominant_entity(pharm + group) == "대웅제약"
+    # An evenly split corpus yields no reporting entity, so no preference applies.
+    assert dominant_entity(pharm[:3] + group[:2] * 2) in {"대웅제약", ""}
+    assert dominant_entity([]) == ""
+
+
+def test_reporting_entity_evidence_outranks_another_entitys_evidence():
+    """Regression for Q023/Q072: near-identical paragraphs per legal entity scored the
+    same, so the group's recycling rate and the parent's committee list won."""
+
+    from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
+    from esgagents.default_config import load_config
+    from esgagents.schemas import EvidenceItem
+
+    agent = EvidenceNormalizerAgent(load_config({"agent_mode": "offline"}))
+    agent.reporting_entity = "대웅제약"
+    pharm = EvidenceItem(raw_evidence_ko="㈜ 대웅제약은 재활용률 34.1%를 달성하였습니다.")
+    group = EvidenceItem(raw_evidence_ko="㈜ 대웅그룹은 재활용률 89.2%를 달성하였습니다.")
+    unknown = EvidenceItem(raw_evidence_ko="재활용률 관리 절차를 운영하고 있습니다.")
+
+    ranked = sorted([group, unknown, pharm], key=agent._rank_key, reverse=True)
+
+    assert ranked[0] is pharm
+    assert ranked[-1] is group
+
+
+def test_entity_preference_is_inert_without_a_reporting_entity():
+    from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
+    from esgagents.default_config import load_config
+    from esgagents.schemas import EvidenceItem
+
+    agent = EvidenceNormalizerAgent(load_config({"agent_mode": "offline"}))
+    agent.reporting_entity = ""
+    pharm = EvidenceItem(raw_evidence_ko="㈜ 대웅제약은 재활용률 34.1%를 달성하였습니다.")
+    group = EvidenceItem(raw_evidence_ko="㈜ 대웅그룹은 재활용률 89.2%를 달성하였습니다.")
+
+    assert agent._rank_key(pharm)[0] == agent._rank_key(group)[0]

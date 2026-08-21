@@ -563,6 +563,105 @@ def conflicting_metric_claims(answer: str, metric_audit: dict[str, Any]) -> list
     return conflicts
 
 
+CORPORATE_NAME_SUFFIXES = (
+    "그룹",
+    "제약",
+    "바이오",
+    "파마",
+    "홀딩스",
+    "주식회사",
+    "산업",
+    "화학",
+    "전자",
+    "건설",
+    "물산",
+)
+ENTITY_MENTION_RE = re.compile(
+    r"(?:㈜|\(주\))?\s*([가-힣A-Za-z]{2,20}(?:"
+    + "|".join(CORPORATE_NAME_SUFFIXES)
+    + r"))(?=은|는|이|가|의|\s|,|\)|$)"
+)
+PERCENT_FIGURE_RE = re.compile(r"(?<![\d.])\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*%")
+
+
+def _nearest_entity_before(text: str, position: int) -> str:
+    """The legal entity a reader would attach to text at `position`."""
+
+    nearest = ""
+    for match in ENTITY_MENTION_RE.finditer(text[:position]):
+        nearest = match.group(1)
+    return nearest
+
+
+def entity_misattributed_numeric_claims(
+    answer: str,
+    evidence_items: list[Any],
+) -> list[str]:
+    """Return sentences quoting a figure that belongs to a different legal entity.
+
+    Source documents carry near-identical paragraphs per legal entity -- a group
+    paragraph and a subsidiary paragraph differing only in the subject and the
+    numbers. Retrieval scores them the same, so an answer can open by naming the
+    subsidiary and then quote the group's figures. The metric contract forbids this
+    for table rows by requiring ``entity_class`` to be read first; prose figures
+    need the same discipline, since the published number would belong to another
+    company.
+    """
+
+    answer_text = unicodedata.normalize("NFKC", answer or "")
+    paragraphs = [
+        " ".join(unicodedata.normalize("NFKC", _evidence_body(item)).split())
+        for item in evidence_items or []
+    ]
+    misattributed: list[str] = []
+    for sentence in _metric_statements(answer_text):
+        end = answer_text.find(sentence) + len(sentence)
+        claimed = _nearest_entity_before(answer_text, end)
+        if not claimed:
+            continue
+        for figure in PERCENT_FIGURE_RE.findall(sentence):
+            token = figure.replace(" ", "")
+            owners = {
+                _nearest_entity_before(paragraph, match.start())
+                for paragraph in paragraphs
+                for match in re.finditer(
+                    re.escape(token.rstrip("%")) + r"\s*%", paragraph
+                )
+            }
+            owners.discard("")
+            if owners and claimed not in owners:
+                misattributed.append(sentence)
+                break
+    return list(dict.fromkeys(misattributed))
+
+
+def salvage_entity_misattributed_claims(
+    answer: str,
+    evidence_items: list[Any],
+) -> tuple[str, list[str]]:
+    """Drop sentences whose figures belong to another legal entity."""
+
+    misattributed = set(entity_misattributed_numeric_claims(answer, evidence_items))
+    if not misattributed:
+        return answer, []
+    kept: list[str] = []
+    actions: list[str] = []
+    for index, statement in enumerate(_metric_statements(answer), start=1):
+        if statement in misattributed:
+            actions.append(f"removed_claim:entity_misattributed_metric:c{index}")
+        else:
+            kept.append(statement)
+    return " ".join(kept), actions
+
+
+def _evidence_body(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        return str(item.get("raw_evidence_ko") or item.get("text") or "")
+    return str(getattr(item, "raw_evidence_ko", "") or "")
+
+
 def salvage_conflicting_metric_claims(
     answer: str,
     metric_audit: dict[str, Any],

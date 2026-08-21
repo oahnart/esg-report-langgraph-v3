@@ -16,6 +16,7 @@ from esgagents.agents.evidence.metric_facts import (
     conflicting_metric_claims,
     metric_facts_supporting_claim,
     salvage_conflicting_metric_claims,
+    salvage_entity_misattributed_claims,
 )
 from esgagents.schemas import QAResult, SemanticReview
 from skills.agents.context_builder import compact
@@ -294,6 +295,15 @@ class SemanticCompletenessCriticAgent:
                     answer,
                     metric_audit,
                 )
+                answer, entity_actions = salvage_entity_misattributed_claims(
+                    answer,
+                    evidence_items,
+                )
+                conflict_actions = [*conflict_actions, *entity_actions]
+                if entity_actions:
+                    quality_flags[qid] = sorted(
+                        set(quality_flags.get(qid, []) + ["entity_misattributed_metric"])
+                    )
                 numeric_actions = []
                 answer, support_actions = salvage_supported_claims(
                     answer,

@@ -31,10 +31,16 @@ from esgagents.agents.evidence.metric_facts import (
 
 logger = logging.getLogger(__name__)
 
-# A claim opening with a back-reference has no antecedent when it leads the answer.
+# A claim opening with any connective reads oddly as the answer's first sentence.
 ANAPHORIC_OPENING_RE = re.compile(
-    r"^\s*(?:이러한|이와\s|이를|이에\s|이는\s|그러한|이\s+덕분에|이\s+경우|"
+    r"^\s*(?:이러한|이와\s|이를|이에\s|이는\s|그러한|이\s+덕분에|이\s+경우|이때|"
     r"또한|아울러|하지만|그러나|따라서|반면|다만|한편)"
+)
+# Demonstratives point at one specific preceding clause, so the claim is unusable
+# without it. Additive connectives ("또한", "아울러") only continue the discourse and
+# stand on their own once the leading connector is stripped, so they stay eligible.
+DEMONSTRATIVE_OPENING_RE = re.compile(
+    r"^\s*(?:이러한|이와\s|이를|이에\s|이는\s|그러한|이\s+덕분에|이\s+경우|이때)"
 )
 
 
@@ -55,6 +61,24 @@ def _lead_with_self_contained_claim(claims: list[str]) -> list[str]:
             return [claim, *claims[:index], *claims[index + 1:]]
     return claims
 
+
+TOPIC_PARTICLE_RE = re.compile(r"(?:를|을|이|가|은|는|의|에서|에게|에|과|와|으로|로|까지|부터|도|만)$")
+# Words every ESG document shares, so their presence says nothing about topic.
+TOPIC_FUNCTION_WORDS = frozenset(
+    {
+        "위한", "위해", "통해", "관련", "대한", "대하여", "따라", "있는", "하는",
+        "설명", "설명합니다", "수립", "운영", "추진", "설정", "관리", "현황", "활동",
+        "회사", "당사", "그리고", "또한", "기업", "내용", "경우", "다음",
+        # generic structure nouns: present in almost every question wording
+        "방식", "역할", "책임", "체계", "절차", "방향", "기준", "관리하", "관련한",
+    }
+)
+
+# Facets whose vocabulary IS the subject matter, so it must count as a topical
+# link. The rest are relational -- present in any document regardless of topic.
+DOMAIN_FACETS = frozenset(
+    {"accountable_body", "operating_organization", "site_management_system"}
+)
 
 FACET_AUGMENT_TERMS = {
     "target": ("목표", "달성", "감축", "target", "goal"),
@@ -393,12 +417,23 @@ class SkillWriterAgent:
             )
             text = SkillWriterAgent._strip_leading_question_context(text, context)
             text = text.strip()
+            previous_accepted = False
             for part in re.split(r"(?<=[.!?。！？])\s+|\n+|(?:^|\s)[•·]\s+", text):
                 claim = compact(part).strip(" •·")
                 if len(claim) < 20 or "|" in claim:
+                    previous_accepted = False
+                    continue
+                # A clause opening with a back-reference ("이 경우 ...", "이에 ...")
+                # depends on the sentence before it in the source. When that sentence
+                # was rejected -- a statute clause heading, say -- the dependent tail
+                # would ship as a standalone statement referring to nothing, mixing an
+                # unrelated regulation into the answer.
+                depends_on_previous = bool(DEMONSTRATIVE_OPENING_RE.match(claim))
+                if depends_on_previous and not previous_accepted:
                     continue
                 safe_claim = safe_narrative_text(claim[:700])
                 if not safe_claim:
+                    previous_accepted = False
                     continue
                 # The fallback pastes raw evidence straight into the customer
                 # answer, so each candidate has to clear the same structural gate
@@ -406,11 +441,13 @@ class SkillWriterAgent:
                 # ("// 00 CEO 메시지 00 CompanyProfile ..."), cover/heading runs and
                 # numbered regulation clauses ship as prose.
                 if final_answer_block_reason(safe_claim):
+                    previous_accepted = False
                     continue
                 # Regulation and policy text is written in the plain register while
                 # the answer uses the polite one. Restate it rather than drop it --
                 # the clause carries real disclosure, only its ending is wrong.
                 safe_claim, _ = normalize_to_polite_register(safe_claim)
+                previous_accepted = True
                 normalized_claim = safe_claim.casefold()
                 relevance = sum(
                     1 for term in question_terms if term in normalized_claim
@@ -623,6 +660,10 @@ class SkillWriterAgent:
         terms = FACET_AUGMENT_TERMS.get(facet, ())
         if not terms:
             return ""
+        # The facet keyword alone is not topical evidence: a press release repeating
+        # "목표" is not a water-management target. An item may only fill a facet if it
+        # also speaks to the question on some term the facet did not supply.
+        topical_terms = cls._question_topic_terms(context, facet, terms)
         seen_text = compact(" ".join([answer, *additions])).casefold()
         candidates: list[tuple[int, int, str]] = []
         sequence = 0
@@ -636,6 +677,8 @@ class SkillWriterAgent:
                 str(getattr(item, "raw_evidence_ko", "") or "")
             )
             raw = cls._strip_leading_question_context(raw, context)
+            if topical_terms and not cls._mentions_topic(raw, topical_terms):
+                continue
             for part in re.split(cls._evidence_sentence_split_pattern(), raw):
                 claim = safe_narrative_text(compact(part).strip(" •·")[:700])
                 if len(claim) < 20 or "|" in claim:
@@ -1090,6 +1133,53 @@ class SkillWriterAgent:
     def _text_has_facet(text: str, facet: str) -> bool:
         lower = compact(text).casefold()
         return any(term.casefold() in lower for term in FACET_AUGMENT_TERMS.get(facet, ()))
+
+    @staticmethod
+    def _mentions_topic(text: str, topic_terms: set[str]) -> bool:
+        """Whether the evidence speaks to the question's subject matter.
+
+        Korean compounds are written both spaced and unspaced (``소유 구조`` /
+        ``소유구조``), so the space-collapsed form is checked as well -- a gate that
+        over-blocks costs real disclosure, so recall is preferred here.
+        """
+
+        body = str(text or "").casefold()
+        collapsed = re.sub(r"\s+", "", body)
+        return any(term in body or term in collapsed for term in topic_terms)
+
+    @classmethod
+    def _question_topic_terms(
+        cls, context: dict[str, Any], facet_name: str, facet_terms: tuple
+    ) -> set[str]:
+        """Subject-matter terms of the question, with the facet's own words removed.
+
+        Kept local to facet augmentation rather than folded into the shared search
+        terms: it strips Korean case particles so ``목표를`` cancels against the facet
+        term ``목표``, and drops the function words every document shares (``위한``,
+        ``통해``), which a shared change would ripple through fallback ranking.
+
+        Only a relational facet's words are removed. ``목표`` says nothing about
+        subject matter -- every document states goals, which is how a New Year address
+        came to fill a water-target facet. A domain facet's words are the subject: a
+        site-management question is *about* ``사업장``, so removing it would reject the
+        very evidence that answers it.
+        """
+
+        text = " ".join(
+            str(context.get(key) or "") for key in ("question", "description")
+        ).casefold()
+        topic: set[str] = set()
+        for token in re.findall(r"[가-힣]{2,}|[a-z]{3,}", text):
+            stem = TOPIC_PARTICLE_RE.sub("", token)
+            if len(stem) < 2 or stem in TOPIC_FUNCTION_WORDS:
+                continue
+            topic.add(stem)
+        if facet_name in DOMAIN_FACETS:
+            return topic
+        facet = {
+            TOPIC_PARTICLE_RE.sub("", term.casefold()) for term in facet_terms or ()
+        }
+        return (topic - facet) or topic
 
     @staticmethod
     def _fallback_search_terms(text: str) -> set[str]:

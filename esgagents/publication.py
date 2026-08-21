@@ -25,6 +25,7 @@ REVIEW_FLAGS = {
     "assessment_based_answer",
     "conflicting_metric",
     "draft_based_answer",
+    "entity_misattributed_metric",
     "human_review_required",
     "legal_review_required",
     "local_partial_evidence",

@@ -70,45 +70,45 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 
 ## Cau Hinh Chinh
 
-| Bien moi truong                   |                                      Mac dinh | Y nghia                                                                                                 |
-| --------------------------------- | --------------------------------------------: | ------------------------------------------------------------------------------------------------------- |
-| `TEAM_RAG_BASE_URL`               |                                          rong | Base URL cua Team RAG. Bat buoc khi goi RAG live.                                                       |
-| `TEAM_RAG_QUALITATIVE_PATH`       |                    `/qualitative/evidence/v3` | Endpoint qualitative. Dat `/qualitative/evidence/v2` de rollback; khong co fallback tu dong.            |
-| `TEAM_RAG_REQUEST_CONTRACT`       |                                         `new` | Body luon la `company_id + item_ids + year + top_k`; `new` cho phep `item_ids` rong (lay het cau), `legacy` tra ve rong ngay.                                |
-| `TEAM_RAG_TIMEOUT_SECONDS`        |                                          `30` | Timeout moi request RAG.                                                                                |
-| `ESG_TOPIC_ISOLATION_ENABLED`     |                                        `true` | Bo evidence bi thay the chu de theo spec §13 (GHG vs o nhiem, nuoc su dung vs nuoc thai, co dong vs giao dich noi bo). Dat `false` de tat.                                                                                |
-| `TEAM_RAG_TOP_K`                  |                                           `5` | Voi metric la so block `primary`; voi cau khac la ngan sach evidence.                                   |
-| `ESG_TEAM_RAG_RETRY_TOP_K`        |                                           `0` | Neu > `TEAM_RAG_TOP_K`, retry QID evidence rong/yeu voi top_k cao hon.                                  |
-| `TEAM_RAG_BATCH_SIZE`             |                                          `20` | So QID trong moi batch RAG.                                                                             |
-| `TEAM_RAG_CONCURRENCY`            |                                           `4` | So batch RAG chay song song.                                                                            |
-| `ESG_TEMPLATE_DIR`                |                                 `template_v1` | Thu muc template cau hoi/quy mo/nganh.                                                                  |
-| `ESG_OUTPUT_DIR`                  |                                `data/outputs` | Noi ghi output JSON va Excel.                                                                           |
-| `ESG_CACHE_DIR`                   |                                  `data/cache` | Noi ghi checkpoint SQLite khi bat checkpoint.                                                           |
-| `ESG_QUANTITATIVE_OUTPUT_ENABLED` |                                       `false` | Bat sheet/artifact dinh luong rieng. Khi `false`, workflow qualitative khong goi loader/API dinh luong. |
-| `ESG_QUANTITATIVE_INPUT_MODE`     |                                        `file` | Nguon dinh luong output-only khi `ESG_QUANTITATIVE_OUTPUT_ENABLED=true`: `file` hoac `api`.             |
-| `ESG_QUANTITATIVE_INPUT_DIR`      |                                 `data/inputs` | Thu muc input dinh luong theo cong ty/nam.                                                              |
-| `ESG_QUANTITATIVE_API_BASE_URL`   |                                          rong | Base URL cho API dinh luong khi dung `api`.                                                             |
-| `ESG_QUANTITATIVE_API_PATH`       | `/companies/{company_id}/{year}/quantitative` | GET path dinh luong.                                                                                    |
-| `ESG_QUANTITATIVE_API_METHOD`     |                                         `GET` | `GET` legacy hoac `POST` cho RAG `/quantitative/answers`.                                               |
-| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                       `false` | Deprecated. Cau qualitative Metrics dung contract metric cua RAG, khong bridge tu API dinh luong rieng. |
-| `ESG_OUTPUT_TIMEZONE`             |                                `Asia/Bangkok` | Mui gio dung trong ten workbook tong hop.                                                               |
-| `ESG_AGENT_MODE`                  |                                        `auto` | `auto`, `llm`, hoac `offline`.                                                                          |
-| `ESG_LLM_PROVIDER`                |                                      `openai` | Provider LLM: `openai` hoac `hallmdr`.                                                                  |
-| `ESG_LLM_API_KEY`                 |                                          rong | Key chung, uu tien hon key rieng cua provider.                                                          |
-| `HALLMDR_API_KEY`                 |                                          rong | HallMDR key khi provider la `hallmdr`.                                                                  |
-| `ESG_LLM_BASE_URL`                |                                          rong | Base URL tuy chinh cua provider.                                                                        |
-| `ESG_QUICK_THINK_LLM`             |                                `gpt-4.1-mini` | Model dung cho drafting nhanh.                                                                          |
-| `ESG_DEEP_THINK_LLM`              |                                     `gpt-4.1` | Model du phong cho tac vu can reasoning sau.                                                            |
-| `ESG_WRITER_CONCURRENCY`          |                                           `4` | So draft LLM chay dong thoi; giam neu provider rate-limit.                                              |
-| `ESG_REVISION_CONCURRENCY`        |                                           `4` | So revision LLM chay dong thoi; ket qua van ghep theo thu tu QID.                                       |
-| `ESG_CHECKPOINT_ENABLED`          |                                       `false` | Bat LangGraph SQLite checkpoint theo cong ty/run.                                                       |
-| `ESG_MAX_REVISION_ROUNDS`         |                                           `2` | So vong sua draft sau QA.                                                                               |
-| `ESG_CONDITIONAL_ANSWER_STATUSES` |                             `thin_but_usable` | Trang thai RAG duoc chap nhan khi co evidence co nguon va semantic label hop le.                        |
-| `ESG_SEMANTIC_QA_ENABLED`         |                                        `true` | Bat semantic QA theo pillar sau grounding QA.                                                           |
-| `ESG_SEMANTIC_QA_CONCURRENCY`     |                                           `4` | So semantic review LLM chay dong thoi.                                                                  |
-| `ESG_SEMANTIC_QA_INCREMENTAL`     |                                        `true` | Sau revision, chi goi lai semantic LLM cho answer/prompt da thay doi.                                   |
-| `ESG_SOURCE_POLICY_ENABLED`       |                                        `true` | Phan tier, xep hang va deduplicate nguon.                                                               |
-| `ESG_OUTPUT_HYGIENE_ENABLED`      |                                        `true` | Chuan hoa Markdown va an ten ca nhan khong can thiet.                                                   |
+| Bien moi truong                   |                                      Mac dinh | Y nghia                                                                                                                                    |
+| --------------------------------- | --------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TEAM_RAG_BASE_URL`               |                                          rong | Base URL cua Team RAG. Bat buoc khi goi RAG live.                                                                                          |
+| `TEAM_RAG_QUALITATIVE_PATH`       |                    `/qualitative/evidence/v3` | Endpoint qualitative. Dat `/qualitative/evidence/v2` de rollback; khong co fallback tu dong.                                               |
+| `TEAM_RAG_REQUEST_CONTRACT`       |                                         `new` | Body luon la `company_id + item_ids + year + top_k`; `new` cho phep `item_ids` rong (lay het cau), `legacy` tra ve rong ngay.              |
+| `TEAM_RAG_TIMEOUT_SECONDS`        |                                          `30` | Timeout moi request RAG.                                                                                                                   |
+| `ESG_TOPIC_ISOLATION_ENABLED`     |                                        `true` | Bo evidence bi thay the chu de theo spec §13 (GHG vs o nhiem, nuoc su dung vs nuoc thai, co dong vs giao dich noi bo). Dat `false` de tat. |
+| `TEAM_RAG_TOP_K`                  |                                           `5` | Voi metric la so block `primary`; voi cau khac la ngan sach evidence.                                                                      |
+| `ESG_TEAM_RAG_RETRY_TOP_K`        |                                           `0` | Neu > `TEAM_RAG_TOP_K`, retry QID evidence rong/yeu voi top_k cao hon.                                                                     |
+| `TEAM_RAG_BATCH_SIZE`             |                                          `20` | So QID trong moi batch RAG.                                                                                                                |
+| `TEAM_RAG_CONCURRENCY`            |                                           `4` | So batch RAG chay song song.                                                                                                               |
+| `ESG_TEMPLATE_DIR`                |                                 `template_v1` | Thu muc template cau hoi/quy mo/nganh.                                                                                                     |
+| `ESG_OUTPUT_DIR`                  |                                `data/outputs` | Noi ghi output JSON va Excel.                                                                                                              |
+| `ESG_CACHE_DIR`                   |                                  `data/cache` | Noi ghi checkpoint SQLite khi bat checkpoint.                                                                                              |
+| `ESG_QUANTITATIVE_OUTPUT_ENABLED` |                                       `false` | Bat sheet/artifact dinh luong rieng. Khi `false`, workflow qualitative khong goi loader/API dinh luong.                                    |
+| `ESG_QUANTITATIVE_INPUT_MODE`     |                                        `file` | Nguon dinh luong output-only khi `ESG_QUANTITATIVE_OUTPUT_ENABLED=true`: `file` hoac `api`.                                                |
+| `ESG_QUANTITATIVE_INPUT_DIR`      |                                 `data/inputs` | Thu muc input dinh luong theo cong ty/nam.                                                                                                 |
+| `ESG_QUANTITATIVE_API_BASE_URL`   |                                          rong | Base URL cho API dinh luong khi dung `api`.                                                                                                |
+| `ESG_QUANTITATIVE_API_PATH`       | `/companies/{company_id}/{year}/quantitative` | GET path dinh luong.                                                                                                                       |
+| `ESG_QUANTITATIVE_API_METHOD`     |                                         `GET` | `GET` legacy hoac `POST` cho RAG `/quantitative/answers`.                                                                                  |
+| `ESG_METRIC_QID_BRIDGE_ENABLED`   |                                       `false` | Deprecated. Cau qualitative Metrics dung contract metric cua RAG, khong bridge tu API dinh luong rieng.                                    |
+| `ESG_OUTPUT_TIMEZONE`             |                                `Asia/Bangkok` | Mui gio dung trong ten workbook tong hop.                                                                                                  |
+| `ESG_AGENT_MODE`                  |                                        `auto` | `auto`, `llm`, hoac `offline`.                                                                                                             |
+| `ESG_LLM_PROVIDER`                |                                      `openai` | Provider LLM: `openai` hoac `hallmdr`.                                                                                                     |
+| `ESG_LLM_API_KEY`                 |                                          rong | Key chung, uu tien hon key rieng cua provider.                                                                                             |
+| `HALLMDR_API_KEY`                 |                                          rong | HallMDR key khi provider la `hallmdr`.                                                                                                     |
+| `ESG_LLM_BASE_URL`                |                                          rong | Base URL tuy chinh cua provider.                                                                                                           |
+| `ESG_QUICK_THINK_LLM`             |                                `gpt-4.1-mini` | Model dung cho drafting nhanh.                                                                                                             |
+| `ESG_DEEP_THINK_LLM`              |                                     `gpt-4.1` | Model du phong cho tac vu can reasoning sau.                                                                                               |
+| `ESG_WRITER_CONCURRENCY`          |                                           `4` | So draft LLM chay dong thoi; giam neu provider rate-limit.                                                                                 |
+| `ESG_REVISION_CONCURRENCY`        |                                           `4` | So revision LLM chay dong thoi; ket qua van ghep theo thu tu QID.                                                                          |
+| `ESG_CHECKPOINT_ENABLED`          |                                       `false` | Bat LangGraph SQLite checkpoint theo cong ty/run.                                                                                          |
+| `ESG_MAX_REVISION_ROUNDS`         |                                           `2` | So vong sua draft sau QA.                                                                                                                  |
+| `ESG_CONDITIONAL_ANSWER_STATUSES` |                             `thin_but_usable` | Trang thai RAG duoc chap nhan khi co evidence co nguon va semantic label hop le.                                                           |
+| `ESG_SEMANTIC_QA_ENABLED`         |                                        `true` | Bat semantic QA theo pillar sau grounding QA.                                                                                              |
+| `ESG_SEMANTIC_QA_CONCURRENCY`     |                                           `4` | So semantic review LLM chay dong thoi.                                                                                                     |
+| `ESG_SEMANTIC_QA_INCREMENTAL`     |                                        `true` | Sau revision, chi goi lai semantic LLM cho answer/prompt da thay doi.                                                                      |
+| `ESG_SOURCE_POLICY_ENABLED`       |                                        `true` | Phan tier, xep hang va deduplicate nguon.                                                                                                  |
+| `ESG_OUTPUT_HYGIENE_ENABLED`      |                                        `true` | Chuan hoa Markdown va an ten ca nhan khong can thiet.                                                                                      |
 
 ### Chay HallMDR tren ha tang H200
 
@@ -216,8 +216,6 @@ Khi code hoac dependency thay doi, build lai rieng API va worker:
 docker compose up --build -d api worker
 ```
 
-docker compose restart api worker
-
 Lenh sau xoa ca volume PostgreSQL va toan bo lich su Temporal local:
 
 ```powershell
@@ -288,10 +286,12 @@ docker compose run --rm api python -m esgagents.cli generate-qualitative `
   --industry TR
 ```
 
+docker compose restart api worker
+
 ```powershell
 docker compose run --rm api python -m esgagents.cli generate-qualitative `
   --company-id daewoong `
-  --company-name "Daewoong" `
+  --company-name "Daewoong Pharmaceutical" `
   --year 2025 `
   --scale LARGE `
   --industry HC
