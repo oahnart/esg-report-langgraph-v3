@@ -15,6 +15,28 @@ RAW_TABLE_TERMS = (
     # consecutive header nouns never occur in a written sentence.
     "구분 기능 실적",
 )
+# Web-page and news-portal chrome that survives scraping. Every marker here is
+# site furniture that no ESG disclosure sentence contains: accessibility
+# skip-links, and the copyright/serial footer of a news article. "공지사항" is
+# deliberately NOT a marker -- a privacy policy legitimately says it will
+# announce amendments "웹사이트 공지사항을 통하여".
+WEB_CHROME_TERMS = (
+    "주메뉴바로가기",
+    "본문바로가기",
+    "메뉴바로가기",
+    "콘텐츠바로가기",
+    "무단전재",
+    "배포금지",
+    "연재물",
+    "관련기사",
+)
+# The same bracketed publisher tag repeated inside one sentence -- "[딜사이트]
+# 증권 포럼 [딜사이트] 유통 포럼" -- is a link list, never a sentence.
+REPEATED_BRACKET_TAG_RE = re.compile(r"(\[[^\[\]\n]{2,12}\])(?:[^\[\n]{0,60}\1)+")
+# A run of relative-age stamps ("160일 ... 36일 ...") is a headline feed.
+NEWS_AGE_STAMP_RE = re.compile(r"(?<![\d,.])\d{1,3}일(?=\s)")
+
+
 HEADER_TERMS = (
     "단순화 전",
     "단순화 후",
@@ -420,6 +442,10 @@ def clean_final_answer_for_customer(text: str) -> tuple[str, str, list[str]]:
     if removed_duplicate:
         cleaned = deduplicated
         actions.append("deduplicated_repeated_sentence")
+    without_chrome, removed_chrome = drop_web_chrome_sentences(cleaned)
+    if removed_chrome:
+        cleaned = without_chrome
+        actions.append("removed_web_navigation_sentence")
     cleaned_reason = final_answer_block_reason(cleaned)
     final_reason = cleaned_reason if initial_reason == "korean_fragment_output" else initial_reason or cleaned_reason
     if salvaged and not cleaned_reason:
@@ -851,6 +877,52 @@ def normalize_answer_coherence(text: str) -> tuple[str, list[str]]:
         actions.append("deduplicated_repeated_sentence")
     value = re.sub(r"\s{2,}", " ", value).strip(" ,")
     return value, list(dict.fromkeys(actions))
+
+
+def _is_web_chrome_sentence(sentence: str) -> bool:
+    """True when the sentence is scraped site furniture rather than prose."""
+
+    value = str(sentence or "")
+    lowered = value.casefold()
+    if any(term in lowered for term in WEB_CHROME_TERMS):
+        return True
+    if REPEATED_BRACKET_TAG_RE.search(value):
+        return True
+    return len(NEWS_AGE_STAMP_RE.findall(value)) >= 2
+
+
+NEWS_FOOTER_TERMS = ("무단전재", "배포금지", "연재물", "관련기사")
+
+
+def drop_web_chrome_sentences(text: str) -> tuple[str, bool]:
+    """Remove scraped navigation/headline sentences, keeping the real prose.
+
+    Removal is per sentence because the dump is often embedded between valid
+    sentences: a privacy-policy answer can carry four good sentences, then the
+    whole site menu, then a closing sentence.
+    """
+
+    parts = [
+        part
+        for part in re.findall(r"[^.!?。！？]+[.!?。！？]?", str(text or ""))
+        if part.strip()
+    ]
+    if not parts:
+        return text, False
+    # A news-portal footer anywhere in the answer establishes that the passage
+    # was scraped from an article page. Sentence splitting shatters a headline
+    # feed into fragments that each carry only one age stamp, so inside such an
+    # answer a single stamp is enough to identify the remaining fragments.
+    from_news_page = any(term in str(text or "") for term in NEWS_FOOTER_TERMS)
+    retained = [
+        part
+        for part in parts
+        if not _is_web_chrome_sentence(part)
+        and not (from_news_page and NEWS_AGE_STAMP_RE.search(part))
+    ]
+    if len(retained) == len(parts):
+        return text, False
+    return " ".join(part.strip() for part in retained).strip(), True
 
 
 def deduplicate_repeated_sentences(text: str) -> tuple[str, bool]:

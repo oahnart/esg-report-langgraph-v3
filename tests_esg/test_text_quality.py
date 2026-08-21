@@ -1,6 +1,7 @@
 import pytest
 
 from esgagents.agents.answering.text_quality import (
+    drop_web_chrome_sentences,
     clean_final_answer_for_customer,
     final_answer_block_reason,
     non_narrative_reason,
@@ -553,3 +554,54 @@ def test_prose_after_a_flattened_table_row_survives():
     assert "(주)대웅제약은 2025년까지 상근감사 제도를 운영하여" in cleaned
     assert reason == ""
     assert "removed_leading_document_title_run" in actions
+
+
+def test_scraped_site_menu_is_dropped_but_surrounding_prose_survives():
+    """innox_am Q018: the site menu sits between four valid sentences."""
+
+    answer = (
+        "이녹스첨단소재는 개인정보취급방침을 통해 개인정보 보호 조치를 시행하고 있습니다. "
+        "이녹스첨단소재 주메뉴바로가기 본문바로가기 회사소개 회사개요 CEO인사말 가치체계 "
+        "연혁 CI 국내사업장 해외사업장 Sales Network 사업소개 OLED 소재 전자재료. "
+        "회사는 개인정보취급방침을 개정하는 경우 웹사이트 공지사항을 통하여 공지할 것입니다."
+    )
+
+    cleaned, removed = drop_web_chrome_sentences(answer)
+
+    assert removed is True
+    assert "주메뉴바로가기" not in cleaned
+    assert "개인정보 보호 조치를 시행하고 있습니다" in cleaned
+    # "공지사항" is legitimate prose here and must not be treated as site chrome.
+    assert "웹사이트 공지사항을 통하여 공지할 것입니다" in cleaned
+
+
+def test_news_portal_feed_is_dropped_only_inside_a_news_page_answer():
+    """A copyright footer marks the passage as scraped from an article page."""
+
+    from_news = (
+        "딜사이트 무단전재 배포금지 연재물 인터배터리. "
+        "삼성운용, 이익잉여금 9000억 쌓았다 36일 제약바이오 하반기 박스권 전망. "
+        "이녹스에코엠은 배터리 수명을 높이는 음극재용 실리콘 첨가제 기술을 소개했습니다."
+    )
+    cleaned, removed = drop_web_chrome_sentences(from_news)
+    assert removed is True
+    assert "무단전재" not in cleaned
+    assert "36일" not in cleaned
+    assert "음극재용 실리콘 첨가제 기술을 소개했습니다" in cleaned
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        # A lone age stamp outside a news page is ordinary prose.
+        "온실가스 배출량은 5일 단위로 집계하여 관리합니다.",
+        "폐수 처리 설비는 30일 주기로 점검합니다.",
+        # A single bracketed tag is a section marker, not a link list.
+        "[E] 환경 부문에서는 온실가스 감축을 추진합니다.",
+    ],
+)
+def test_ordinary_prose_is_not_mistaken_for_site_chrome(answer):
+    cleaned, removed = drop_web_chrome_sentences(answer)
+
+    assert removed is False
+    assert cleaned == answer

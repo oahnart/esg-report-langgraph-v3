@@ -22,11 +22,16 @@ KOREAN_SURNAMES = (
     "모탁국어은편용"
 )
 ROLE_PATTERN = (
-    r"대표이사|사외이사|대표|부장|과장|차장|팀장|사원|이사|상무|전무|임원|위원장"
+    r"대표이사|사외이사|사내이사|대표|부장|과장|차장|팀장|사원|이사|상무|전무|임원"
+    r"|위원장|감사위원|위원|후보자|후보"
 )
+# The lookahead lists the particles that may follow a role, and deliberately does
+# not accept an arbitrary syllable: that is what keeps "김경자 위원회" (an organisation)
+# from being read as a person holding the role "위원".
+ROLE_TRAILING_PARTICLE = r"으로|로|과|와|이|가|을|를|은|는|의|도|만|에게|에|께서|및"
 KOREAN_NAME_ROLE_RE = re.compile(
-    rf"(?<![가-힣A-Za-z])([{KOREAN_SURNAMES}][가-힣]{{1,2}})\s+"
-    rf"({ROLE_PATTERN})(?=\s|,|\)|\.|과|와|이|가|을|를|은|는|$)"
+    rf"(?<![가-힣A-Za-z0-9])([{KOREAN_SURNAMES}][가-힣]{{1,2}})\s+"
+    rf"({ROLE_PATTERN})(?=\s|,|\)|\.|\]|\(|{ROLE_TRAILING_PARTICLE}|$)"
 )
 # A real given name is indistinguishable by shape from an attributive modifier
 # whose first syllable happens to be a surname (여/남/신/전/고/기 ...). Redacting
@@ -57,12 +62,39 @@ KOREAN_NAME_FALSE_POSITIVES = {
     "해당",
     "총괄",
     "담당",
+    # role nouns: "사외이사 후보자" must not be read as the name "이사" plus the
+    # role "후보자". A role word is never a given name.
+    "이사",
+    "감사",
+    "위원",
+    "임원",
+    "사장",
+    "부장",
+    "후보",
+    # quantifiers and counters: same shape as a two-syllable given name
+    "이상의",
+    "이하의",
+    "미만의",
+    "인의",
+    "명의",
+    "이내의",
 }
+# A roster written as a parenthesised list after a headcount:
+# "사내이사 3명(장경호, 김경훈, 김성만)". The headcount anchor is required so ordinary
+# parentheticals whose words happen to start with a surname syllable -- "(성별, 연령)" --
+# are never touched.
+KOREAN_NAME_ROSTER_RE = re.compile(
+    rf"(\d+\s*[명인]\s*)\(\s*[{KOREAN_SURNAMES}][가-힣]{{1,2}}"
+    rf"(?:\s*,\s*[{KOREAN_SURNAMES}][가-힣]{{1,2}})+\s*\)"
+)
 ENGLISH_NAME_ROLE_RE = re.compile(
     r"\b(?:[A-Z][a-z]+\s+){2,3}(CEO|Director|Manager|Officer|Chair|President)\b"
 )
 ROLE_ONLY_PAREN_RE = re.compile(
     rf"\(\s*(?:{ROLE_PATTERN})(?:\s*,\s*(?:{ROLE_PATTERN}))*\s*\)"
+)
+ROLE_ONLY_BRACKET_RE = re.compile(
+    rf"\[\s*(?:{ROLE_PATTERN})\s*\]\s*"
 )
 ADJACENT_DUPLICATE_ROLE_RE = re.compile(
     rf"\b({ROLE_PATTERN})(?:\s*,\s*\1)+\b"
@@ -225,6 +257,10 @@ def normalize_markdown(text: str) -> str:
 
 def sanitize_person_names(text: str) -> tuple[str, list[str]]:
     actions: list[str] = []
+    without_roster = KOREAN_NAME_ROSTER_RE.sub(r"\1", text)
+    if without_roster != text:
+        actions.append("redacted_person_name")
+    text = without_roster
     value = KOREAN_NAME_ROLE_RE.sub(
         lambda match: match.group(0)
         if match.group(1) in KOREAN_NAME_FALSE_POSITIVES
@@ -235,6 +271,11 @@ def sanitize_person_names(text: str) -> tuple[str, list[str]]:
     if value != text:
         actions.append("redacted_person_name")
 
+    without_bracket = ROLE_ONLY_BRACKET_RE.sub("", value)
+    if without_bracket != value:
+        actions.append("removed_role_only_heading")
+    value = without_bracket
+
     without_parenthetical = ROLE_ONLY_PAREN_RE.sub("", value)
     if without_parenthetical != value:
         actions.append("removed_role_only_parenthetical")
@@ -243,6 +284,7 @@ def sanitize_person_names(text: str) -> tuple[str, list[str]]:
     deduplicated = ADJACENT_DUPLICATE_ROLE_RE.sub(lambda match: match.group(1), value)
     if deduplicated != value:
         actions.append("deduplicated_person_roles")
+
     return deduplicated, actions
 
 

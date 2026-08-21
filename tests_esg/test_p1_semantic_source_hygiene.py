@@ -1905,3 +1905,89 @@ def test_metrics_coverage_shortfall_keeps_the_on_topic_narrative():
 def test_wrong_topic_and_gap_only_answers_are_still_discarded(review):
     assert SemanticCompletenessCriticAgent._hard_failure(review, METRIC_CONTRACT_FOR_TESTS)
     assert not SemanticCompletenessCriticAgent._coverage_shortfall(review)
+
+
+@pytest.mark.parametrize(
+    ("answer", "leaked"),
+    [
+        # innox_am Q075/Q077: a roster in parentheses after a headcount
+        (
+            "당사의 이사회는 사내이사 3명(장경호, 김경훈, 김성만)과 사외이사 3명(윤석남, 김경자, 이미혜), "
+            "총 6인의 이사로 구성되어 있습니다.",
+            ("장경호", "김경훈", "김성만", "윤석남", "김경자", "이미혜"),
+        ),
+        # innox_am Q079: the bare role "위원", followed by the particle "으로"
+        (
+            "감사위원회는 위원장, 김경자 위원, 이미혜 위원으로 구성되어 있습니다.",
+            ("김경자", "이미혜"),
+        ),
+    ],
+)
+def test_director_names_are_redacted_from_customer_prose(answer, leaked):
+    redacted, actions = sanitize_person_names(answer)
+
+    for name in leaked:
+        assert name not in redacted
+    assert "redacted_person_name" in actions
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        # A counter is shaped like a two-syllable given name ("인의", "이상의").
+        "총 6인의 이사로 구성되어 있습니다.",
+        "위원회는 2인 이상의 이사로 구성합니다.",
+        "이사회는 3명 이상 9명 이내의 이사로 구성합니다.",
+        # "위원회" is an organisation, never a person holding the role "위원".
+        "ESG위원회는 전사 전략을 심의합니다.",
+        # Attributive modifiers must survive; they carry the disclosure.
+        "여성 위원 비율을 관리하고 있습니다.",
+        # An ordinary parenthetical whose words start with a surname syllable.
+        "평가는 3개 영역(성별, 연령)으로 구분하여 실시합니다.",
+    ],
+)
+def test_headcounts_and_organisations_are_not_redacted_as_names(answer):
+    redacted, actions = sanitize_person_names(answer)
+
+    assert redacted == answer
+    assert actions == []
+
+
+def test_headcount_survives_when_its_roster_is_redacted():
+    """The figure is the disclosure; only the names may go."""
+
+    answer = (
+        "당사의 이사회는 사내이사 3명(장경호, 김경훈, 김성만)과 "
+        "사외이사 3명(윤석남, 김경자, 이미혜), 총 6인의 이사로 구성되어 있습니다."
+    )
+
+    redacted, actions = sanitize_person_names(answer)
+
+    assert redacted == "당사의 이사회는 사내이사 3명과 사외이사 3명, 총 6인의 이사로 구성되어 있습니다."
+    assert "redacted_person_name" in actions
+
+
+def test_director_candidate_profile_is_stripped_of_names():
+    """innox_am Q095: a shareholder-meeting candidate bio names real people."""
+
+    answer = (
+        "[김경자 후보자] 김경자 후보는 현재 한국항공우주(주) 사외이사로 재직중이며 "
+        "한국수출입은행에서 35년간 재직한 신용평가 전문가입니다."
+    )
+
+    redacted, actions = sanitize_person_names(answer)
+
+    assert "김경자" not in redacted
+    assert redacted.startswith("후보는 현재")
+    assert "removed_role_only_heading" in actions
+
+
+def test_name_before_a_parenthesised_role_is_redacted():
+    """innox_am Q075/Q077/Q081: "김경훈 사내이사(각자대표이사)는"."""
+
+    answer = "제8기 정기주주총회에서 김경훈 사내이사(각자대표이사)는 임기만료 안건이 상정되었습니다."
+
+    redacted, _ = sanitize_person_names(answer)
+
+    assert "김경훈" not in redacted
+    assert "사내이사(각자대표이사)는 임기만료" in redacted
