@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+from enum import Enum
 from typing import Optional
 
 import typer
@@ -8,13 +8,20 @@ import typer
 from esgagents.graph.esg_graph import ESGQualitativeGraph
 from esgagents.output_writer import OutputRunExistsError
 from esgagents.provenance import ProvenanceError, verify_runtime_provenance
-from esgagents.schemas import CompanyInput, model_to_dict
+from esgagents.progress import ProgressEvent, ProgressReporter, format_progress_event
+from esgagents.schemas import CompanyInput
 
 app = typer.Typer(help="ESG qualitative report generator")
 
 
-def _progress_observer(node_name: str, status: str) -> None:
-    typer.echo(f"[progress] {node_name}: {status}", err=True)
+class ProgressLevelOption(str, Enum):
+    full = "full"
+    steps = "steps"
+    quiet = "quiet"
+
+
+def _progress_sink(event: ProgressEvent) -> None:
+    typer.echo(format_progress_event(event), err=True)
 
 
 @app.callback()
@@ -33,6 +40,10 @@ def generate_qualitative(
     item_ids: Optional[str] = typer.Option(None, help="Comma-separated QIDs, e.g. Q001,Q002"),
     output_language: str = typer.Option("Korean"),
     run_id: Optional[str] = typer.Option(None),
+    progress_level: ProgressLevelOption = typer.Option(
+        ProgressLevelOption.full,
+        help="Progress detail: full, steps, or quiet.",
+    ),
 ):
     try:
         verify_runtime_provenance()
@@ -51,11 +62,16 @@ def generate_qualitative(
         run_id=run_id,
     )
     try:
-        artifacts = ESGQualitativeGraph(progress_observer=_progress_observer).generate(input_payload)
+        progress_reporter = ProgressReporter(
+            _progress_sink,
+            level=progress_level.value,
+        )
+        ESGQualitativeGraph(
+            progress_reporter=progress_reporter
+        ).generate(input_payload)
     except OutputRunExistsError:
         typer.echo("Error: output run already exists", err=True)
         raise typer.Exit(code=1)
-    typer.echo(json.dumps(model_to_dict(artifacts), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

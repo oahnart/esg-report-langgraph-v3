@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal, InvalidOperation
 import re
 from time import perf_counter
+from threading import Lock
 from typing import Any
 from types import SimpleNamespace
 
@@ -13,6 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from skills.agents.context_builder import compact
 from esgagents.llm_clients.structured import bind_structured
+from esgagents.progress import ProgressReporter, safe_error_detail
 from esgagents.schemas import SkillDraft
 from esgagents.agents.answering.question_contracts import build_question_contract
 from esgagents.agents.answering.grounding import ground_answer_sentences
@@ -127,10 +129,16 @@ INLINE_PERIOD_RE = re.compile(
 
 
 class SkillWriterAgent:
-    def __init__(self, config: dict[str, Any] | None = None, llm: Any | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any] | None = None,
+        llm: Any | None = None,
+        progress_reporter: ProgressReporter | None = None,
+    ):
         self.config = config or {}
         self.llm = llm
         self.structured_llm = bind_structured(llm, SkillDraft, "Skill Writer")
+        self.progress_reporter = progress_reporter or ProgressReporter()
         self.concurrency = max(1, int(self.config.get("writer_concurrency", 4)))
         self.sentence_grounding_enforced = bool(
             self.config.get("sentence_grounding_enforced", True)
@@ -142,7 +150,13 @@ class SkillWriterAgent:
         revision_counts = {planned.id: state.get("revision_counts", {}).get(planned.id, 0) for planned in state["planned_questions"]}
         candidates: list[tuple[Any, dict[str, Any], Any, dict[str, Any], dict[str, Any]]] = []
         started = perf_counter()
-        for planned in state["planned_questions"]:
+        planned_questions = list(state["planned_questions"])
+        question_total = len(planned_questions)
+        positions = {
+            planned.id: index
+            for index, planned in enumerate(planned_questions, start=1)
+        }
+        for planned in planned_questions:
             context = state["skill_contexts"][planned.id]
             gate = state["evidence_gate"].get(planned.id, {})
             rag = state["rag_results"].get(planned.id)
@@ -157,6 +171,17 @@ class SkillWriterAgent:
                         ]
                     )
                 )
+                self.progress_reporter.event(
+                    "WRITER",
+                    planned.id,
+                    "skipped",
+                    current=positions[planned.id],
+                    total=question_total,
+                    details={
+                        "reason": context.get("acceptance_reason")
+                        or gate.get("reason", "no accepted evidence")
+                    },
+                )
                 continue
             metric_audit = context.get("metric_audit", {})
             if metric_audit.get("all_numeric_facts_conflicted"):
@@ -167,20 +192,83 @@ class SkillWriterAgent:
                         + ["conflicting_metric", "all_metric_facts_conflicted"]
                     )
                 )
+                self.progress_reporter.event(
+                    "WRITER",
+                    planned.id,
+                    "skipped",
+                    current=positions[planned.id],
+                    total=question_total,
+                    details={"reason": "all_numeric_facts_conflicted"},
+                )
                 continue
             candidates.append((planned, context, rag, gate, metric_audit))
 
         results: dict[str, tuple[str, list[str]]] = {}
         if candidates:
             workers = min(self.concurrency, len(candidates))
+            completion_lock = Lock()
+            completed = 0
+
+            def tracked_draft(planned: Any, context: dict[str, Any], rag: Any):
+                nonlocal completed
+                token = self.progress_reporter.start(
+                    "WRITER",
+                    planned.id,
+                    current=positions[planned.id],
+                    total=question_total,
+                    details={
+                        "provider": self.config.get("llm_provider"),
+                        "model": self.config.get("quick_think_llm"),
+                    },
+                )
+                try:
+                    result = self._draft_answer(context, rag)
+                except Exception as exc:
+                    with completion_lock:
+                        completed += 1
+                        completion = completed
+                    self.progress_reporter.finish(
+                        token,
+                        status="fallback",
+                        details={
+                            "llm_completed": f"{completion}/{len(candidates)}",
+                            "error_type": type(exc).__name__,
+                            "error": safe_error_detail(exc),
+                        },
+                    )
+                    raise
+                answer, draft_flags = result
+                with completion_lock:
+                    completed += 1
+                    completion = completed
+                self.progress_reporter.finish(
+                    token,
+                    status=(
+                        "fallback"
+                        if "llm_error_fallback" in draft_flags
+                        else "completed"
+                    ),
+                    details={
+                        "llm_completed": f"{completion}/{len(candidates)}",
+                        "answer_chars": len(answer),
+                        "flags": draft_flags,
+                    },
+                )
+                return result
+
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {
-                    planned.id: executor.submit(self._draft_answer, context, rag)
+                    executor.submit(tracked_draft, planned, context, rag): (
+                        planned,
+                        context,
+                        rag,
+                    )
                     for planned, context, rag, _, _ in candidates
                 }
-                for planned, context, rag, _, _ in candidates:
+                for future in as_completed(futures):
+                    planned, context, rag = futures[future]
                     try:
-                        results[planned.id] = futures[planned.id].result()
+                        results[planned.id] = future.result()
                     except Exception as exc:  # Defensive isolation beyond agent fallback.
                         logger.warning(
                             "Skill Writer task failed for %s; using deterministic fallback: %s",

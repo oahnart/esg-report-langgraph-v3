@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import re
-import sys
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter
@@ -11,6 +10,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.llm_clients.structured import bind_structured
+from esgagents.progress import ProgressReporter, safe_error_detail
 from esgagents.schemas import SkillDraft, model_to_dict
 from skills.agents.context_builder import compact
 
@@ -76,10 +76,16 @@ def _curated_writer_items(state: dict[str, Any], qid: str) -> list[Any]:
 class RevisionAgent:
     """Rewrites only critic-failed answers with their accepted source evidence."""
 
-    def __init__(self, config: dict[str, Any] | None = None, llm: Any | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any] | None = None,
+        llm: Any | None = None,
+        progress_reporter: ProgressReporter | None = None,
+    ):
         self.config = config or {}
         self.llm = llm
         self.structured_llm = bind_structured(llm, SkillDraft, "Revision Writer")
+        self.progress_reporter = progress_reporter or ProgressReporter()
         self.max_revision_rounds = max(0, int(self.config.get("max_revision_rounds", 1)))
         self.concurrency = max(1, int(self.config.get("revision_concurrency", 4)))
         self.sentence_grounding_enforced = bool(
@@ -96,28 +102,57 @@ class RevisionAgent:
             qid: dict(values)
             for qid, values in state.get("evidence_curation_qid_stats", {}).items()
         }
-        planned_by_id = {planned.id: planned for planned in state.get("planned_questions", [])}
+        planned_questions = list(state.get("planned_questions", []))
+        planned_by_id = {planned.id: planned for planned in planned_questions}
+        question_total = len(planned_questions)
+        positions = {
+            planned.id: index
+            for index, planned in enumerate(planned_questions, start=1)
+        }
         eligible_qids = eligible_revision_qids(state, self.max_revision_rounds)
         started = perf_counter()
 
-        if eligible_qids:
-            self._progress(
-                f"revision eligible qids: {len(eligible_qids)} "
-                f"(max rounds={self.max_revision_rounds})"
-            )
-
         rewrite_results: dict[str, tuple[str, list[str]]] = {}
         rewrite_errors: dict[str, Exception] = {}
-        for index, qid in enumerate(eligible_qids, start=1):
-            self._progress(f"revision {index}/{len(eligible_qids)} {qid}: started")
+        for qid in eligible_qids:
             revision_counts[qid] = int(revision_counts.get(qid, 0)) + 1
             qid_stats.setdefault(qid, {})["revision_called"] = True
+
+        def tracked_rewrite(qid: str):
+            token = self.progress_reporter.start(
+                "REVISION",
+                qid,
+                current=positions[qid],
+                total=question_total,
+                details={
+                    "round": revision_counts[qid],
+                    "provider": self.config.get("llm_provider"),
+                    "model": self.config.get("deep_think_llm"),
+                },
+            )
+            try:
+                result = self._rewrite(state, planned_by_id[qid])
+            except Exception as exc:
+                self.progress_reporter.finish(
+                    token,
+                    status="fallback",
+                    details={
+                        "error_type": type(exc).__name__,
+                        "error": safe_error_detail(exc),
+                    },
+                )
+                raise
+            self.progress_reporter.finish(
+                token,
+                details={"answer_chars": len(result[0]), "flags": result[1]},
+            )
+            return result
 
         if eligible_qids:
             workers = min(self.concurrency, len(eligible_qids))
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {
-                    qid: executor.submit(self._rewrite, state, planned_by_id[qid])
+                    qid: executor.submit(tracked_rewrite, qid)
                     for qid in eligible_qids
                 }
                 for qid in eligible_qids:
@@ -130,7 +165,6 @@ class RevisionAgent:
             if qid in rewrite_errors:
                 exc = rewrite_errors[qid]
                 logger.warning("Revision writer failed for %s: %s", qid, exc)
-                self._progress(f"revision {index}/{len(eligible_qids)} {qid}: failed")
                 revised, fallback_flags = self._deterministic_safe_fallback(state, qid)
                 revision_flags = self._with_flags(
                     fallback_flags,
@@ -247,8 +281,6 @@ class RevisionAgent:
                     quality_flags[qid],
                     ["revision_returned_empty"] if not actions else ["sanitizer_returned_empty"],
                 )
-            self._progress(f"revision {index}/{len(eligible_qids)} {qid}: completed")
-
         elapsed_ms = round((perf_counter() - started) * 1000)
         logger.info(
             "revision_phase elapsed_ms=%s candidates=%s llm_calls=%s "
@@ -258,6 +290,16 @@ class RevisionAgent:
             len(eligible_qids) if self.llm is not None else 0,
             len(rewrite_errors),
             min(self.concurrency, len(eligible_qids)) if eligible_qids else 0,
+        )
+        self.progress_reporter.event(
+            "REVISION",
+            "summary",
+            details={
+                "eligible": len(eligible_qids),
+                "failures": len(rewrite_errors),
+                "max_workers": min(self.concurrency, len(eligible_qids)) if eligible_qids else 0,
+                "elapsed_ms": elapsed_ms,
+            },
         )
 
         return {
@@ -516,10 +558,6 @@ class RevisionAgent:
             ]
         )
         return [SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)]
-
-    @staticmethod
-    def _progress(message: str) -> None:
-        print(f"[progress] {message}", file=sys.stderr, flush=True)
 
     @staticmethod
     def _with_flags(existing: list[str], additions: list[str]) -> list[str]:

@@ -24,6 +24,7 @@ from skills.agents import (
 from esgagents.llm_clients import create_llm_pair
 from esgagents.quantitative import QuantitativeAgent
 from esgagents.rag_client import TeamRagClient
+from esgagents.progress import ProgressReporter
 from esgagents.template_loader import TemplateRepository
 
 
@@ -38,6 +39,7 @@ class ESGAgents:
         config: dict[str, Any],
         templates: TemplateRepository,
         rag_client: TeamRagClient,
+        progress_reporter: ProgressReporter | None = None,
     ):
         self.config = config
         self.templates = templates
@@ -59,18 +61,24 @@ class ESGAgents:
         self.company_intake_agent = CompanyIntakeAgent(config, templates)
         self.template_selector_agent = TemplateSelectorAgent(templates)
         self.question_planner_agent = QuestionPlannerAgent()
-        self.rag_batch_agent = RagBatchAgent(config, rag_client)
+        self.rag_batch_agent = RagBatchAgent(config, rag_client, progress_reporter)
         self.evidence_gate_agent = EvidenceGateAgent(config)
         self.evidence_normalizer_agent = EvidenceNormalizerAgent(config)
         self.quantitative_agent = QuantitativeAgent(config, templates)
         self.skill_registry = SkillRegistry(config["skill_dir"])
         self.skill_router_agent = SkillRouterAgent(self.skill_registry)
-        self.evidence_curator_agent = EvidenceCuratorAgent(config, self.quick_llm)
+        self.evidence_curator_agent = EvidenceCuratorAgent(
+            config, self.quick_llm, progress_reporter
+        )
         self.skill_context_builder_agent = SkillContextBuilderAgent(self.skill_registry)
-        self.skill_writer_agent = SkillWriterAgent(config, self.quick_llm)
+        self.skill_writer_agent = SkillWriterAgent(
+            config, self.quick_llm, progress_reporter
+        )
         self.skill_policy_critic_agent = SkillPolicyCriticAgent(config)
-        self.semantic_critic_agent = SemanticCompletenessCriticAgent(config, self.quick_llm)
-        self.revision_agent = RevisionAgent(config, self.deep_llm)
+        self.semantic_critic_agent = SemanticCompletenessCriticAgent(
+            config, self.quick_llm, progress_reporter
+        )
+        self.revision_agent = RevisionAgent(config, self.deep_llm, progress_reporter)
         self.output_hygiene_agent = OutputHygieneAgent(config)
         self.report_manager_agent = ReportManagerAgent(config)
 

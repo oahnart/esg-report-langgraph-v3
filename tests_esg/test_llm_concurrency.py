@@ -10,6 +10,7 @@ from esgagents.agents.answering.revision import RevisionAgent
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
 from esgagents.default_config import load_config
 from esgagents.graph.setup import ESGGraphSetup
+from esgagents.progress import ProgressReporter
 from esgagents.schemas import EvidenceItem, QAResult, SemanticReview, SkillDraft
 from skills.agents.writer import SkillWriterAgent
 
@@ -252,6 +253,31 @@ def test_writer_timeout_is_isolated_to_its_qid():
     assert "llm_error_fallback" in result["quality_flags"]["Q002"]
 
 
+def test_writer_progress_reports_each_qid_and_fallback_duration():
+    qids = ["Q001", "Q002", "Q003"]
+    events = []
+    llm = RecordingStructuredLLM(
+        _draft_response,
+        fail_qid="Q002",
+        delay=0,
+    )
+
+    SkillWriterAgent(
+        {"writer_concurrency": 3},
+        llm,
+        ProgressReporter(events.append),
+    ).run(_writer_state(qids))
+
+    terminal = {
+        event.name: event
+        for event in events
+        if event.category == "WRITER" and event.status != "started"
+    }
+    assert set(terminal) == set(qids)
+    assert terminal["Q002"].status == "fallback"
+    assert all(event.duration_seconds is not None for event in terminal.values())
+
+
 def test_revision_parallelism_is_bounded_and_failure_isolated():
     qids = [f"Q{index:03d}" for index in range(1, 9)]
     llm = RecordingStructuredLLM(_revision_response, fail_qid="Q004")
@@ -280,6 +306,30 @@ def test_revision_parallelism_is_bounded_and_failure_isolated():
     assert result["final_answers"] == sequential["final_answers"]
     assert result["quality_flags"] == sequential["quality_flags"]
     assert result["revision_counts"] == sequential["revision_counts"]
+
+
+def test_revision_progress_reports_real_worker_start_and_failure_fallback():
+    qids = ["Q001", "Q002", "Q003"]
+    events = []
+    llm = RecordingStructuredLLM(_revision_response, fail_qid="Q002", delay=0)
+
+    RevisionAgent(
+        {"revision_concurrency": 2, "max_revision_rounds": 1},
+        llm,
+        ProgressReporter(events.append),
+    ).run(_revision_state(qids))
+
+    terminal = {
+        event.name: event
+        for event in events
+        if event.category == "REVISION"
+        and event.name != "summary"
+        and event.status != "started"
+    }
+    assert terminal["Q002"].status == "fallback"
+    assert terminal["Q001"].status == "completed"
+    assert terminal["Q003"].status == "completed"
+    assert all(event.duration_seconds is not None for event in terminal.values())
 
 
 def test_semantic_review_cache_reuses_unchanged_inputs_and_refreshes_one_qid():
@@ -329,6 +379,35 @@ def test_semantic_incremental_can_be_disabled_for_rollback():
     critic.run(state)
 
     assert len(llm.calls) == 4
+
+
+def test_semantic_progress_reports_each_llm_review_with_verdict_and_duration():
+    qids = ["Q001", "Q002", "Q003"]
+    events = []
+    llm = RecordingStructuredLLM(_semantic_response, delay=0)
+    critic = SemanticCompletenessCriticAgent(
+        {
+            "semantic_qa_enabled": True,
+            "semantic_qa_concurrency": 2,
+            "semantic_qa_incremental": False,
+        },
+        llm,
+        ProgressReporter(events.append),
+    )
+
+    critic.run(_semantic_state(qids))
+
+    terminal = {
+        event.name: event
+        for event in events
+        if event.category == "SEMANTIC"
+        and event.name in qids
+        and event.status != "started"
+    }
+    assert set(terminal) == set(qids)
+    assert all(event.status == "completed" for event in terminal.values())
+    assert all(event.duration_seconds is not None for event in terminal.values())
+    assert all(event.details["verdict"] == "PASS" for event in terminal.values())
 
 
 def test_performance_config_defaults_are_enabled_and_bounded():

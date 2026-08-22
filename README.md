@@ -301,6 +301,49 @@ docker compose run --rm api python -m esgagents.cli generate-qualitative `
   --industry HC
 ```
 
+### Theo doi progress chi tiet
+
+CLI mac dinh dung `--progress-level full`. Cac dong progress duoc ghi vao
+`stderr`. Sau khi hoan thanh, CLI khong dump lai payload `RunArtifacts` len
+terminal vi du lieu day du da duoc ghi vao `qualitative_run.json`. Moi dong
+progress co timestamp, tong thoi gian tu luc workflow bat dau va duration cua
+tac vu vua hoan thanh.
+
+Che do `full` hien thi:
+
+- Tat ca LangGraph step va thoi gian tung step.
+- Tung RAG batch va tung HTTP attempt/retry: endpoint, QID, top-k, timeout,
+  status, request ID, server latency va client duration.
+- Tung QID cua Curator, Writer, Semantic Critic va Revision, bao gom
+  cache/skip/fallback/timeout va so tac vu da hoan thanh.
+- Tong ket workflow: so cau, RAG request, LLM call, revision va output stats.
+
+Vi du rut gon:
+
+```text
+[2026-08-23T14:32:05.120+07:00] [+00:00:00.000] WORKFLOW START Generate qualitative report company_id=daewoong year=2025
+[2026-08-23T14:32:06.020+07:00] [+00:00:00.900] RAG API START POST qualitative evidence attempt=1/3 endpoint=http://rag:8787/qualitative/evidence/v3 qids=Q001,Q002
+[2026-08-23T14:32:09.246+07:00] [+00:00:04.126] RAG API DONE POST qualitative evidence attempt=1/3 duration=3.226s status_code=200 request_id=rag-abc
+[2026-08-23T14:32:10.100+07:00] [+00:00:04.980] CURATOR START Q023 question=23/85 evidence=6
+[2026-08-23T14:32:12.914+07:00] [+00:00:07.794] CURATOR DONE Q023 question=23/85 duration=2.814s kept=4 dropped=2 answerability=SUFFICIENT
+```
+
+Neu chi can cac step lon:
+
+```powershell
+python -m esgagents.cli generate-qualitative ... --progress-level steps
+```
+
+Tat progress:
+
+```powershell
+python -m esgagents.cli generate-qualitative ... --progress-level quiet
+```
+
+Progress khong ghi API key, bearer token, response body hay noi dung evidence.
+Query parameter co ten nhu `api_key`, `token`, `secret`, `password` hoac
+`signature` se duoc thay bang `[REDACTED]`.
+
 ## Chay API Dong Bo (Khong Qua Temporal)
 
 Start FastAPI:

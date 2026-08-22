@@ -13,6 +13,7 @@ from esgagents.agents.evidence.metric_routing import (
     qualitative_evidence_route,
 )
 from esgagents.default_config import load_config
+from esgagents.progress import ProgressReporter
 from esgagents.schemas import (
     EvidenceCurationDrop,
     EvidenceCurationKeep,
@@ -185,6 +186,7 @@ def test_legacy_metric_rows_remain_writer_eligible_when_no_qualitative_item_exis
 
 
 def test_enforced_curator_applies_explicit_keep_drop_without_touching_metrics():
+    progress_events = []
     planned = _planned()
     rag = RagQuestionResult(
         question_id=planned.id,
@@ -234,7 +236,9 @@ def test_enforced_curator_applies_explicit_keep_drop_without_touching_metrics():
         def with_structured_output(self, schema):
             return Structured()
 
-    result = EvidenceCuratorAgent({}, LLM()).run(
+    result = EvidenceCuratorAgent(
+        {}, LLM(), ProgressReporter(progress_events.append)
+    ).run(
         {
             "planned_questions": [planned],
             "rag_results": {planned.id: rag},
@@ -248,6 +252,18 @@ def test_enforced_curator_applies_explicit_keep_drop_without_touching_metrics():
     curated = result["curated_qualitative_evidence"][planned.id]
     assert [item.evidence_id for item in curated] == [prepared[0].evidence_id]
     assert len(normalized[planned.id]["metric_evidence"]) == 1
+    terminal = [
+        event
+        for event in progress_events
+        if event.category == "CURATOR"
+        and event.name == planned.id
+        and event.status != "started"
+    ]
+    assert len(terminal) == 1
+    assert terminal[0].status == "completed"
+    assert terminal[0].duration_seconds is not None
+    assert terminal[0].details["kept"] == 1
+    assert terminal[0].details["dropped"] == 1
 
 
 def test_found_table_qualitative_insufficient_does_not_remove_metric_rows():

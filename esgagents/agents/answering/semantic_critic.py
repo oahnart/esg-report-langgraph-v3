@@ -12,6 +12,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.llm_clients.structured import bind_structured
+from esgagents.progress import ProgressReporter, safe_error_detail
 from esgagents.agents.evidence.metric_facts import (
     conflicting_metric_claims,
     metric_facts_supporting_claim,
@@ -213,7 +214,12 @@ METRIC_DIMENSION_PATTERNS: dict[str, tuple[str, ...]] = {
 
 
 class SemanticCompletenessCriticAgent:
-    def __init__(self, config: dict[str, Any] | None = None, llm: Any | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any] | None = None,
+        llm: Any | None = None,
+        progress_reporter: ProgressReporter | None = None,
+    ):
         self.config = config or {}
         self.enabled = bool(self.config.get("semantic_qa_enabled", True))
         self.concurrency = max(1, int(self.config.get("semantic_qa_concurrency", 4)))
@@ -221,6 +227,7 @@ class SemanticCompletenessCriticAgent:
         self.llm_timeout_seconds = max(1.0, float(self.config.get("llm_timeout_seconds", 120)))
         self.llm = llm
         self.structured_llm = bind_structured(llm, SemanticReview, "Semantic Completeness Critic")
+        self.progress_reporter = progress_reporter or ProgressReporter()
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         if not self.enabled:
@@ -244,9 +251,14 @@ class SemanticCompletenessCriticAgent:
             for qid, values in state.get("evidence_curation_qid_stats", {}).items()
         }
         skill_checks = {qid: list(checks) for qid, checks in state.get("skill_checks", {}).items()}
+        all_planned = list(state.get("planned_questions", []))
+        question_total = len(all_planned)
+        positions = {
+            item.id: index for index, item in enumerate(all_planned, start=1)
+        }
         planned = [
             item
-            for item in state.get("planned_questions", [])
+            for item in all_planned
             if getattr(qa_results.get(item.id), "status", "") == "passed"
             and bool(final_answers.get(item.id, ""))
         ]
@@ -287,6 +299,14 @@ class SemanticCompletenessCriticAgent:
                     build_question_contract(item),
                 )
                 cache_hit_qids.add(qid)
+                self.progress_reporter.event(
+                    "SEMANTIC",
+                    qid,
+                    "cache",
+                    current=positions[qid],
+                    total=question_total,
+                    details={"verdict": reviews[qid].verdict},
+                )
             else:
                 llm_candidates.append(item)
                 llm_reviews.pop(qid, None)
@@ -300,10 +320,26 @@ class SemanticCompletenessCriticAgent:
             )
         if llm_candidates:
             executor = ThreadPoolExecutor(max_workers=min(self.concurrency, len(llm_candidates)))
+            tokens = {
+                item.id: self.progress_reporter.start(
+                    "SEMANTIC",
+                    item.id,
+                    current=positions[item.id],
+                    total=question_total,
+                    details={
+                        "state": "queued",
+                        "provider": self.config.get("llm_provider"),
+                        "model": self.config.get("quick_think_llm"),
+                    },
+                )
+                for item in llm_candidates
+            }
             futures = {executor.submit(self._llm_review, review_state, item): item.id for item in llm_candidates}
+            completed = 0
             try:
                 for future in as_completed(futures, timeout=self.llm_timeout_seconds):
                     qid = futures[future]
+                    completed += 1
                     try:
                         llm_review = future.result()
                         llm_reviews[qid] = llm_review
@@ -312,15 +348,38 @@ class SemanticCompletenessCriticAgent:
                             llm_review,
                             build_question_contract(next(item for item in planned if item.id == qid)),
                         )
+                        self.progress_reporter.finish(
+                            tokens[qid],
+                            details={
+                                "llm_completed": f"{completed}/{len(llm_candidates)}",
+                                "verdict": reviews[qid].verdict,
+                                "alignment": reviews[qid].alignment,
+                            },
+                        )
                     except Exception as exc:
                         logger.warning("Semantic review failed for %s; using deterministic fallback: %s", qid, exc)
                         fallback_qids.add(qid)
+                        self.progress_reporter.finish(
+                            tokens[qid],
+                            status="fallback",
+                            details={
+                                "llm_completed": f"{completed}/{len(llm_candidates)}",
+                                "error_type": type(exc).__name__,
+                                "error": safe_error_detail(exc),
+                            },
+                        )
             except FuturesTimeoutError:
                 pending = [qid for future, qid in futures.items() if not future.done()]
                 for future in futures:
                     if not future.done():
                         future.cancel()
                 fallback_qids.update(pending)
+                for qid in pending:
+                    self.progress_reporter.finish(
+                        tokens[qid],
+                        status="timeout",
+                        details={"timeout": f"{self.llm_timeout_seconds}s"},
+                    )
                 logger.warning(
                     "Semantic review timed out after %.1fs for %s; using deterministic fallback",
                     self.llm_timeout_seconds,
@@ -328,6 +387,22 @@ class SemanticCompletenessCriticAgent:
                 )
             finally:
                 executor.shutdown(wait=False, cancel_futures=True)
+
+        llm_candidate_qids = {item.id for item in llm_candidates}
+        for item in planned:
+            if item.id in llm_candidate_qids or item.id in cache_hit_qids:
+                continue
+            self.progress_reporter.event(
+                "SEMANTIC",
+                item.id,
+                "skipped",
+                current=positions[item.id],
+                total=question_total,
+                details={
+                    "reason": "deterministic_only",
+                    "verdict": deterministic[item.id].verdict,
+                },
+            )
 
         for item in planned:
             reviews[item.id] = self._apply_rag_constraints(
@@ -522,6 +597,17 @@ class SemanticCompletenessCriticAgent:
             len(cache_hit_qids),
             min(self.concurrency, len(llm_candidates)) if llm_candidates else 0,
             self.incremental,
+        )
+        self.progress_reporter.event(
+            "SEMANTIC",
+            "summary",
+            details={
+                "reviewed": len(planned),
+                "llm_candidates": len(llm_candidates),
+                "cache_hits": len(cache_hit_qids),
+                "fallbacks": len(fallback_qids),
+                "elapsed_ms": elapsed_ms,
+            },
         )
         return {
             "semantic_reviews": reviews,

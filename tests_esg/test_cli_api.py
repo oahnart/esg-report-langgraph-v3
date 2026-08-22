@@ -85,3 +85,78 @@ def test_cli_maps_existing_output_to_exit_code_one(monkeypatch):
 
     assert result.exit_code == 1
     assert "output run already exists" in result.output
+
+
+def test_cli_full_progress_is_default_and_quiet_can_suppress_it(monkeypatch):
+    class ProgressGraph:
+        def __init__(self, *args, progress_reporter=None, **kwargs):
+            self.progress_reporter = progress_reporter
+
+        def generate(self, payload):
+            token = self.progress_reporter.start(
+                "CURATOR",
+                "Q001",
+                current=1,
+                total=1,
+            )
+            self.progress_reporter.finish(
+                token,
+                details={"kept": 2, "answerability": "SUFFICIENT"},
+            )
+            raise OutputRunExistsError("output run already exists")
+
+    monkeypatch.setattr("esgagents.cli.ESGQualitativeGraph", ProgressGraph)
+    base_args = [
+        "generate-qualitative",
+        "--company-id",
+        "company_1",
+        "--year",
+        "2025",
+        "--scale",
+        "large",
+        "--industry",
+        "TC",
+    ]
+
+    detailed = CliRunner().invoke(cli_app, base_args)
+    quiet = CliRunner().invoke(cli_app, [*base_args, "--progress-level", "quiet"])
+
+    assert detailed.exit_code == 1
+    assert "CURATOR START Q001 question=1/1" in detailed.output
+    assert "CURATOR DONE Q001 question=1/1" in detailed.output
+    assert "duration=" in detailed.output
+    assert "CURATOR" not in quiet.output
+
+
+def test_cli_success_does_not_dump_run_artifacts_to_terminal(monkeypatch):
+    class SuccessfulGraph:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def generate(self, payload):
+            return {
+                "run_id": "run_1",
+                "answers": ["large qualitative payload must stay in the output file"],
+                "output_paths": {"json": "data/outputs/qualitative_run.json"},
+            }
+
+    monkeypatch.setattr("esgagents.cli.ESGQualitativeGraph", SuccessfulGraph)
+    result = CliRunner().invoke(
+        cli_app,
+        [
+            "generate-qualitative",
+            "--company-id",
+            "company_1",
+            "--year",
+            "2025",
+            "--scale",
+            "large",
+            "--industry",
+            "TC",
+            "--progress-level",
+            "quiet",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == ""

@@ -9,6 +9,7 @@ import requests
 from pydantic import ValidationError
 from requests import HTTPError, RequestException
 
+from esgagents.progress import ProgressReporter, redact_url_secrets, safe_error_detail
 from esgagents.schemas import RagQuestionResult, RagResponse
 
 
@@ -148,11 +149,13 @@ class TeamRagClient:
         transport: Transport | None = None,
         qualitative_path: str = "/qualitative/evidence/v3",
         request_contract: str = "new",
+        progress_reporter: ProgressReporter | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.max_retries = max_retries
         self.transport = transport
+        self.progress_reporter = progress_reporter or ProgressReporter()
         raw_path, _, raw_query = str(qualitative_path).partition("?")
         self.qualitative_path = f"/{raw_path.strip('/')}"
         # Defaults only apply to the v3 endpoint; the v2 rollback path takes no such params.
@@ -164,6 +167,9 @@ class TeamRagClient:
             raise ValueError("request_contract must be 'new' or 'legacy'")
         self.request_contract = normalized_contract
         self.session = requests.Session()
+
+    def set_progress_reporter(self, progress_reporter: ProgressReporter) -> None:
+        self.progress_reporter = progress_reporter
 
     @property
     def endpoint(self) -> str:
@@ -205,17 +211,25 @@ class TeamRagClient:
         if self.transport:
             last_error: Exception | None = None
             for attempt in range(self.max_retries + 1):
+                token = self._start_request_progress(payload, attempt)
                 try:
                     data = self.transport(self.endpoint, payload, float(self.timeout_seconds))
                     if not isinstance(data, dict):
                         raise TeamRagError("Team RAG returned a non-object JSON payload")
+                    self._finish_request_progress(token, data=data, status_code="transport")
                     return data
                 except RequestException as exc:
                     last_error = exc
+                    self._finish_request_progress(
+                        token,
+                        error=exc,
+                        retrying=attempt < self.max_retries,
+                    )
                     if attempt < self.max_retries:
                         time.sleep(0.25 * (attempt + 1))
                         continue
-                except Exception:
+                except Exception as exc:
+                    self._finish_request_progress(token, error=exc)
                     raise
                 break
             raise TeamRagError(
@@ -228,6 +242,8 @@ class TeamRagClient:
         last_error: Exception | None = None
         for attempt in range(self.max_retries + 1):
             retryable = False
+            response = None
+            token = self._start_request_progress(payload, attempt)
             try:
                 response = self.session.post(
                     self.endpoint,
@@ -238,6 +254,11 @@ class TeamRagClient:
                 data = response.json()
                 if not isinstance(data, dict):
                     raise TeamRagError("Team RAG returned a non-object JSON payload")
+                self._finish_request_progress(
+                    token,
+                    data=data,
+                    status_code=response.status_code,
+                )
                 return data
             except HTTPError as exc:
                 last_error = self._format_http_error(exc, payload)
@@ -249,6 +270,12 @@ class TeamRagClient:
                 last_error = exc
                 retryable = False
 
+            self._finish_request_progress(
+                token,
+                error=last_error,
+                retrying=retryable and attempt < self.max_retries,
+                status_code=response.status_code if response is not None else None,
+            )
             if not retryable or attempt >= self.max_retries:
                 break
             time.sleep(0.25 * (attempt + 1))
@@ -259,6 +286,60 @@ class TeamRagClient:
             f"Team RAG request failed: {last_error}",
             retryable=isinstance(last_error, RequestException),
         ) from last_error
+
+    def _start_request_progress(
+        self,
+        payload: dict[str, Any],
+        attempt: int,
+    ):
+        item_ids = payload.get("item_ids") or []
+        return self.progress_reporter.start(
+            "RAG API",
+            "POST qualitative evidence",
+            current=attempt + 1,
+            total=self.max_retries + 1,
+            details={
+                "endpoint": redact_url_secrets(self.endpoint),
+                "qids": item_ids,
+                "qid_count": len(item_ids) if isinstance(item_ids, list) else "unknown",
+                "company_id": payload.get("company_id"),
+                "year": payload.get("year"),
+                "top_k": payload.get("top_k"),
+                "timeout": f"{self.timeout_seconds}s",
+            },
+        )
+
+    def _finish_request_progress(
+        self,
+        token,
+        *,
+        data: dict[str, Any] | None = None,
+        error: BaseException | None = None,
+        retrying: bool = False,
+        status_code: int | str | None = None,
+    ) -> None:
+        if error is not None:
+            self.progress_reporter.finish(
+                token,
+                status="retry" if retrying else "failed",
+                details={
+                    "status_code": status_code,
+                    "error_type": type(error).__name__,
+                    "error": safe_error_detail(error),
+                },
+            )
+            return
+        response_data = data or {}
+        results = response_data.get("results")
+        self.progress_reporter.finish(
+            token,
+            details={
+                "status_code": status_code,
+                "request_id": response_data.get("request_id"),
+                "results": len(results) if isinstance(results, list) else None,
+                "server_latency_ms": response_data.get("latency_ms"),
+            },
+        )
 
     def _parse_v3_response(
         self,

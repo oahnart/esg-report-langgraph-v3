@@ -10,6 +10,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.agents.answering.question_contracts import build_question_contract
 from esgagents.llm_clients.structured import bind_structured
+from esgagents.progress import ProgressReporter, safe_error_detail
 from esgagents.schemas import (
     EvidenceCurationKeep,
     EvidenceCurationResult,
@@ -24,7 +25,12 @@ logger = logging.getLogger(__name__)
 class EvidenceCuratorAgent:
     """Select qualitative evidence without touching the metric-table lane."""
 
-    def __init__(self, config: dict[str, Any] | None = None, llm: Any | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any] | None = None,
+        llm: Any | None = None,
+        progress_reporter: ProgressReporter | None = None,
+    ):
         self.config = config or {}
         self.concurrency = max(1, int(self.config.get("evidence_curator_concurrency", 4)))
         self.timeout_seconds = max(
@@ -34,6 +40,7 @@ class EvidenceCuratorAgent:
         self.incremental = bool(self.config.get("evidence_curator_incremental", True))
         self.llm = llm
         self.structured_llm = bind_structured(llm, EvidenceCurationResult, "Evidence Curator")
+        self.progress_reporter = progress_reporter or ProgressReporter()
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         normalized = state.get("normalized_evidence", {})
@@ -62,8 +69,14 @@ class EvidenceCuratorAgent:
         previous_fingerprints = dict(state.get("curator_fingerprints", {}))
         next_fingerprints = dict(previous_fingerprints)
 
+        planned_questions = list(state.get("planned_questions", []))
+        question_total = len(planned_questions)
+        question_positions = {
+            planned.id: index
+            for index, planned in enumerate(planned_questions, start=1)
+        }
         candidates = []
-        for planned in state.get("planned_questions", []):
+        for planned in planned_questions:
             qid = planned.id
             prepared = prepared_by_qid[qid]
             fallback = self._pass_through_result(state, planned, prepared)
@@ -73,6 +86,21 @@ class EvidenceCuratorAgent:
                 or not bool(gate.get(qid, {}).get("accepted"))
             ):
                 effective[qid] = fallback
+                reason = (
+                    "llm_unavailable"
+                    if self.structured_llm is None and prepared
+                    else "no_eligible_evidence"
+                    if not prepared
+                    else "evidence_gate_rejected"
+                )
+                self.progress_reporter.event(
+                    "CURATOR",
+                    qid,
+                    "skipped",
+                    current=question_positions[qid],
+                    total=question_total,
+                    details={"reason": reason, "evidence": len(prepared)},
+                )
                 continue
             fingerprint = self._fingerprint(state, planned, prepared)
             next_fingerprints[qid] = fingerprint
@@ -89,12 +117,39 @@ class EvidenceCuratorAgent:
                         "notes": [*cached.notes, "curator_cache_hit"],
                     }
                 )
+                self.progress_reporter.event(
+                    "CURATOR",
+                    qid,
+                    "cache",
+                    current=question_positions[qid],
+                    total=question_total,
+                    details={
+                        "kept": len(cached.keep),
+                        "dropped": len(cached.drop),
+                        "answerability": cached.qualitative_answerability,
+                    },
+                )
                 continue
             candidates.append((planned, prepared, fallback))
 
         if candidates:
             workers = min(self.concurrency, len(candidates))
             executor = ThreadPoolExecutor(max_workers=workers)
+            tokens = {
+                planned.id: self.progress_reporter.start(
+                    "CURATOR",
+                    planned.id,
+                    current=question_positions[planned.id],
+                    total=question_total,
+                    details={
+                        "evidence": len(prepared),
+                        "state": "queued",
+                        "provider": self.config.get("llm_provider"),
+                        "model": self.config.get("quick_think_llm"),
+                    },
+                )
+                for planned, prepared, _ in candidates
+            }
             futures = {
                 executor.submit(self._curate, state, planned, prepared): (
                     planned,
@@ -104,15 +159,26 @@ class EvidenceCuratorAgent:
                 for planned, prepared, fallback in candidates
             }
             completed = set()
+            llm_completed = 0
             try:
                 for future in as_completed(futures, timeout=self.timeout_seconds):
                     completed.add(future)
                     planned, prepared, fallback = futures[future]
                     qid = planned.id
+                    llm_completed += 1
                     try:
                         result = self._normalize_result(qid, prepared, future.result())
                         llm_results[qid] = result
                         effective[qid] = result.model_copy(update={"mode": "enforced"})
+                        self.progress_reporter.finish(
+                            tokens[qid],
+                            details={
+                                "llm_completed": f"{llm_completed}/{len(candidates)}",
+                                "kept": len(result.keep),
+                                "dropped": len(result.drop),
+                                "answerability": result.qualitative_answerability,
+                            },
+                        )
                     except Exception as exc:
                         logger.warning("Evidence Curator failed for %s: %s", qid, exc)
                         effective[qid] = fallback.model_copy(
@@ -128,12 +194,26 @@ class EvidenceCuratorAgent:
                         )
                         flags = quality_flags.setdefault(qid, [])
                         flags.extend(["curator_fallback", "human_review_required"])
+                        self.progress_reporter.finish(
+                            tokens[qid],
+                            status="fallback",
+                            details={
+                                "llm_completed": f"{llm_completed}/{len(candidates)}",
+                                "error_type": type(exc).__name__,
+                                "error": safe_error_detail(exc),
+                            },
+                        )
             except FuturesTimeoutError:
                 pending = [future for future in futures if future not in completed]
                 for future in pending:
                     future.cancel()
                     planned, prepared, fallback = futures[future]
                     qid = planned.id
+                    self.progress_reporter.finish(
+                        tokens[qid],
+                        status="timeout",
+                        details={"timeout": f"{self.timeout_seconds}s"},
+                    )
                     effective[qid] = fallback.model_copy(
                         update={
                             "qualitative_answerability": (
@@ -239,6 +319,15 @@ class EvidenceCuratorAgent:
                 "publication_status": "",
             }
         logger.info("evidence_curation_stats %s", curation_stats)
+        self.progress_reporter.event(
+            "CURATOR",
+            "summary",
+            details={
+                **curation_stats,
+                "llm_candidates": len(candidates),
+                "max_workers": min(self.concurrency, len(candidates)) if candidates else 0,
+            },
+        )
         for qid, stats in qid_stats.items():
             logger.info("evidence_curation_qid qid=%s stats=%s", qid, stats)
 

@@ -7,6 +7,7 @@ from typing import Any, Callable
 from langgraph.graph import END, START, StateGraph
 
 from esgagents.agents import ESGAgents
+from esgagents.progress import ProgressReporter, safe_error_detail
 
 from .conditional_logic import ESGConditionalLogic
 from .node_names import ESGGraphNodes
@@ -22,10 +23,14 @@ class ESGGraphSetup:
         agents: ESGAgents,
         conditional_logic: ESGConditionalLogic,
         progress_observer: Callable[[str, str], None] | None = None,
+        progress_reporter: ProgressReporter | None = None,
     ):
         self.agents = agents
         self.conditional_logic = conditional_logic
         self.progress_observer = progress_observer
+        self.progress_reporter = progress_reporter or ProgressReporter.from_legacy(
+            progress_observer
+        )
 
     def setup_graph(self) -> StateGraph:
         workflow = StateGraph(ESGState)
@@ -129,26 +134,34 @@ class ESGGraphSetup:
     def _observe(self, node_name: str, node: Callable[[Any], Any]) -> Callable[[Any], Any]:
         def observed(state: Any) -> Any:
             started = perf_counter()
-            if self.progress_observer:
-                self.progress_observer(node_name, "started")
+            token = self.progress_reporter.start(
+                "STEP",
+                node_name,
+                verbosity="steps",
+            )
             try:
                 result = node(state)
-            except BaseException:
+            except BaseException as exc:
                 logger.exception(
                     "graph_node node=%r status=failed elapsed_ms=%s",
                     node_name,
                     round((perf_counter() - started) * 1000),
                 )
-                if self.progress_observer:
-                    self.progress_observer(node_name, "failed")
+                self.progress_reporter.finish(
+                    token,
+                    status="failed",
+                    details={
+                        "error_type": type(exc).__name__,
+                        "error": safe_error_detail(exc),
+                    },
+                )
                 raise
             logger.info(
                 "graph_node node=%r status=completed elapsed_ms=%s",
                 node_name,
                 round((perf_counter() - started) * 1000),
             )
-            if self.progress_observer:
-                self.progress_observer(node_name, "completed")
+            self.progress_reporter.finish(token)
             return result
 
         return observed

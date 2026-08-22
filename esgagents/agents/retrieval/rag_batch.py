@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
+from esgagents.progress import ProgressReporter, redact_url_secrets, safe_error_detail
 from esgagents.rag_client import TeamRagClient
 from esgagents.schemas import (
     EvidenceItem,
@@ -24,9 +25,15 @@ def chunked(values: list[str], size: int) -> list[list[str]]:
 
 
 class RagBatchAgent:
-    def __init__(self, config: dict[str, Any], rag_client: TeamRagClient):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        rag_client: TeamRagClient,
+        progress_reporter: ProgressReporter | None = None,
+    ):
         self.config = config
         self.rag_client = rag_client
+        self.progress_reporter = progress_reporter or ProgressReporter()
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         company: NormalizedCompany = state["company"]
@@ -39,11 +46,66 @@ class RagBatchAgent:
         raw_responses = []
         request_traces: list[RagRequestTrace] = []
 
-        def fetch(batch: list[str]):
-            return self.rag_client.fetch_evidence(company.company_id, batch, company.top_k, company.year)
+        def fetch(
+            batch: list[str],
+            batch_index: int,
+            batch_total: int,
+            top_k: int,
+            phase: str,
+        ):
+            token = self.progress_reporter.start(
+                "RAG BATCH",
+                phase,
+                current=batch_index,
+                total=batch_total,
+                details={
+                    "qids": batch,
+                    "qid_count": len(batch),
+                    "top_k": top_k,
+                    "endpoint": redact_url_secrets(
+                        getattr(self.rag_client, "endpoint", "")
+                    ),
+                },
+            )
+            try:
+                response = self.rag_client.fetch_evidence(
+                    company.company_id,
+                    batch,
+                    top_k,
+                    company.year,
+                )
+            except BaseException as exc:
+                self.progress_reporter.finish(
+                    token,
+                    status="failed",
+                    details={
+                        "error_type": type(exc).__name__,
+                        "error": safe_error_detail(exc),
+                    },
+                )
+                raise
+            self.progress_reporter.finish(
+                token,
+                details={
+                    "request_id": response.request_id,
+                    "results": len(response.results),
+                    "server_latency_ms": response.latency_ms,
+                },
+            )
+            return response
 
         with ThreadPoolExecutor(max_workers=min(concurrency, max(1, len(batches)))) as pool:
-            futures = {pool.submit(fetch, batch): batch for batch in batches}
+            futures = {
+                pool.submit(
+                    fetch,
+                    batch,
+                    index,
+                    len(batches),
+                    company.top_k,
+                    "initial",
+                ): batch
+                for index, batch in enumerate(batches, start=1)
+            }
             for future in as_completed(futures):
                 response = future.result()
                 raw_responses.append(model_to_dict(response))
@@ -89,13 +151,14 @@ class RagBatchAgent:
                 with ThreadPoolExecutor(max_workers=min(concurrency, max(1, len(retry_batches)))) as pool:
                     futures = {
                         pool.submit(
-                            self.rag_client.fetch_evidence,
-                            company.company_id,
+                            fetch,
                             batch,
+                            index,
+                            len(retry_batches),
                             retry_top_k,
-                            company.year,
+                            "retry",
                         ): batch
-                        for batch in retry_batches
+                        for index, batch in enumerate(retry_batches, start=1)
                     }
                     for future in as_completed(futures):
                         try:
