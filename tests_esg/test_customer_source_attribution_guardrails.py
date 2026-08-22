@@ -137,5 +137,5 @@ def test_assessment_checklist_overclaim_fails_instead_of_rewriting_final_answer(
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "source usage overstated" in result["qa_results"][planned.id].notes

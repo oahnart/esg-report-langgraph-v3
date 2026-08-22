@@ -102,11 +102,15 @@ $env:ESG_OUTPUT_LANGUAGE="Korean"
 | `ESG_WRITER_CONCURRENCY`          |                                           `4` | So draft LLM chay dong thoi; giam neu provider rate-limit.                                                                                 |
 | `ESG_REVISION_CONCURRENCY`        |                                           `4` | So revision LLM chay dong thoi; ket qua van ghep theo thu tu QID.                                                                          |
 | `ESG_CHECKPOINT_ENABLED`          |                                       `false` | Bat LangGraph SQLite checkpoint theo cong ty/run.                                                                                          |
-| `ESG_MAX_REVISION_ROUNDS`         |                                           `2` | So vong sua draft sau QA.                                                                                                                  |
+| `ESG_MAX_REVISION_ROUNDS`         |                                           `1` | So vong sua draft sau QA; mac dinh chi sua mot lan.                                                                                        |
 | `ESG_CONDITIONAL_ANSWER_STATUSES` |                             `thin_but_usable` | Trang thai RAG duoc chap nhan khi co evidence co nguon va semantic label hop le.                                                           |
 | `ESG_SEMANTIC_QA_ENABLED`         |                                        `true` | Bat semantic QA theo pillar sau grounding QA.                                                                                              |
 | `ESG_SEMANTIC_QA_CONCURRENCY`     |                                           `4` | So semantic review LLM chay dong thoi.                                                                                                     |
 | `ESG_SEMANTIC_QA_INCREMENTAL`     |                                        `true` | Sau revision, chi goi lai semantic LLM cho answer/prompt da thay doi.                                                                      |
+| `ESG_EVIDENCE_CURATOR_CONCURRENCY`|                                           `4` | So QID Curator xu ly dong thoi.                                                                                                             |
+| `ESG_EVIDENCE_CURATOR_TIMEOUT_SECONDS` |                                   `120` | Timeout cho pha Curator; timeout hoac thieu Curator LLM se fallback deterministic, ha answerability xuong `PARTIAL` va bat human review.      |
+| `ESG_EVIDENCE_CURATOR_INCREMENTAL`|                                        `true` | Tai su dung ket qua Curator khi question, skill, metric status va evidence fingerprint khong doi.                                           |
+| `ESG_SENTENCE_GROUNDING_ENFORCED` |                                        `true` | Sentence khong map duoc evidence ID hoac so khong ground dung reference se hard-fail theo mac dinh.                                          |
 | `ESG_SOURCE_POLICY_ENABLED`       |                                        `true` | Phan tier, xep hang va deduplicate nguon.                                                                                                  |
 | `ESG_OUTPUT_HYGIENE_ENABLED`      |                                        `true` | Chuan hoa Markdown va an ten ca nhan khong can thiet.                                                                                      |
 
@@ -489,8 +493,8 @@ V3 dung `answerable` va `coverage_status` lam quyet dinh chinh. Chi `answerable=
 Voi contract metric moi, runtime doc `metric_expected` va `metric_status` truoc:
 
 - `not_expected`: tiep tuc dung `items[]`.
-- `found_table`: chi `metric_evidence` co `block_role=primary` va co `entity_class`/`entity` moi duoc dung lam so; `scope_variant` va `denominator` chi duoc giu trong audit. `narrative_evidence` van bat buoc de giu cong thuc, pham vi va thay doi cach ghi nhan.
-- `not_found`: viet phan dinh tinh tu narrative/items, de trong so va dung `metric_absence.reason` de ghi canh bao trung lap. Khong suy so tu doan van hay `normalized_answer_ko`.
+- `found_table`: chi `metric_evidence` co `block_role=primary` va co `entity_class`/`entity` moi duoc dung lam so; `scope_variant` va `denominator` chi duoc giu trong audit. Neu co `narrative_evidence`, van doc de giu cong thuc, pham vi va thay doi cach ghi nhan; thieu narrative khong duoc lam mat bang so hop le.
+- `not_found`: viet phan dinh tinh chi tu non-metric `items[]`, de trong so va dung `metric_absence.reason` de ghi canh bao trung lap. Khong suy so tu doan van hay `normalized_answer_ko`.
 
 Payload legacy khong co cac truong tren van duoc ho tro bang `items[].semantic_label="metric_row"` va duoc danh dau `legacy_metric_contract`.
 
@@ -524,7 +528,8 @@ flowchart TD
   E --> F["Normalize Evidence Sources"]
   F --> Q["Process Quantitative Metrics (optional output-only)"]
   Q --> G["Select Specialist Skill"]
-  G --> H["Build Specialist Context"]
+  G --> C7["Curate Qualitative Evidence"]
+  C7 --> H["Build Specialist Context"]
   H --> I["Draft Evidence-Grounded Answers"]
   I --> J["Review Draft Grounding"]
   J --> S["Review Semantic Completeness"]
@@ -541,14 +546,15 @@ flowchart TD
 | Company Intake      | `esgagents/agents/intake/company_intake.py`        | Validate input, normalize `scale`, `industry`, `top_k`, `run_id`.                                   |
 | Template Selection  | `esgagents/agents/planning/template_selector.py`   | Load 95 question va chon subset theo `item_ids`.                                                    |
 | RAG Batch           | `esgagents/agents/retrieval/rag_batch.py`          | Goi Team RAG theo batch va concurrency.                                                             |
-| Evidence Gate       | `esgagents/agents/evidence/evidence_gate.py`       | Loai cau hoi khong co evidence hoac status/label yeu.                                               |
+| Evidence Gate       | `esgagents/agents/evidence/evidence_gate.py`       | Loai cau hoi khong co evidence hoac status/label yeu; audit company/year chi ghi match khi response v3 co metadata de xac minh.             |
 | Evidence Normalizer | `esgagents/agents/evidence/evidence_normalizer.py` | Deduplicate, rank evidence, tao source list.                                                        |
+| Evidence Curator    | `esgagents/agents/evidence/evidence_curator.py`    | Chon qualitative evidence da duoc route tu `items[]` hoac `narrative_evidence`; khong sua metric lane. |
 | Skill Router        | `skills/agents/router.py`                          | Chon skill `carbon`, `materiality`, `commitment`, hoac `general_section`.                           |
-| Skill Writer        | `skills/agents/writer.py`                          | Tao draft bang LLM neu co, fallback bang RAG normalized answer neu offline.                         |
-| Skill Policy Critic | `skills/agents/critic.py`                          | Chan numeric/certification/claim khong co evidence va gan audit flags.                              |
-| Semantic Critic     | `esgagents/agents/answering/semantic_critic.py`    | Kiem tra alignment, pillar facets va source-use policy; Metrics fail cung neu thieu KPI/ky bao cao. |
-| Revision            | `esgagents/agents/answering/revision.py`           | Gui tung draft QA fail co evidence hop le den deep LLM de viet lai va QA lai.                       |
-| Output Hygiene      | `esgagents/agents/answering/output_hygiene.py`     | Chuan hoa Markdown va an ten ca nhan khong duoc yeu cau.                                            |
+| Skill Writer        | `skills/agents/writer.py`                          | Tao draft co sentence-to-evidence mapping; fallback deterministic chi tu curated evidence khi Curator enforced. |
+| Skill Policy Critic | `skills/agents/critic.py`                          | Chi danh gia numeric/certification/claim va tao QA notes; khong rewrite hoac xoa answer.             |
+| Semantic Critic     | `esgagents/agents/answering/semantic_critic.py`    | Chi kiem tra alignment, facets, source use va tao structured repair plan; khong rewrite answer.      |
+| Revision            | `esgagents/agents/answering/revision.py`           | Noi duy nhat sua/salvage answer theo QA notes va repair plan, toi da mot vong, sau do QA lai.         |
+| Output Hygiene      | `esgagents/agents/answering/output_hygiene.py`     | Chuan hoa output va fail-close answer van QA failed sau khi het quyen Revision.                       |
 | Report Manager      | `esgagents/agents/managers/report_manager.py`      | Dong goi `RunArtifacts`, stats, audit fields.                                                       |
 
 ## Output
@@ -669,6 +675,17 @@ Pipeline nay uu tien tinh audit va tinh phong ve trong bao cao ESG:
 - `found_table` chi dung `metric_evidence` primary co dinh danh phap nhan;
   `not_found` duoc phep tra narrative kem ly do thieu so. `metric_confidence=low`
   giu narrative, chan so va gan co human review.
+- Curator chi xu ly qualitative lane: `not_expected` va `not_found` doc tu
+  `items[]`, `found_table` doc tu `narrative_evidence`. Curator khong duoc
+  KEEP/DROP, gop phap nhan, hay thay doi `metric_evidence`.
+- Raw evidence duoc giu nguyen cho audit; Curator/Writer dung ban `clean_text`
+  co evidence ID on dinh. `normalized_answer_ko` chi la display/fallback legacy,
+  khong phai evidence day du khi Curator enforced.
+- Curator luon duoc enforce trong code, khong co enable/shadow environment flag.
+  Sentence grounding duoc enforce theo mac dinh. Audit luu structural
+  gate, keep/drop, writer/revision calls, semantic pass truoc/sau revision va
+  publication status theo tung QID; artifact cung co cac ty le evidence, grounding,
+  revision va publication tong hop.
 - Moi draft QA fail co evidence/source hop le se duoc gui rieng den revision writer trong gioi han `ESG_MAX_REVISION_ROUNDS`, kem QA notes va evidence. Agent phai bo claim khong duoc chung minh hoac tra `final_answer` rong neu khong con noi dung an toan.
 
 ## Template

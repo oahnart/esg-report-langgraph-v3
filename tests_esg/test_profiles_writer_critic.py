@@ -226,7 +226,7 @@ def test_skill_writer_falls_back_without_llm():
     assert result["final_answers"]["Q016"] == "deterministic answer"
 
 
-def test_skill_policy_critic_flags_hard_failures_and_clears_final_answer():
+def test_skill_policy_critic_flags_hard_failures_without_mutating_answer():
     planned = _planned("Q031", "GHG emissions")
     state = {
         "planned_questions": [planned],
@@ -250,7 +250,7 @@ def test_skill_policy_critic_flags_hard_failures_and_clears_final_answer():
     assert "unsupported numeric claim: 30%" in notes
     assert "unsupported net-zero commitment" in notes
     assert result["hard_failures"]["Q031"]
-    assert result["final_answers"]["Q031"] == ""
+    assert result["final_answers"]["Q031"] == state["draft_answers"]["Q031"]
     assert "unsupported numeric claim: 30%" not in result["quality_flags"]["Q031"]
 
 
@@ -282,14 +282,14 @@ def test_skill_policy_critic_rejects_table_metric_values_in_found_table_final_an
     result = SkillPolicyCriticAgent().run(state)
 
     assert result["qa_results"]["Q031"].status == "failed"
-    assert result["final_answers"]["Q031"] == ""
+    assert result["final_answers"]["Q031"] == answer
     assert any(
         note.startswith("unsupported numeric claim:")
         for note in result["qa_results"]["Q031"].notes
     )
 
 
-def test_skill_policy_critic_salvages_grounded_claim_after_delivery_metadata():
+def test_skill_policy_critic_reports_delivery_metadata_without_salvaging():
     state = {
         "planned_questions": [_planned()],
         "draft_answers": {"Q016": "The company operates an ethics reporting channel. Drafted with AI assistance."},
@@ -307,9 +307,10 @@ def test_skill_policy_critic_salvages_grounded_claim_after_delivery_metadata():
 
     result = SkillPolicyCriticAgent().run(state)
 
-    assert result["qa_results"]["Q016"].status == "passed"
-    assert result["final_answers"]["Q016"] == "The company operates an ethics reporting channel."
-    assert "removed_claim:delivery_metadata" in result["sanitizer_actions"]["Q016"]
+    assert result["qa_results"]["Q016"].status == "failed"
+    assert result["final_answers"]["Q016"] == state["draft_answers"]["Q016"]
+    assert "final answer contains delivery metadata" in result["qa_results"]["Q016"].notes
+    assert result["sanitizer_actions"].get("Q016", []) == []
 
 
 def test_skill_policy_critic_rejects_empty_source_metadata_dict():
@@ -332,7 +333,7 @@ def test_skill_policy_critic_rejects_empty_source_metadata_dict():
 
     assert result["qa_results"]["Q016"].status == "failed"
     assert result["hard_failures"]["Q016"] == ["missing stable provenance"]
-    assert result["final_answers"]["Q016"] == ""
+    assert result["final_answers"]["Q016"] == state["draft_answers"]["Q016"]
 
 
 def _grounded_critic_state(
@@ -427,7 +428,7 @@ def test_critic_still_rejects_unsupported_certification_and_net_zero_claims():
     assert result["qa_results"]["Q031"].status == "failed"
     assert "unsupported certification or initiative claim" in result["qa_results"]["Q031"].notes
     assert "unsupported net-zero commitment" in result["qa_results"]["Q031"].notes
-    assert result["final_answers"]["Q031"] == ""
+    assert result["final_answers"]["Q031"] == state["draft_answers"]["Q031"]
 
 
 def test_critic_ignores_ordered_list_markers_but_not_real_numbers():
@@ -698,6 +699,29 @@ def test_revision_sanitizer_removes_known_unsupported_claim_segments():
 
     assert sanitized == "The company disclosed Scope 1 emissions."
     assert actions == ["removed_unsupported_numeric_claim:30%"]
+
+
+def test_revision_owns_delivery_metadata_salvage_after_critic_review():
+    planned = _planned("Q016")
+    answer = "The company operates an ethics reporting channel. Drafted with AI assistance."
+    state = _revision_state(
+        [planned],
+        {"Q016": QAResult(status="failed", notes=["final answer contains delivery metadata"])},
+        {"Q016": answer},
+    )
+    state["normalized_evidence"]["Q016"]["items"] = [
+        EvidenceItem(
+            raw_evidence_ko="The company operates an ethics reporting channel.",
+            source_name="source.docx",
+            source_path="ESG/source.docx",
+        )
+    ]
+
+    result = RevisionAgent({"max_revision_rounds": 1}, None).run(state)
+
+    assert result["final_answers"]["Q016"] == "The company operates an ethics reporting channel."
+    assert "removed_claim:delivery_metadata" in result["sanitizer_actions"]["Q016"]
+    assert "claim_salvage_applied" in result["quality_flags"]["Q016"]
 
 
 def test_revision_writer_applies_sanitizer_before_next_critic_pass():

@@ -10,6 +10,7 @@ class ESGGraphNodes:
     EVIDENCE_NORMALIZATION = "06 Normalize Evidence Sources"
     QUANTITATIVE_PROCESSING = "06B Process Quantitative Metrics (Optional Output)"
     SKILL_SELECTION = "07 Select Specialist Skill"
+    EVIDENCE_CURATION = "07B Curate Qualitative Evidence"
     SKILL_CONTEXT = "08 Build Specialist Context"
     ANSWER_DRAFTING = "09 Draft Evidence-Grounded Answers"
     DRAFT_REVIEW = "10 Review Draft Grounding"

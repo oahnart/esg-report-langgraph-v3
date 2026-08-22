@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
-from esgagents.schemas import EvidenceItem, MetricEvidenceItem, RagQuestionResult
+from esgagents.schemas import EvidenceItem, EvidenceOrigin, MetricEvidenceItem, RagQuestionResult
 
 
 METRIC_SUMMARY_FIELDS = (
@@ -108,7 +108,26 @@ def valid_primary_metric_items(result: RagQuestionResult) -> list[MetricEvidence
     ]
 
 
-def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
+def qualitative_evidence_route(result: RagQuestionResult) -> EvidenceOrigin:
+    """Return the API field that owns customer-writing evidence for this QID."""
+
+    if result.metric_expected is False or result.metric_status == "not_expected":
+        return "items"
+    if result.metric_status == "found_table":
+        return "narrative_evidence"
+    if result.metric_status == "not_found":
+        return "items"
+    return "legacy_items"
+
+
+def curatable_qualitative_items(result: RagQuestionResult) -> list[EvidenceItem]:
+    """Route only evidence eligible for qualitative curation and writing.
+
+    Metric table rows are a separate deterministic lane.  In particular,
+    ``found_table`` reads the API's full ``narrative_evidence`` field, while
+    ``not_found`` deliberately falls back to non-metric ``items[]``.
+    """
+
     # metric_expected is the first routing discriminator in the API contract.
     # A non-metric question keeps the legacy items[] behavior even when newer
     # metadata is present.
@@ -130,12 +149,18 @@ def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
     return _dedupe(result.items)
 
 
+def narrative_items(result: RagQuestionResult) -> list[EvidenceItem]:
+    """Compatibility alias for the pre-curator routing name."""
+
+    return curatable_qualitative_items(result)
+
+
 def routed_writer_items(result: RagQuestionResult) -> list[EvidenceItem]:
-    return narrative_items(result)
+    return curatable_qualitative_items(result)
 
 
 def routed_gate_items(result: RagQuestionResult) -> list[EvidenceItem]:
-    return narrative_items(result)
+    return curatable_qualitative_items(result)
 
 
 def is_metric_row(item: Any) -> bool:

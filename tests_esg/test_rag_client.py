@@ -63,8 +63,8 @@ def _v3_result(qid, *, coverage_status="complete", answerable=True, failure_code
     }
 
 
-def _v3_response(results, *, company_id="iljinhysolus"):
-    return {
+def _v3_response(results, *, company_id="iljinhysolus", reporting_year=None):
+    response = {
         "company_id": company_id,
         "request_id": "rag-req-1",
         "api_version": "3.0",
@@ -75,6 +75,9 @@ def _v3_response(results, *, company_id="iljinhysolus"):
         "warnings": [],
         "results": results,
     }
+    if reporting_year is not None:
+        response["reporting_year"] = reporting_year
+    return response
 
 
 def test_rag_client_posts_expected_batch_payload():
@@ -98,6 +101,35 @@ def test_rag_client_posts_expected_batch_payload():
     }
     assert seen["timeout"] == 12
     assert response.results[0].question_id == "Q016"
+
+
+def test_rag_client_verifies_response_reporting_year_when_supplied():
+    client = TeamRagClient(
+        "https://rag.example",
+        transport=lambda endpoint, payload, timeout: _v3_response(
+            [_v3_result("Q016")], reporting_year=2025
+        ),
+    )
+
+    response = client.fetch_evidence("iljinhysolus", ["Q016"], 5, 2025)
+
+    assert response.reporting_year == 2025
+    assert response.results[0].contract_year_match is True
+    assert response.results[0].response_reporting_year == 2025
+
+
+def test_rag_client_rejects_response_reporting_year_mismatch():
+    client = TeamRagClient(
+        "https://rag.example",
+        transport=lambda endpoint, payload, timeout: _v3_response(
+            [_v3_result("Q016")], reporting_year=2024
+        ),
+    )
+
+    with pytest.raises(TeamRagError) as exc_info:
+        client.fetch_evidence("iljinhysolus", ["Q016"], 5, 2025)
+
+    assert exc_info.value.error_code == "CLIENT_CONTRACT_YEAR_MISMATCH"
 
 
 def test_rag_client_legacy_request_contract_keeps_item_ids_and_year():

@@ -125,6 +125,92 @@ def test_graph_runs_with_checkpoint_enabled(tmp_path):
     assert (tmp_path / "checkpoints" / "CHECKPOINT_COMPANY.db").exists()
 
 
+def test_graph_keeps_metric_only_found_table_publishable(tmp_path):
+    def transport(endpoint, payload, timeout):
+        qid = payload.get("question_ids", payload.get("item_ids", []))[0]
+        return {
+            "company_id": payload["company_id"],
+            "request_id": "metric-only",
+            "api_version": "3.0",
+            "rag_version": "rag-v3",
+            "index_version": "idx",
+            "generated_at": "2026-08-07T09:04:39+07:00",
+            "latency_ms": 10,
+            "warnings": [],
+            "results": [
+                {
+                    "question_id": qid,
+                    "question_ko": qid,
+                    "pillar": "metrics",
+                    "normalized_answer_ko": "",
+                    "answer_status": "high_confidence",
+                    "retrieval_confidence": 0.9,
+                    "coverage_status": "complete",
+                    "answerable": True,
+                    "covered_facets": ["metric_result", "reporting_period"],
+                    "missing_facets": [],
+                    "failure_code": None,
+                    "failure_reason": "",
+                    "retrieval_notes": [],
+                    "items": [],
+                    "metric_expected": True,
+                    "metric_status": "found_table",
+                    "metric_summary": {
+                        "n_rows": 1,
+                        "n_blocks": 1,
+                        "n_primary": 1,
+                        "n_scope_variant": 0,
+                        "n_denominator": 0,
+                    },
+                    "metric_evidence": [
+                        {
+                            "raw_evidence_ko": "Water use | t | 2025=100",
+                            "semantic_label": "metric_row",
+                            "source_name": "metrics.xlsx",
+                            "source_path": "ESG/metrics.xlsx",
+                            "canonical_source_id": "metric-src",
+                            "chunk_id": "m1",
+                            "source_tier": "tier_2_operational",
+                            "source_type": "operational_record",
+                            "document_status": "approved",
+                            "table_block": "Water > Company",
+                            "block_role": "primary",
+                            "entity": "Company",
+                            "entity_class": "company",
+                        }
+                    ],
+                    "narrative_evidence": [],
+                }
+            ],
+        }
+
+    graph = ESGQualitativeGraph(
+        config={"output_dir": str(tmp_path), "agent_mode": "offline"},
+        rag_client=TeamRagClient("mock://rag", transport=transport),
+    )
+    artifacts = graph.generate(
+        {
+            "company_id": "daewoong",
+            "company_name": "Daewoong",
+            "year": 2025,
+            "scale": "large",
+            "industry": "HC",
+            "item_ids": ["Q039"],
+        },
+        write_outputs=False,
+    )
+
+    answer = artifacts.answers[0]
+    assert answer.local_acceptance_reason == ""
+    assert answer.metric_audit["accepted_facts"]
+    assert answer.final_answer == ""
+    assert answer.publication_status in {"published", "review_required"}
+    assert answer.publication_status != "blocked"
+    assert artifacts.stats["answered"] == 1
+    assert artifacts.curation_qid_stats["Q039"]["writer_called"] is False
+    assert "revision_rate" in artifacts.quality_metrics
+
+
 def test_graph_uses_v3_metric_items_without_quantitative_loader(tmp_path):
     def transport(endpoint, payload, timeout):
         return _v3_metric_response(payload)

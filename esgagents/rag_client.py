@@ -193,7 +193,12 @@ class TeamRagClient:
         }
         data = self._post(payload)
         if self.is_v3:
-            return self._parse_v3_response(data, company_id=company_id, item_ids=item_ids)
+            return self._parse_v3_response(
+                data,
+                company_id=company_id,
+                item_ids=item_ids,
+                year=year,
+            )
         return RagResponse.model_validate(data)
 
     def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -261,6 +266,7 @@ class TeamRagClient:
         *,
         company_id: str,
         item_ids: list[str],
+        year: int,
     ) -> RagResponse:
         requested_ids = list(dict.fromkeys(item_ids))
         response_violations = [
@@ -278,6 +284,22 @@ class TeamRagClient:
                 "Team RAG v3 contract violation: response company_id does not match request",
                 error_code="CLIENT_CONTRACT_COMPANY_MISMATCH",
             )
+
+        raw_response_year = data.get("reporting_year", data.get("year"))
+        response_year: int | None = None
+        if raw_response_year is not None:
+            try:
+                response_year = int(raw_response_year)
+            except (TypeError, ValueError) as exc:
+                raise TeamRagError(
+                    "Team RAG v3 contract violation: response reporting year is invalid",
+                    error_code="CLIENT_CONTRACT_INVALID_YEAR",
+                ) from exc
+            if response_year != int(year):
+                raise TeamRagError(
+                    "Team RAG v3 contract violation: response reporting year does not match request",
+                    error_code="CLIENT_CONTRACT_YEAR_MISMATCH",
+                )
 
         raw_results = data.get("results")
         if not isinstance(raw_results, list):
@@ -311,11 +333,18 @@ class TeamRagClient:
             if not qid:
                 response_violations.append(f"result at index {index} has no question_id")
                 continue
-            parsed_results[qid] = self._parse_v3_result(raw_result)
+            parsed_results[qid] = self._parse_v3_result(raw_result).model_copy(
+                update={
+                    "contract_company_match": True,
+                    "contract_year_match": True if response_year is not None else None,
+                    "response_reporting_year": response_year,
+                }
+            )
 
         if not requested_ids:
             normalized = dict(data)
             normalized["company_id"] = company_id
+            normalized["reporting_year"] = response_year
             normalized["results"] = list(parsed_results.values())
             normalized["client_contract_violations"] = response_violations
             return RagResponse.model_validate(normalized)
@@ -335,11 +364,15 @@ class TeamRagClient:
                     retrieval_notes=["Created locally because Team RAG omitted this question."],
                     client_contract_warnings=[warning],
                     is_v3_payload=True,
+                    contract_company_match=True,
+                    contract_year_match=True if response_year is not None else None,
+                    response_reporting_year=response_year,
                 )
             ordered_results.append(result)
 
         normalized = dict(data)
         normalized["company_id"] = company_id
+        normalized["reporting_year"] = response_year
         normalized["results"] = ordered_results
         normalized["client_contract_violations"] = response_violations
         try:

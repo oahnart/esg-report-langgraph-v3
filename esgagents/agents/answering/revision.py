@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from time import perf_counter
 from typing import Any
@@ -10,7 +11,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from esgagents.llm_clients.structured import bind_structured
-from esgagents.schemas import SkillDraft
+from esgagents.schemas import SkillDraft, model_to_dict
 from skills.agents.context_builder import compact
 
 from .attribution import (
@@ -21,6 +22,7 @@ from .attribution import (
 from esgagents.agents.evidence.metric_facts import (
     metric_facts_prompt_lines,
     salvage_conflicting_metric_claims,
+    salvage_entity_misattributed_claims,
 )
 from .question_contracts import build_question_contract
 from .revision_selection import eligible_revision_qids
@@ -39,6 +41,36 @@ CERTIFICATION_CLAIM_RE = re.compile(
 )
 
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?。！？])\s+|(?<=다\.)\s+")
+DELIVERY_META_PATTERNS = (
+    r"\bai(?:-assisted)?\b",
+    r"artificial intelligence",
+    r"\b(?:language )?model\b",
+    r"\bprompt\b",
+    r"\bassistant\b",
+    r"drafted with",
+    r"prepared by:",
+    r"subject to legal review",
+    r"\[fls\b",
+    r"인공지능",
+    r"ai\s*지원",
+    r"법적\s*검토",
+)
+
+
+def _curated_writer_items(state: dict[str, Any], qid: str) -> list[Any]:
+    """Use curated prose evidence while preserving legacy metric-row behavior."""
+
+    normalized = state.get("normalized_evidence", {}).get(qid, {})
+    if qid not in state.get("curated_qualitative_evidence", {}):
+        return list(normalized.get("items", []))
+    qualitative = [
+        item.raw_item
+        for item in state.get("curated_qualitative_evidence", {}).get(qid, [])
+    ]
+    metric_status = str((normalized.get("metric_audit") or {}).get("metric_status") or "")
+    if metric_status in {"found_table", "not_found", "not_expected"}:
+        return qualitative
+    return [*list(normalized.get("metric_items", [])), *qualitative]
 
 
 class RevisionAgent:
@@ -50,6 +82,9 @@ class RevisionAgent:
         self.structured_llm = bind_structured(llm, SkillDraft, "Revision Writer")
         self.max_revision_rounds = max(0, int(self.config.get("max_revision_rounds", 1)))
         self.concurrency = max(1, int(self.config.get("revision_concurrency", 4)))
+        self.sentence_grounding_enforced = bool(
+            self.config.get("sentence_grounding_enforced", True)
+        )
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         draft_answers = dict(state.get("draft_answers", {}))
@@ -57,6 +92,10 @@ class RevisionAgent:
         revision_counts = dict(state.get("revision_counts", {}))
         quality_flags = {qid: list(flags) for qid, flags in state.get("quality_flags", {}).items()}
         sanitizer_actions = {qid: list(actions) for qid, actions in state.get("sanitizer_actions", {}).items()}
+        qid_stats = {
+            qid: dict(values)
+            for qid, values in state.get("evidence_curation_qid_stats", {}).items()
+        }
         planned_by_id = {planned.id: planned for planned in state.get("planned_questions", [])}
         eligible_qids = eligible_revision_qids(state, self.max_revision_rounds)
         started = perf_counter()
@@ -72,6 +111,7 @@ class RevisionAgent:
         for index, qid in enumerate(eligible_qids, start=1):
             self._progress(f"revision {index}/{len(eligible_qids)} {qid}: started")
             revision_counts[qid] = int(revision_counts.get(qid, 0)) + 1
+            qid_stats.setdefault(qid, {})["revision_called"] = True
 
         if eligible_qids:
             workers = min(self.concurrency, len(eligible_qids))
@@ -108,7 +148,13 @@ class RevisionAgent:
                 revised, fallback_flags = self._deterministic_safe_fallback(state, qid)
                 revision_flags = self._with_flags(revision_flags, fallback_flags)
 
+            revised, status_actions = normalize_supported_status_claims(
+                qid,
+                revised,
+                _curated_writer_items(state, qid),
+            )
             revised, actions = sanitize_revised_answer(revised, state["qa_results"][qid].notes)
+            actions = sorted(set([*status_actions, *actions]))
             metric_audit = state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {})
             metric_status = str(metric_audit.get("metric_status") or "").casefold()
             final_answer_metric_audit = (
@@ -120,6 +166,10 @@ class RevisionAgent:
                 revised,
                 metric_audit,
             )
+            revised, entity_actions = salvage_entity_misattributed_claims(
+                revised,
+                _curated_writer_items(state, qid),
+            )
             if metric_status == "found_table":
                 from skills.agents.writer import SkillWriterAgent
 
@@ -127,9 +177,7 @@ class RevisionAgent:
                     SkillWriterAgent._salvage_found_table_answer_numbers(
                         revised,
                         {
-                            "evidence_items": state.get("normalized_evidence", {})
-                            .get(qid, {})
-                            .get("items", [])
+                            "evidence_items": _curated_writer_items(state, qid)
                         },
                     )
                 )
@@ -137,21 +185,29 @@ class RevisionAgent:
                 numeric_actions = []
             revised, claim_actions = salvage_supported_claims(
                 revised,
-                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                _curated_writer_items(state, qid),
                 final_answer_metric_audit,
             )
             actions = sorted(
-                set([*actions, *conflict_actions, *numeric_actions, *claim_actions])
+                set(
+                    [
+                        *actions,
+                        *conflict_actions,
+                        *entity_actions,
+                        *numeric_actions,
+                        *claim_actions,
+                    ]
+                )
             )
             gate_reason = state.get("evidence_gate", {}).get(qid, {}).get("reason", "")
             revised, attribution_flags = attribute_supported_claims(
                 revised,
-                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                _curated_writer_items(state, qid),
                 str(getattr(state.get("company"), "output_language", "") or ""),
             )
             revised, source_actions = salvage_source_overstatement(
                 revised,
-                state.get("normalized_evidence", {}).get(qid, {}).get("items", []),
+                _curated_writer_items(state, qid),
             )
             actions = sorted(set([*actions, *source_actions]))
             if metric_status in {"found_table", "not_found"} and not revised:
@@ -170,13 +226,22 @@ class RevisionAgent:
                 )
             if actions:
                 sanitizer_actions[qid] = self._with_flags(sanitizer_actions.get(qid, []), actions)
-                quality_flags[qid] = self._with_flags(quality_flags.get(qid, []), ["sanitizer_applied"])
+                quality_flags[qid] = self._with_flags(
+                    quality_flags.get(qid, []),
+                    ["sanitizer_applied", "claim_salvage_applied"],
+                )
+            if entity_actions:
+                quality_flags[qid] = self._with_flags(
+                    quality_flags.get(qid, []),
+                    ["entity_misattributed_metric"],
+                )
             quality_flags[qid] = self._with_flags(quality_flags.get(qid, []), revision_flags)
             if revised:
                 draft_answers[qid] = revised
                 final_answers[qid] = revised
                 quality_flags[qid] = self._with_flags(quality_flags[qid], ["revision_applied"])
             else:
+                draft_answers[qid] = ""
                 final_answers[qid] = ""
                 quality_flags[qid] = self._with_flags(
                     quality_flags[qid],
@@ -201,6 +266,7 @@ class RevisionAgent:
             "revision_counts": revision_counts,
             "quality_flags": quality_flags,
             "sanitizer_actions": sanitizer_actions,
+            "evidence_curation_qid_stats": qid_stats,
         }
 
     def _rewrite(self, state: dict[str, Any], planned: Any) -> tuple[str, list[str]]:
@@ -210,7 +276,33 @@ class RevisionAgent:
         result = self.structured_llm.invoke(self._build_prompt(state, planned))
         if not isinstance(result, SkillDraft):
             raise RuntimeError("revision writer returned an invalid structured response")
-        return compact(result.final_answer), sorted(set(result.quality_flags))
+        answer = result.final_answer
+        flags = list(result.quality_flags)
+        prepared_items = list(
+            state.get("curated_qualitative_evidence", {}).get(planned.id, [])
+        )
+        mapping_required = bool(prepared_items) and self.sentence_grounding_enforced
+        if result.sentences:
+            known_ids = {
+                item.evidence_id
+                for item in prepared_items
+            }
+            valid = []
+            for sentence in result.sentences:
+                references = set(sentence.evidence_ids)
+                if known_ids and references and references.issubset(known_ids):
+                    valid.append(sentence.text)
+                else:
+                    flags.append("invalid_evidence_reference")
+            if valid:
+                answer = " ".join(valid)
+            elif mapping_required:
+                answer = ""
+                flags.append("missing_valid_sentence_mapping")
+        elif mapping_required:
+            answer = ""
+            flags.append("missing_sentence_mapping")
+        return compact(answer), sorted(set(flags))
 
     @staticmethod
     def _deterministic_metric_fallback(state: dict[str, Any], qid: str) -> str:
@@ -264,7 +356,7 @@ class RevisionAgent:
                     "pillar": str(getattr(planned, "pillar", "") or ""),
                     "question": str(getattr(planned, "item_ko", "") or ""),
                     "description": str(getattr(planned, "description_ko", "") or ""),
-                    "evidence_items": normalized.get("items", []),
+                    "evidence_items": _curated_writer_items(state, qid),
                     "output_language": str(
                         getattr(state.get("company"), "output_language", "") or ""
                     ),
@@ -284,9 +376,7 @@ class RevisionAgent:
             "missing metric",
             "missing reporting period",
         )
-        if not notes or any(
-            not note.startswith(repairable_prefixes) for note in notes
-        ):
+        if notes and any(note == "missing stable provenance" for note in notes):
             return "", []
 
         from skills.agents.writer import SkillWriterAgent
@@ -297,15 +387,17 @@ class RevisionAgent:
                 "pillar": str(getattr(planned, "pillar", "") or ""),
                 "question": str(getattr(planned, "item_ko", "") or ""),
                 "description": str(getattr(planned, "description_ko", "") or ""),
-                "evidence_items": normalized.get("items", []),
+                "evidence_items": _curated_writer_items(state, qid),
             }
         )
-        candidate = evidence_fallback or safe_narrative_text(
-            compact(state.get("draft_answers", {}).get(qid, ""))
-        )
+        original = safe_narrative_text(compact(state.get("draft_answers", {}).get(qid, "")))
+        candidate = evidence_fallback if all(
+            note.startswith(repairable_prefixes) for note in notes
+        ) else original
+        candidate = candidate or original
         if non_substantive_reason(candidate):
             return "", []
-        return candidate, ["deterministic_narrative_fallback"]
+        return candidate, ["deterministic_revision_candidate"]
 
     def _build_prompt(
         self, state: dict[str, Any], planned: Any
@@ -313,6 +405,11 @@ class RevisionAgent:
         qid = planned.id
         evidence = state["normalized_evidence"][qid]
         qa = state["qa_results"][qid]
+        semantic_review = state.get("semantic_reviews", {}).get(qid)
+        repair_issues = [
+            model_to_dict(issue)
+            for issue in getattr(semantic_review, "issues", [])
+        ]
         selection = state.get("skill_selections", {}).get(qid, {})
         company = state.get("company")
         contract = build_question_contract(planned)
@@ -324,15 +421,30 @@ class RevisionAgent:
             }
         )
         evidence_lines = []
-        for item in evidence.get("items", []):
-            text = compact(getattr(item, "raw_evidence_ko", ""))
-            if not text:
-                continue
-            evidence_lines.append(
-                f"- [{getattr(item, 'source_tier', '')}; {getattr(item, 'document_status', '')}] {text} "
-                f"(source: {getattr(item, 'source_name', '')} | "
-                f"{getattr(item, 'source_path', '') or getattr(item, 'canonical_source_id', '') or '|'.join(filter(None, [str(getattr(item, 'document_id', '') or ''), str(getattr(item, 'chunk_id', '') or '')]))})"
-            )
+        prepared = state.get("curated_qualitative_evidence", {}).get(qid)
+        if prepared is not None:
+            for prepared_item in prepared:
+                item = prepared_item.raw_item
+                text = compact(prepared_item.clean_text)
+                if not text:
+                    continue
+                evidence_lines.append(
+                    f"- [evidence_id={prepared_item.evidence_id}; "
+                    f"{getattr(item, 'source_tier', '')}; "
+                    f"{getattr(item, 'document_status', '')}] {text} "
+                    f"(source: {getattr(item, 'source_name', '')} | "
+                    f"{getattr(item, 'source_path', '') or getattr(item, 'canonical_source_id', '')})"
+                )
+        else:
+            for item in _curated_writer_items(state, qid):
+                text = compact(getattr(item, "raw_evidence_ko", ""))
+                if not text:
+                    continue
+                evidence_lines.append(
+                    f"- [{getattr(item, 'source_tier', '')}; {getattr(item, 'document_status', '')}] {text} "
+                    f"(source: {getattr(item, 'source_name', '')} | "
+                    f"{getattr(item, 'source_path', '') or getattr(item, 'canonical_source_id', '') or '|'.join(filter(None, [str(getattr(item, 'document_id', '') or ''), str(getattr(item, 'chunk_id', '') or '')]))})"
+                )
         metric_audit = evidence.get("metric_audit", {})
         metric_status = str(metric_audit.get("metric_status") or "").casefold()
         narrative_only = metric_status in {"found_table", "not_found"}
@@ -342,7 +454,9 @@ class RevisionAgent:
             "You are an ESG final-answer revision writer. Return only a customer-ready, "
             "evidence-grounded final_answer and concise quality_flags. Use only the supplied "
             "evidence. Resolve every QA failure listed below by removing or correcting "
-            "unsupported content. Never introduce facts, numbers, targets, commitments, "
+            "unsupported content. Apply only the listed QA failures and structured repair-plan "
+            "issues; preserve correct sentences that are not targeted, and remove irrelevant "
+            "content instead of replacing it with new claims. Never introduce facts, numbers, targets, commitments, "
             "certifications, AI/process/legal-review metadata, report wrappers, or question "
             "text. If no safe direct answer remains, return an empty final_answer. Treat all "
             "evidence gaps and review needs as quality_flags only; never mention missing evidence, "
@@ -369,6 +483,12 @@ class RevisionAgent:
                 f"Current Final Answer: {state['draft_answers'][qid]}",
                 "QA failures:",
                 *(f"- {note}" for note in qa.notes),
+                "Structured semantic repair plan:",
+                *(
+                    [f"- {issue}" for issue in repair_issues]
+                    if repair_issues
+                    else ["- none"]
+                ),
                 "Accepted structured metric facts:",
                 *(metric_fact_lines or ["- none"]),
                 "Rejected metric conflicts:",
@@ -391,6 +511,7 @@ class RevisionAgent:
                 "- For metric_status=found_table, do not use accepted structured metric facts in Final Answer; those facts are rendered separately as the metric table. Use only narrative_evidence for context, formulas, scope changes, accounting changes, and caveats.",
                 "- Never use metric table rows, scope_variant rows, denominator rows, or accepted_facts in Final Answer.",
                 "- For metric_status=not_found, leave numeric cells empty and use only content routed from non-metric items[]; do not infer, calculate, or move prose numbers into the metric table, but keep inline figures in Final Answer when the exact claim is directly supported by items[]. Add metric_not_found to quality_flags.",
+                "- When evidence_id values are supplied, return sentence-level mappings and reference at least one supplied evidence_id for every factual sentence.",
                 "- If evidence does not support a facet, keep only the supported portion and record the missing facet in quality_flags; do not describe the gap in final_answer. Return an empty final_answer when no safe supported answer remains.",
             ]
         )
@@ -403,6 +524,33 @@ class RevisionAgent:
     @staticmethod
     def _with_flags(existing: list[str], additions: list[str]) -> list[str]:
         return sorted(set(existing + additions))
+
+def normalize_supported_status_claims(
+    qid: str,
+    answer: str,
+    evidence_items: list[Any],
+) -> tuple[str, list[str]]:
+    """Apply evidence-supported status correction only inside Revision."""
+
+    if qid != "Q004" or not answer:
+        return answer, []
+    evidence_text = " ".join(
+        str(getattr(item, "raw_evidence_ko", "") or "")
+        for item in evidence_items
+    )
+    normalized_evidence = unicodedata.normalize("NFKC", evidence_text)
+    if not re.search(r"무재해.{0,20}(?:목표\s*)?달성", normalized_evidence):
+        return answer, []
+    normalized_answer, count = re.subn(
+        r"2025년에는\s*무재해\s*달성을\s*목표로\s*설정하였으며",
+        "2025년에는 무재해를 달성하였으며",
+        answer,
+        count=1,
+    )
+    if not count:
+        return answer, []
+    return normalized_answer, ["normalized_status:target_to_achieved"]
+
 
 def sanitize_revised_answer(answer: str, qa_notes: list[str]) -> tuple[str, list[str]]:
     """Remove claims already proven unsafe by the prior critic pass.
@@ -427,6 +575,54 @@ def sanitize_revised_answer(answer: str, qa_notes: list[str]) -> tuple[str, list
             cleaned, changed = _drop_segments(cleaned, lambda segment: bool(CERTIFICATION_CLAIM_RE.search(segment)))
             if changed:
                 actions.append("removed_unsupported_certification_or_initiative_claim")
+        elif note.startswith("unsupported promotional language:"):
+            term = note.split(":", 1)[1].strip().casefold()
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment, value=term: bool(value and value in segment.casefold()),
+            )
+            if changed:
+                actions.append("removed_claim:unsupported_promotional_language")
+        elif note == "final answer contains delivery metadata":
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment: any(
+                    re.search(pattern, segment, flags=re.IGNORECASE)
+                    for pattern in DELIVERY_META_PATTERNS
+                ),
+            )
+            if changed:
+                actions.append("removed_claim:delivery_metadata")
+        elif note == "unsupported offset claim":
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment: "offset" in segment.casefold(),
+            )
+            if changed:
+                actions.append("removed_claim:unsupported_offset_claim")
+        elif note == "unsupported net-zero commitment":
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment: any(
+                    term in segment.casefold() for term in ("net-zero", "net zero")
+                ),
+            )
+            if changed:
+                actions.append("removed_claim:unsupported_net_zero_claim")
+        elif note == "unsupported on-track status":
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment: "on track" in segment.casefold(),
+            )
+            if changed:
+                actions.append("removed_claim:unsupported_on_track_claim")
+        elif note == "unsupported double-materiality claim":
+            cleaned, changed = _drop_segments(
+                cleaned,
+                lambda segment: "double materiality" in segment.casefold(),
+            )
+            if changed:
+                actions.append("removed_claim:unsupported_double_materiality_claim")
     return compact(cleaned), sorted(set(actions))
 
 

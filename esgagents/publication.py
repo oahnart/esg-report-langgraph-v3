@@ -118,6 +118,11 @@ def evaluate_publication(
         or getattr(answer, "rag_metric_status", "")
         or ""
     ).casefold()
+    metric_table_only = (
+        not final_answer
+        and metric_status == "found_table"
+        and bool(metric_audit.get("accepted_facts"))
+    )
     unresolved_conflicts = conflicting_metric_claims(final_answer, metric_audit)
     if metric_status == "found_table":
         unsupported_metric_claims = unsupported_numeric_claims_not_in_text_evidence(
@@ -165,7 +170,7 @@ def evaluate_publication(
         if not blocking_reason:
             blocking_reason = quality.reason
         blocking_issues.update(quality.issues)
-    if not final_answer:
+    if not final_answer and not metric_table_only:
         if not blocking_reason:
             blocking_reason = "empty_final_answer"
         blocking_issues.add("empty_final_answer")
@@ -188,7 +193,7 @@ def evaluate_publication(
         review_issues.add("metric_not_found")
     if unresolved_conflicts:
         review_issues.add("unresolved_metric_conflict")
-    if quality.grade != "full":
+    if quality.grade != "full" and not metric_table_only:
         review_issues.add(f"qa_grade:{quality.grade}")
     if review_issues:
         return PublicationDecision(
@@ -197,7 +202,11 @@ def evaluate_publication(
             tuple(sorted(review_issues)),
         )
 
-    return PublicationDecision("published", "complete_grounded_answer", ())
+    return PublicationDecision(
+        "published",
+        "complete_grounded_metric_table" if metric_table_only else "complete_grounded_answer",
+        (),
+    )
 
 
 def _claim_support_issues(answer: Any) -> tuple[set[str], set[str]]:

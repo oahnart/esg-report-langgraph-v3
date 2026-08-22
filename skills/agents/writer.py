@@ -15,6 +15,7 @@ from skills.agents.context_builder import compact
 from esgagents.llm_clients.structured import bind_structured
 from esgagents.schemas import SkillDraft
 from esgagents.agents.answering.question_contracts import build_question_contract
+from esgagents.agents.answering.grounding import ground_answer_sentences
 from esgagents.agents.answering.text_quality import (
     clean_customer_evidence_text,
     final_answer_block_reason,
@@ -131,6 +132,9 @@ class SkillWriterAgent:
         self.llm = llm
         self.structured_llm = bind_structured(llm, SkillDraft, "Skill Writer")
         self.concurrency = max(1, int(self.config.get("writer_concurrency", 4)))
+        self.sentence_grounding_enforced = bool(
+            self.config.get("sentence_grounding_enforced", True)
+        )
 
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         drafts: dict[str, str] = {}
@@ -144,7 +148,15 @@ class SkillWriterAgent:
             rag = state["rag_results"].get(planned.id)
             if not context.get("accepted") or rag is None:
                 drafts[planned.id] = ""
-                flags[planned.id] = sorted(set(flags.get(planned.id, []) + [gate.get("reason", "no accepted evidence")]))
+                flags[planned.id] = sorted(
+                    set(
+                        flags.get(planned.id, [])
+                        + [
+                            context.get("acceptance_reason")
+                            or gate.get("reason", "no accepted evidence")
+                        ]
+                    )
+                )
                 continue
             metric_audit = context.get("metric_audit", {})
             if metric_audit.get("all_numeric_facts_conflicted"):
@@ -257,11 +269,36 @@ class SkillWriterAgent:
             len(candidates) if self.llm is not None else 0,
             min(self.concurrency, len(candidates)) if candidates else 0,
         )
+        grounded_drafts = {}
+        grounding_issues = {}
+        qid_stats = {
+            qid: dict(values)
+            for qid, values in state.get("evidence_curation_qid_stats", {}).items()
+        }
+        candidate_qids = {planned.id for planned, *_ in candidates}
+        for planned in state["planned_questions"]:
+            prepared = state.get("curated_qualitative_evidence", {}).get(
+                planned.id,
+                state.get("normalized_evidence", {})
+                .get(planned.id, {})
+                .get("prepared_qualitative_items", []),
+            )
+            grounded_drafts[planned.id], grounding_issues[planned.id] = (
+                ground_answer_sentences(drafts.get(planned.id, ""), prepared)
+            )
+            stats = qid_stats.setdefault(planned.id, {})
+            stats["writer_called"] = planned.id in candidate_qids
+            stats["writer_llm_called"] = (
+                planned.id in candidate_qids and self.llm is not None
+            )
         return {
             "draft_answers": drafts,
             "final_answers": dict(drafts),
             "quality_flags": flags,
             "revision_counts": revision_counts,
+            "grounded_draft_sentences": grounded_drafts,
+            "grounding_issues": grounding_issues,
+            "evidence_curation_qid_stats": qid_stats,
         }
 
     def _offline_fallback(
@@ -272,7 +309,7 @@ class SkillWriterAgent:
         metric_fallback = "" if narrative_only else self._metric_fallback(context)
         normalized_fallback = (
             ""
-            if narrative_only
+            if narrative_only or context.get("curator_enforced")
             else safe_narrative_text(compact(getattr(rag, "normalized_answer_ko", "")))
         )
         evidence_fallback = self._evidence_fallback(context)
@@ -286,7 +323,11 @@ class SkillWriterAgent:
     def _draft_answer(self, context: dict[str, Any], rag: Any) -> tuple[str, list[str]]:
         metric_status = str(getattr(rag, "metric_status", "") or "").casefold()
         narrative_only = metric_status in {"found_table", "not_found"}
-        fallback = "" if narrative_only else safe_narrative_text(compact(rag.normalized_answer_ko))
+        fallback = (
+            ""
+            if narrative_only or context.get("curator_enforced")
+            else safe_narrative_text(compact(rag.normalized_answer_ko))
+        )
         metric_fallback = "" if narrative_only else self._metric_fallback(context)
         evidence_fallback = self._evidence_fallback(context)
         if self.llm is None:
@@ -301,8 +342,33 @@ class SkillWriterAgent:
             if self.structured_llm is not None:
                 result = self.structured_llm.invoke(prompt)
                 if isinstance(result, SkillDraft):
-                    answer = safe_narrative_text(compact(result.final_answer))
                     fallback_flags: list[str] = []
+                    answer = result.final_answer
+                    mapping_required = bool(context.get("prepared_evidence")) and (
+                        self.sentence_grounding_enforced
+                        or bool(context.get("curator_enforced"))
+                    )
+                    if result.sentences:
+                        known_ids = {
+                            item.evidence_id
+                            for item in context.get("prepared_evidence", [])
+                        }
+                        valid_sentences = []
+                        for sentence in result.sentences:
+                            references = set(sentence.evidence_ids)
+                            if not references or not references.issubset(known_ids):
+                                fallback_flags.append("invalid_evidence_reference")
+                                continue
+                            valid_sentences.append(sentence.text)
+                        if valid_sentences:
+                            answer = " ".join(valid_sentences)
+                        elif mapping_required:
+                            answer = ""
+                            fallback_flags.append("missing_valid_sentence_mapping")
+                    elif mapping_required:
+                        answer = ""
+                        fallback_flags.append("missing_sentence_mapping")
+                    answer = safe_narrative_text(compact(answer))
                     substantive_reason = non_substantive_reason(answer)
                     metric_facts = (
                         []

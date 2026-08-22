@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import re
 import unicodedata
 
@@ -247,6 +248,11 @@ INLINE_SOURCE_REFERENCE_RE = re.compile(
 )
 
 ALLOWED_SYMBOL_PUNCTUATION = set("%&+-/=@.,;:()[]·")
+EXPOSED_EVIDENCE_ID_RE = re.compile(
+    r"(?:\[\s*)?(?:evidence[_\s-]*id\s*=\s*)?"
+    r"Q[A-Za-z0-9_-]*-EV-[0-9a-f]{8,64}(?:\s*\])?",
+    flags=re.IGNORECASE,
+)
 
 
 def _capitalize_initial_ascii(text: str) -> str:
@@ -259,8 +265,11 @@ def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
     """Normalize customer prose without chasing one-off bad characters."""
 
     original = str(text or "").strip()
-    value = unicodedata.normalize("NFKC", original)
+    decoded = html.unescape(original)
+    value = unicodedata.normalize("NFKC", decoded)
     actions: list[str] = []
+    if decoded != original:
+        actions.append("html_entities_decoded")
     retained: list[str] = []
     removed_control = False
     removed_symbol = False
@@ -286,6 +295,10 @@ def normalize_final_answer_text(text: str) -> tuple[str, list[str]]:
         retained.append(char)
 
     cleaned = "".join(retained)
+    cleaned_without_ids = EXPOSED_EVIDENCE_ID_RE.sub(" ", cleaned)
+    if cleaned_without_ids != cleaned:
+        cleaned = cleaned_without_ids
+        actions.append("removed_exposed_evidence_id")
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     cleaned = re.sub(
         r"^[\u2022\u2023\u2043\u204c\u204d\u2219\u25a0-\u25ff\u2605-\u2606\u2610-\u2612\u2713-\u2718\u2756\u276f]\s+",

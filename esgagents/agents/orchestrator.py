@@ -7,6 +7,7 @@ from esgagents.agents.answering.revision import RevisionAgent
 from esgagents.agents.answering.output_hygiene import OutputHygieneAgent
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
 from esgagents.agents.evidence.evidence_gate import EvidenceGateAgent
+from esgagents.agents.evidence.evidence_curator import EvidenceCuratorAgent
 from esgagents.agents.evidence.evidence_normalizer import EvidenceNormalizerAgent
 from esgagents.agents.intake.company_intake import CompanyIntakeAgent
 from esgagents.agents.managers.report_manager import ReportManagerAgent
@@ -64,9 +65,10 @@ class ESGAgents:
         self.quantitative_agent = QuantitativeAgent(config, templates)
         self.skill_registry = SkillRegistry(config["skill_dir"])
         self.skill_router_agent = SkillRouterAgent(self.skill_registry)
+        self.evidence_curator_agent = EvidenceCuratorAgent(config, self.quick_llm)
         self.skill_context_builder_agent = SkillContextBuilderAgent(self.skill_registry)
         self.skill_writer_agent = SkillWriterAgent(config, self.quick_llm)
-        self.skill_policy_critic_agent = SkillPolicyCriticAgent()
+        self.skill_policy_critic_agent = SkillPolicyCriticAgent(config)
         self.semantic_critic_agent = SemanticCompletenessCriticAgent(config, self.quick_llm)
         self.revision_agent = RevisionAgent(config, self.deep_llm)
         self.output_hygiene_agent = OutputHygieneAgent(config)
@@ -95,6 +97,9 @@ class ESGAgents:
 
     def skill_router(self, state: dict[str, Any]) -> dict[str, Any]:
         return self.skill_router_agent.run(state)
+
+    def evidence_curator(self, state: dict[str, Any]) -> dict[str, Any]:
+        return self.evidence_curator_agent.run(state)
 
     def skill_context_builder(self, state: dict[str, Any]) -> dict[str, Any]:
         return self.skill_context_builder_agent.run(state)

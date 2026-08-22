@@ -9,6 +9,7 @@ from skills.agents.context_builder import compact
 from esgagents.schemas import QAResult
 from esgagents.agents.evidence.policy import has_stable_source
 from esgagents.agents.evidence.metric_facts import metric_numbers_equivalent
+from esgagents.agents.answering.grounding import ground_answer_sentences
 
 
 PROMOTIONAL_TERMS = (
@@ -85,8 +86,23 @@ def _item_field(item: Any, field: str) -> str:
     return str(getattr(item, field, "") or "")
 
 
-def _evidence_corpus(normalized: dict[str, Any]) -> str:
+def _evidence_corpus(
+    normalized: dict[str, Any],
+    curated: list[Any] | None = None,
+) -> str:
     evidence_parts = []
+    if curated is not None:
+        for item in curated:
+            text = compact(getattr(item, "clean_text", ""))
+            if text:
+                evidence_parts.append(text)
+        metric_status = str((normalized.get("metric_audit") or {}).get("metric_status") or "")
+        if metric_status not in {"found_table", "not_found", "not_expected"}:
+            for item in normalized.get("metric_items", []):
+                text = compact(_item_field(item, "raw_evidence_ko"))
+                if text:
+                    evidence_parts.append(text)
+        return "\n".join(evidence_parts)
     for item in normalized.get("items", []):
         text = compact(_item_field(item, "raw_evidence_ko"))
         stable_source = has_stable_source(
@@ -315,6 +331,12 @@ def _structured_fact_numbers(normalized: dict[str, Any]) -> set[str]:
 
 
 class SkillPolicyCriticAgent:
+    def __init__(self, config: dict[str, Any] | None = None):
+        self.config = config or {}
+        self.sentence_grounding_enforced = bool(
+            self.config.get("sentence_grounding_enforced", True)
+        )
+
     def run(self, state: dict[str, Any]) -> dict[str, Any]:
         qa: dict[str, QAResult] = {}
         final_answers = dict(state.get("final_answers", state.get("draft_answers", {})))
@@ -328,16 +350,64 @@ class SkillPolicyCriticAgent:
             qid: list(actions)
             for qid, actions in state.get("sanitizer_actions", {}).items()
         }
+        grounded_sentences: dict[str, list[Any]] = {}
+        grounding_issues: dict[str, list[str]] = {}
 
         for planned in state["planned_questions"]:
             qid = planned.id
             answer = state["draft_answers"].get(qid, "")
             gate = state["evidence_gate"].get(qid, {})
+            prepared = list(
+                state.get("curated_qualitative_evidence", {}).get(
+                    qid,
+                    state.get("normalized_evidence", {})
+                    .get(qid, {})
+                    .get("prepared_qualitative_items", []),
+                )
+            )
+            grounding_applicable = (
+                self.sentence_grounding_enforced
+                and qid in state.get("curated_qualitative_evidence", {})
+                and bool(prepared)
+            )
+            grounded_sentences[qid], grounding_issues[qid] = ground_answer_sentences(
+                answer,
+                prepared,
+            )
             if not answer:
-                reason = gate.get("reason", "empty answer")
+                metric_audit = (
+                    state.get("normalized_evidence", {})
+                    .get(qid, {})
+                    .get("metric_audit", {})
+                )
+                metric_table_only = (
+                    str(metric_audit.get("metric_status") or "").casefold()
+                    == "found_table"
+                    and bool(metric_audit.get("accepted_facts"))
+                    and bool(gate.get("accepted"))
+                )
+                if metric_table_only:
+                    qa[qid] = QAResult(status="passed", notes=["metric_table_only"])
+                    quality_flags[qid] = sorted(
+                        set(quality_flags.get(qid, []) + ["metric_table_only"])
+                    )
+                    hard_failures[qid] = []
+                    last_rejected_answers.pop(qid, None)
+                    qa_failure_stages.pop(qid, None)
+                    skill_checks[qid] = [
+                        "evidence_available: passed",
+                        "metric_table: passed",
+                    ]
+                    disclosure_flags[qid] = []
+                    continue
+                reason = (
+                    "curator_insufficient"
+                    if state.get("qualitative_answerability", {}).get(qid)
+                    == "INSUFFICIENT"
+                    else gate.get("reason", "empty answer")
+                )
                 missing_source = reason == "missing stable provenance"
                 qa[qid] = QAResult(status="failed" if missing_source else "empty", notes=[reason])
-                final_answers[qid] = ""
                 quality_flags[qid] = sorted(set(quality_flags.get(qid, []) + [reason]))
                 hard_failures[qid] = [reason] if missing_source else []
                 if missing_source:
@@ -351,34 +421,59 @@ class SkillPolicyCriticAgent:
                 continue
 
             normalized = state["normalized_evidence"].get(qid, {})
-            evidence_text = _evidence_corpus(normalized)
+            curated_present = qid in state.get("curated_qualitative_evidence", {})
+            validation_normalized = normalized
+            if curated_present:
+                curated_items = list(
+                    state.get("curated_qualitative_evidence", {}).get(qid, [])
+                )
+                raw_items = [item.raw_item for item in curated_items]
+                metric_status = str(
+                    (normalized.get("metric_audit") or {}).get("metric_status") or ""
+                ).casefold()
+                validation_items = list(raw_items)
+                if metric_status not in {"found_table", "not_found", "not_expected"}:
+                    validation_items.extend(normalized.get("metric_items", []))
+                validation_metric_audit = dict(normalized.get("metric_audit", {}))
+                if metric_status in {"found_table", "not_found"}:
+                    validation_metric_audit["accepted_facts"] = []
+                validation_normalized = {
+                    **normalized,
+                    "items": validation_items,
+                    "sources": [
+                        {
+                            "source_path": item.source_path,
+                            "canonical_source_id": item.canonical_source_id,
+                            "document_id": item.document_id,
+                            "chunk_id": item.chunk_id,
+                        }
+                        for item in validation_items
+                    ],
+                    "metric_audit": validation_metric_audit,
+                }
+            evidence_text = _evidence_corpus(
+                normalized,
+                list(state.get("curated_qualitative_evidence", {}).get(qid, []))
+                if curated_present
+                else None,
+            )
             notes = self._validation_notes(
                 planned,
                 state,
                 qid,
                 answer,
-                normalized,
+                validation_normalized,
                 evidence_text,
             )
-            salvaged_answer, salvage_actions = self._salvage_repairable_claims(answer, notes)
-            if salvage_actions:
-                sanitizer_actions[qid] = sorted(
-                    set(sanitizer_actions.get(qid, []) + salvage_actions)
-                )
-                last_rejected_answers[qid] = answer
-                original_notes = list(notes)
-                notes = self._validation_notes(
-                    planned,
-                    state,
-                    qid,
-                    salvaged_answer,
-                    normalized,
-                    evidence_text,
-                ) if salvaged_answer else sorted(
-                    set([*original_notes, "no safe supported claim remains"])
-                )
-            else:
-                salvaged_answer = answer
+            if grounding_applicable:
+                notes.extend(grounding_issues[qid])
+                notes = sorted(set(notes))
+            grounded_sentences[qid], grounding_issues[qid] = ground_answer_sentences(
+                answer,
+                prepared,
+            )
+            if grounding_applicable:
+                notes = sorted(set([*notes, *grounding_issues[qid]]))
 
             qid_hard_failures = [note for note in notes if self._is_hard_failure(note)]
             qid_disclosure_flags = self._disclosure_flags(state, qid, answer)
@@ -389,7 +484,9 @@ class SkillPolicyCriticAgent:
             merged_flags = sorted(set(quality_flags.get(qid, []) + qid_disclosure_flags))
             quality_flags[qid] = merged_flags
             qa[qid] = QAResult(status="failed" if notes else "passed", notes=notes or ["grounded"])
-            final_answers[qid] = "" if notes else salvaged_answer
+            # Critics are read-only with respect to answer content. Revision is the
+            # only stage allowed to rewrite or remove claims; publication hygiene
+            # clears any answer that remains failed after the single revision round.
             skill_checks[qid] = qid_checks
             disclosure_flags[qid] = qid_disclosure_flags
             hard_failures[qid] = qid_hard_failures
@@ -410,6 +507,8 @@ class SkillPolicyCriticAgent:
             "last_rejected_answers": last_rejected_answers,
             "qa_failure_stages": qa_failure_stages,
             "sanitizer_actions": sanitizer_actions,
+            "grounded_final_sentences": grounded_sentences,
+            "grounding_issues": grounding_issues,
         }
 
     def _validation_notes(
@@ -435,60 +534,6 @@ class SkillPolicyCriticAgent:
         notes.extend(self._delivery_metadata_notes(answer))
         notes.extend(self._skill_notes(state, qid, answer, evidence_text))
         return sorted(set(notes))
-
-    def _salvage_repairable_claims(
-        self,
-        answer: str,
-        notes: list[str],
-    ) -> tuple[str, list[str]]:
-        if not answer or not notes or any(note == "missing stable provenance" for note in notes):
-            return answer, []
-        parts = [
-            part.strip()
-            for part in re.split(r"(?<=[.!?ă€‚])\s+|\n+|\s*â€¢\s*", answer)
-            if part.strip()
-        ]
-        if not parts:
-            parts = [answer.strip()]
-
-        def unsafe(part: str) -> str:
-            lower = part.casefold()
-            for note in notes:
-                if note.startswith("unsupported numeric claim:"):
-                    display = note.split(":", 1)[1].strip()
-                    if display and display.replace(" ", "") in part.replace(" ", ""):
-                        return "unsupported_numeric_claim"
-                elif note == "unsupported certification or initiative claim":
-                    if self._has_certification_claim(lower):
-                        return "unsupported_certification_or_initiative_claim"
-                elif note.startswith("unsupported promotional language:"):
-                    term = note.split(":", 1)[1].strip()
-                    if term and term in lower:
-                        return "unsupported_promotional_language"
-                elif note == "final answer contains delivery metadata":
-                    if any(re.search(pattern, part, flags=re.IGNORECASE) for pattern in DELIVERY_META_PATTERNS):
-                        return "delivery_metadata"
-                elif note == "unsupported offset claim" and "offset" in lower:
-                    return "unsupported_offset_claim"
-                elif note == "unsupported net-zero commitment" and ("net-zero" in lower or "net zero" in lower):
-                    return "unsupported_net_zero_claim"
-                elif note == "unsupported on-track status" and "on track" in lower:
-                    return "unsupported_on_track_claim"
-                elif note == "unsupported double-materiality claim" and "double materiality" in lower:
-                    return "unsupported_double_materiality_claim"
-            return ""
-
-        kept: list[str] = []
-        actions: list[str] = []
-        for part in parts:
-            reason = unsafe(part)
-            if reason:
-                actions.append(f"removed_claim:{reason}")
-            else:
-                kept.append(part)
-        if len(kept) == len(parts):
-            return answer, []
-        return compact(" ".join(kept)), sorted(set(actions))
 
     def _question_leakage_notes(self, planned: Any, answer: str) -> list[str]:
         normalized_answer = " ".join(unicodedata.normalize("NFKC", answer or "").split()).casefold()
@@ -600,4 +645,9 @@ class SkillPolicyCriticAgent:
         return checks
 
     def _is_hard_failure(self, note: str) -> bool:
-        return note.startswith("unsupported numeric claim") or note in HARD_FAILURE_NOTES
+        return (
+            note.startswith("unsupported numeric claim")
+            or note.startswith("unsupported_sentence:")
+            or note.startswith("prose_numeric_grounding_fail:")
+            or note in HARD_FAILURE_NOTES
+        )

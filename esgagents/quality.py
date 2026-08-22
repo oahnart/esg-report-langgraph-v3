@@ -256,6 +256,15 @@ def classify_answer_quality(answer: Any) -> AnswerQuality:
             "non_narrative_output",
         }
     )
+    metric_audit = getattr(answer, "metric_audit", {}) or {}
+    metric_table_only = (
+        not final_answer
+        and qa_status == "passed"
+        and str(metric_audit.get("metric_status") or "").casefold() == "found_table"
+        and bool(metric_audit.get("accepted_facts"))
+    )
+    if metric_table_only and not hard_failure:
+        return AnswerQuality("full", "complete_grounded_metric_table", tuple(sorted(issues)))
     if not final_answer or qa_status in {"empty", "failed"} or hard_failure:
         if qa_status == "failed" or hard_failure:
             issues.add("qa_failed")

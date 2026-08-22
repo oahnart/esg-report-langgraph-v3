@@ -49,7 +49,16 @@ class ReportManagerAgent:
                 final_answer = ""
             if final_answer and not bool(gate.get("accepted")):
                 final_answer = ""
-            if final_answer:
+            normalized = state["normalized_evidence"].get(planned.id, {})
+            metric_audit = dict(normalized.get("metric_audit", {}))
+            metric_table_only = (
+                not final_answer
+                and str(metric_audit.get("metric_status") or "").casefold()
+                == "found_table"
+                and bool(metric_audit.get("accepted_facts"))
+                and bool(gate.get("accepted"))
+            )
+            if final_answer or metric_table_only:
                 result_bucket = "answered"
             elif qa.status == "failed":
                 result_bucket = "failed"
@@ -62,8 +71,6 @@ class ReportManagerAgent:
                 result_bucket = "weak"
             else:
                 result_bucket = "empty"
-            normalized = state["normalized_evidence"].get(planned.id, {})
-            metric_audit = dict(normalized.get("metric_audit", {}))
             local_dimensions = list(build_question_contract(planned).metric_dimensions)
             if local_dimensions:
                 metric_audit["local_dimensions"] = local_dimensions
@@ -96,12 +103,14 @@ class ReportManagerAgent:
                 )
             consumer_decision = self._consumer_decision(
                 final_answer=final_answer,
+                has_metric_output=metric_table_only,
                 answer_status=rag.answer_status if rag else "",
                 gate=gate,
                 quality_flags=quality_flags,
             )
             revision_count = int(state.get("revision_counts", {}).get(planned.id, 0))
             selection = state.get("skill_selections", {}).get(planned.id, {})
+            curation_result = state.get("evidence_curation_results", {}).get(planned.id)
             record = AnswerRecord(
                 qid=planned.id,
                 source_id=planned.source_id,
@@ -130,6 +139,34 @@ class ReportManagerAgent:
                     model_to_dict(item) for item in normalized.get("metric_evidence", [])
                 ],
                 rag_narrative_evidence=[model_to_dict(item) for item in rag.narrative_evidence] if rag else [],
+                qualitative_evidence_route=str(
+                    normalized.get("qualitative_evidence_route", "") or ""
+                ),
+                qualitative_answerability=str(
+                    state.get("qualitative_answerability", {}).get(planned.id, "")
+                    or ""
+                ),
+                evidence_curation=(
+                    model_to_dict(curation_result)
+                    if curation_result is not None
+                    else {}
+                ),
+                pipeline_audit={
+                    "structural_gate": dict(
+                        state.get("structural_evidence_audit", {}).get(planned.id, {})
+                    ),
+                    **dict(
+                        state.get("evidence_curation_qid_stats", {}).get(planned.id, {})
+                    ),
+                },
+                grounded_sentences=state.get("grounded_final_sentences", {}).get(
+                    planned.id,
+                    [],
+                ),
+                grounding_issues=state.get("grounding_issues", {}).get(
+                    planned.id,
+                    [],
+                ),
                 consumer_decision=consumer_decision,
                 upstream_hints=self._upstream_hints(
                     state.get("upstream_hints", {}).get(planned.id, {}),
@@ -149,7 +186,10 @@ class ReportManagerAgent:
                 last_rejected_answer=state.get("last_rejected_answers", {}).get(planned.id, ""),
                 qa_failure_stage=state.get("qa_failure_stages", {}).get(planned.id, ""),
                 sanitizer_actions=state.get("sanitizer_actions", {}).get(planned.id, []),
-                original_evidence=self._writer_original_evidence(normalized),
+                original_evidence=self._writer_original_evidence(
+                    normalized,
+                    state.get("curated_qualitative_evidence", {}).get(planned.id),
+                ),
                 evidence_summary=normalized.get("evidence_summary", ""),
                 sources=normalized.get("sources", []),
                 claim_support=state.get("claim_support", {}).get(planned.id, []),
@@ -187,11 +227,17 @@ class ReportManagerAgent:
             record.publication_reason = publication.reason
             record.publication_issues = list(publication.issues)
             apply_customer_answer_contract(record)
+            record.pipeline_audit["publication_status"] = publication.status
             records.append(record)
         stats = {"answered": 0, "empty": 0, "weak": 0, "failed": 0}
         for record in records:
             bucket = str(record.result_bucket or "empty")
             stats[bucket if bucket in stats else "empty"] += 1
+        qid_stats = {
+            record.qid: dict(record.pipeline_audit)
+            for record in records
+        }
+        quality_metrics = self._quality_metrics(state, records, qid_stats)
         artifacts = RunArtifacts(
             run_id=company.run_id,
             company=model_to_dict(company),
@@ -203,10 +249,102 @@ class ReportManagerAgent:
                 for item in state.get("quantitative_results", [])
             ],
             quantitative_stats=dict(state.get("quantitative_stats", {})),
+            curation_stats=dict(state.get("evidence_curation_stats", {})),
+            curation_qid_stats=qid_stats,
+            quality_metrics=quality_metrics,
             provenance=verify_runtime_provenance(),
             rag_request_traces=list(state.get("rag_request_traces", [])),
         )
         return {"artifacts": artifacts}
+
+    @staticmethod
+    def _quality_metrics(
+        state: dict[str, Any],
+        records: list[AnswerRecord],
+        qid_stats: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        total = len(records)
+        denominator = max(1, total)
+        rag_chunks = sum(int(item.get("rag_chunk_count", 0)) for item in qid_stats.values())
+        curated_chunks = sum(int(item.get("curated_keep_count", 0)) for item in qid_stats.values())
+        curator_candidates = sum(
+            int(item.get("curator_candidate_count", 0)) for item in qid_stats.values()
+        )
+        dropped = sum(int(item.get("curated_drop_count", 0)) for item in qid_stats.values())
+        reason_counts: dict[str, int] = {}
+        for item in qid_stats.values():
+            for reason, count in dict(item.get("drop_reason_counts", {})).items():
+                key = str(reason).upper()
+                reason_counts[key] = reason_counts.get(key, 0) + int(count)
+
+        semantic_reviews = state.get("semantic_reviews", {})
+        issue_types_by_qid = {
+            qid: {
+                str(getattr(issue, "issue_type", "") or "").upper()
+                for issue in getattr(review, "issues", [])
+            }
+            for qid, review in semantic_reviews.items()
+        }
+        grounding = state.get("grounding_issues", {})
+        revised = [item for item in qid_stats.values() if item.get("revision_called")]
+        revised_passed = [
+            item for item in revised if item.get("semantic_pass_after_revision") is True
+        ]
+        publication_counts = {
+            status: sum(record.publication_status == status for record in records)
+            for status in ("published", "review_required", "blocked")
+        }
+
+        def qid_rate(predicate: Any) -> float:
+            return round(sum(bool(predicate(record.qid)) for record in records) / denominator, 6)
+
+        return {
+            "avg_rag_chunks_per_qid": round(rag_chunks / denominator, 6),
+            "avg_curated_chunks_per_qid": round(curated_chunks / denominator, 6),
+            "evidence_drop_rate": round(dropped / max(1, curator_candidates), 6),
+            "irrelevant_drop_rate": round(
+                sum(count for reason, count in reason_counts.items() if "IRRELEVANT" in reason)
+                / max(1, curator_candidates),
+                6,
+            ),
+            "noise_drop_rate": round(
+                sum(count for reason, count in reason_counts.items() if "NOISE" in reason)
+                / max(1, curator_candidates),
+                6,
+            ),
+            "partial_answerability_rate": qid_rate(
+                lambda qid: qid_stats.get(qid, {}).get("answerability") == "PARTIAL"
+            ),
+            "insufficient_answerability_rate": qid_rate(
+                lambda qid: qid_stats.get(qid, {}).get("answerability") == "INSUFFICIENT"
+            ),
+            "unsupported_claim_rate": qid_rate(
+                lambda qid: any(
+                    issue.startswith("unsupported_sentence")
+                    for issue in grounding.get(qid, [])
+                )
+                or "UNSUPPORTED_CLAIM" in issue_types_by_qid.get(qid, set())
+            ),
+            "irrelevant_content_rate": qid_rate(
+                lambda qid: "IRRELEVANT_CONTENT" in issue_types_by_qid.get(qid, set())
+            ),
+            "overstatement_rate": qid_rate(
+                lambda qid: "OVERSTATEMENT" in issue_types_by_qid.get(qid, set())
+            ),
+            "numeric_grounding_fail_rate": qid_rate(
+                lambda qid: any(
+                    issue.startswith("prose_numeric_grounding_fail")
+                    for issue in grounding.get(qid, [])
+                )
+            ),
+            "revision_rate": round(len(revised) / denominator, 6),
+            "revision_success_rate": round(
+                len(revised_passed) / max(1, len(revised)),
+                6,
+            ),
+            "publication_status_counts": publication_counts,
+            "drop_reason_counts": reason_counts,
+        }
 
     @staticmethod
     def _upstream_hints(
@@ -228,17 +366,22 @@ class ReportManagerAgent:
         return merged
 
     @staticmethod
-    def _writer_original_evidence(normalized: dict[str, Any]) -> str:
+    def _writer_original_evidence(
+        normalized: dict[str, Any],
+        curated: list[Any] | None = None,
+    ) -> str:
         metric_audit = normalized.get("metric_audit", {}) or {}
         metric_status = str(metric_audit.get("metric_status") or "").casefold()
         narrative_only = metric_status in {"found_table", "not_found"}
         metric_items = [] if narrative_only else list(normalized.get("metric_items", []))
         if metric_audit.get("numeric_withheld"):
             metric_items = []
-        evidence_items = [
-            *metric_items[:5],
-            *list(normalized.get("narrative_items", []))[:5],
-        ]
+        qualitative_items = (
+            [item.raw_item for item in curated]
+            if curated is not None
+            else list(normalized.get("narrative_items", []))
+        )
+        evidence_items = [*metric_items[:5], *qualitative_items[:5]]
         raw_parts = [
             ReportManagerAgent._raw_evidence_text(item)
             for item in evidence_items
@@ -256,11 +399,12 @@ class ReportManagerAgent:
     def _consumer_decision(
         *,
         final_answer: str,
+        has_metric_output: bool = False,
         answer_status: str,
         gate: dict[str, Any],
         quality_flags: list[str],
     ) -> str:
-        if final_answer:
+        if final_answer or has_metric_output:
             partial_markers = {
                 "partial_answer",
                 "rag_partial_coverage",

@@ -31,6 +31,27 @@ def test_only_full_clean_answer_is_published():
     assert published_answer(_answer()) == "A grounded customer-ready answer."
 
 
+def test_metric_table_only_answer_is_published_without_narrative_prose():
+    answer = _answer(
+        final_answer="",
+        metric_audit={
+            "metric_status": "found_table",
+            "accepted_facts": [
+                {"metric": "water_use", "period": "2025", "value": "100"}
+            ],
+        },
+        qa=QAResult(status="passed", notes=["metric_table_only"]),
+        quality_flags=["metric_table_only"],
+        qa_grade=None,
+        coverage_reason="",
+    )
+
+    decision = evaluate_publication(answer)
+
+    assert decision.status == "published"
+    assert decision.reason == "complete_grounded_metric_table"
+
+
 @pytest.mark.parametrize("grade", ["partial", "cautious"])
 def test_non_full_safe_answers_require_review(grade):
     answer = _answer(

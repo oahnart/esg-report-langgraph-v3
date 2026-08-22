@@ -155,6 +155,51 @@ class EvidenceItem(BaseModel):
         return "" if value is None else str(value)
 
 
+EvidenceOrigin = Literal["items", "narrative_evidence", "legacy_items"]
+QualitativeAnswerability = Literal["SUFFICIENT", "PARTIAL", "INSUFFICIENT"]
+
+
+class PreparedEvidence(BaseModel):
+    """Immutable raw evidence plus its customer-writing representation."""
+
+    evidence_id: str
+    origin: EvidenceOrigin
+    raw_item: EvidenceItem
+    clean_text: str
+    sanitization_actions: list[str] = Field(default_factory=list)
+
+
+class EvidenceCurationKeep(BaseModel):
+    evidence_id: str
+    supported_facets: list[str] = Field(default_factory=list)
+    reason: str = ""
+
+
+class EvidenceCurationDrop(BaseModel):
+    evidence_id: str
+    reason_code: str = "NOT_USEFUL_FOR_QUESTION"
+    reason: str = ""
+
+
+class EvidenceCurationResult(BaseModel):
+    qid: str
+    evidence_route: EvidenceOrigin
+    qualitative_answerability: QualitativeAnswerability = "INSUFFICIENT"
+    covered_facets: list[str] = Field(default_factory=list)
+    missing_required_facets: list[str] = Field(default_factory=list)
+    keep: list[EvidenceCurationKeep] = Field(default_factory=list)
+    drop: list[EvidenceCurationDrop] = Field(default_factory=list)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    mode: Literal["enforced", "fallback"] = "enforced"
+    notes: list[str] = Field(default_factory=list)
+
+
+class GroundedSentence(BaseModel):
+    sentence_id: str
+    text: str
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
 class MetricSummary(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -225,6 +270,9 @@ class RagQuestionResult(BaseModel):
     metric_evidence: list[MetricEvidenceItem] = Field(default_factory=list)
     narrative_evidence: list[EvidenceItem] = Field(default_factory=list)
     is_v3_payload: bool = Field(default=False, exclude=True)
+    contract_company_match: bool | None = Field(default=None, exclude=True)
+    contract_year_match: bool | None = Field(default=None, exclude=True)
+    response_reporting_year: int | None = Field(default=None, exclude=True)
 
     @field_validator("question_ko", "normalized_answer_ko", "answer_status", "failure_reason", mode="before")
     @classmethod
@@ -238,6 +286,7 @@ class RagQuestionResult(BaseModel):
 
 class RagResponse(BaseModel):
     company_id: str
+    reporting_year: int | None = None
     request_id: str = ""
     api_version: str = ""
     rag_version: str = ""
@@ -260,6 +309,7 @@ class RagRequestTrace(BaseModel):
     rag_version: str = ""
     index_version: str = ""
     generated_at: datetime | None = None
+    reporting_year: int | None = None
     latency_ms: int | None = None
     warnings: list[str] = Field(default_factory=list)
     requested_item_ids: list[str] = Field(default_factory=list)
@@ -338,12 +388,23 @@ class QAResult(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class SemanticIssue(BaseModel):
+    issue_type: str
+    severity: Literal["LOW", "MEDIUM", "HIGH"] = "MEDIUM"
+    sentence_id: str = ""
+    evidence_ids: list[str] = Field(default_factory=list)
+    reason: str = ""
+    recommended_action: Literal["REMOVE", "REWRITE", "KEEP"] = "REWRITE"
+
+
 class SemanticReview(BaseModel):
     alignment: Literal["aligned", "partial", "misaligned", "insufficient"] = "aligned"
     covered_facets: list[str] = Field(default_factory=list)
     missing_facets: list[str] = Field(default_factory=list)
     source_usage: Literal["appropriate", "overstated", "unclear"] = "appropriate"
     notes: list[str] = Field(default_factory=list)
+    verdict: Literal["PASS", "REVISE"] = "PASS"
+    issues: list[SemanticIssue] = Field(default_factory=list)
 
 
 class ClaimSupport(BaseModel):
@@ -383,6 +444,12 @@ class AnswerRecord(BaseModel):
     rag_metric_absence: dict[str, Any] = Field(default_factory=dict)
     rag_metric_evidence: list[dict[str, Any]] = Field(default_factory=list)
     rag_narrative_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    qualitative_evidence_route: str = ""
+    qualitative_answerability: str = ""
+    evidence_curation: dict[str, Any] = Field(default_factory=dict)
+    pipeline_audit: dict[str, Any] = Field(default_factory=dict)
+    grounded_sentences: list[GroundedSentence] = Field(default_factory=list)
+    grounding_issues: list[str] = Field(default_factory=list)
     consumer_decision: Literal[
         "answered",
         "answered_partial",
@@ -429,7 +496,11 @@ class AnswerRecord(BaseModel):
 
 
 class SkillDraft(BaseModel):
-    final_answer: str = Field(description="Evidence-grounded ESG disclosure answer.")
+    final_answer: str = Field(default="", description="Evidence-grounded ESG disclosure answer.")
+    sentences: list[GroundedSentence] = Field(
+        default_factory=list,
+        description="Optional sentence-level evidence mapping for grounded output.",
+    )
     quality_flags: list[str] = Field(
         default_factory=list,
         description="Concise quality or disclosure flags identified while drafting.",
@@ -445,6 +516,9 @@ class RunArtifacts(BaseModel):
     stats: dict[str, int]
     quantitative_results: list[QuantitativeResult] = Field(default_factory=list)
     quantitative_stats: dict[str, int] = Field(default_factory=dict)
+    curation_stats: dict[str, int] = Field(default_factory=dict)
+    curation_qid_stats: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    quality_metrics: dict[str, Any] = Field(default_factory=dict)
     output_paths: dict[str, str] = Field(default_factory=dict)
     provenance: dict[str, Any] = Field(default_factory=dict)
     rag_request_traces: list[RagRequestTrace] = Field(default_factory=list)

@@ -65,6 +65,10 @@ class ESGGraphSetup:
             self._observe(ESGGraphNodes.SKILL_SELECTION, self.agents.skill_router),
         )
         workflow.add_node(
+            ESGGraphNodes.EVIDENCE_CURATION,
+            self._observe(ESGGraphNodes.EVIDENCE_CURATION, self.agents.evidence_curator),
+        )
+        workflow.add_node(
             ESGGraphNodes.SKILL_CONTEXT,
             self._observe(ESGGraphNodes.SKILL_CONTEXT, self.agents.skill_context_builder),
         )
@@ -104,7 +108,8 @@ class ESGGraphSetup:
             ESGGraphNodes.QUANTITATIVE_PROCESSING,
         )
         workflow.add_edge(ESGGraphNodes.QUANTITATIVE_PROCESSING, ESGGraphNodes.SKILL_SELECTION)
-        workflow.add_edge(ESGGraphNodes.SKILL_SELECTION, ESGGraphNodes.SKILL_CONTEXT)
+        workflow.add_edge(ESGGraphNodes.SKILL_SELECTION, ESGGraphNodes.EVIDENCE_CURATION)
+        workflow.add_edge(ESGGraphNodes.EVIDENCE_CURATION, ESGGraphNodes.SKILL_CONTEXT)
         workflow.add_edge(ESGGraphNodes.SKILL_CONTEXT, ESGGraphNodes.ANSWER_DRAFTING)
         workflow.add_edge(ESGGraphNodes.ANSWER_DRAFTING, ESGGraphNodes.DRAFT_REVIEW)
         workflow.add_edge(ESGGraphNodes.DRAFT_REVIEW, ESGGraphNodes.SEMANTIC_REVIEW)

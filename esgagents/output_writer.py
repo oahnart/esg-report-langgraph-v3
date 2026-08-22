@@ -76,6 +76,12 @@ AUDIT_COLUMNS = [
     "Last Rejected Answer",
     "QA Failure Stage",
     "Sanitizer Actions",
+    "Qualitative Evidence Route",
+    "Qualitative Answerability",
+    "Evidence Curation",
+    "Pipeline Audit",
+    "Grounded Sentences",
+    "Grounding Issues",
 ]
 
 COMBINED_QUALITATIVE_COLUMNS = [
@@ -414,6 +420,16 @@ class OutputWriter:
             answer.last_rejected_answer,
             answer.qa_failure_stage,
             "; ".join(answer.sanitizer_actions),
+            answer.qualitative_evidence_route,
+            answer.qualitative_answerability,
+            json.dumps(answer.evidence_curation, ensure_ascii=False, sort_keys=True),
+            json.dumps(answer.pipeline_audit, ensure_ascii=False, sort_keys=True),
+            json.dumps(
+                [model_to_dict(item) for item in answer.grounded_sentences],
+                ensure_ascii=False,
+                sort_keys=True,
+            ),
+            "; ".join(answer.grounding_issues),
         ]
 
     def _write_excel(self, artifacts: RunArtifacts, path: Path) -> None:
@@ -428,7 +444,7 @@ class OutputWriter:
         for answer in artifacts.answers:
             self._append_excel_row(ws, self._audit_row(answer))
 
-        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 22, 30, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48]
+        widths = [12, 16, 24, 44, 18, 18, 18, 18, 16, 36, 36, 60, 24, 52, 48, 52, 52, 22, 60, 22, 22, 30, 72, 14, 18, 28, 48, 60, 60, 52, 44, 20, 48, 16, 42, 16, 28, 16, 60, 32, 52, 44, 44, 16, 24, 24, 60, 60, 24, 48, 24, 24, 72, 72, 72, 48]
         for idx, width in enumerate(widths, start=1):
             ws.column_dimensions[get_column_letter(idx)].width = width
         ws.freeze_panes = "A2"

@@ -259,6 +259,7 @@ class RagBatchAgent:
             rag_version=response.rag_version,
             index_version=response.index_version,
             generated_at=response.generated_at,
+            reporting_year=response.reporting_year,
             latency_ms=response.latency_ms,
             warnings=list(response.warnings),
             requested_item_ids=list(requested_item_ids),

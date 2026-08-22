@@ -214,6 +214,15 @@ class OutputHygieneAgent:
                     if qa is not None
                     else QAResult(status="failed", notes=list(dict.fromkeys(notes)))
                 )
+            qa = qa_results.get(qid)
+            qa_status = str(getattr(qa, "status", "") or "").casefold()
+            if redacted and qa_status in {"failed", "empty"}:
+                # Critics never mutate answer content. The publication boundary is
+                # responsible for fail-closing any answer that still fails after
+                # the single allowed Revision round.
+                redacted = ""
+                flags.append("failed_qa_answer_removed")
+                actions.append("removed_answer_after_failed_qa")
             gate_reason = str(state.get("evidence_gate", {}).get(qid, {}).get("reason", "") or "")
             metric_audit = state.get("normalized_evidence", {}).get(qid, {}).get("metric_audit", {}) or {}
             metric_status = str(metric_audit.get("metric_status") or "").casefold()

@@ -36,6 +36,22 @@ def _format_evidence_line(item: Any) -> str:
     return f"[{'; '.join(metadata)}]{fact_text} {compact(item.raw_evidence_ko)}"
 
 
+def _format_prepared_evidence_line(item: Any) -> str:
+    raw_item = item.raw_item
+    metadata = [
+        raw_item.source_tier or "tier_unknown",
+        raw_item.document_status or "unknown",
+        f"evidence_id={item.evidence_id}",
+        f"origin={item.origin}",
+        f"source={raw_item.source_name}",
+    ]
+    if raw_item.canonical_source_id:
+        metadata.append(f"canonical_source_id={raw_item.canonical_source_id}")
+    if raw_item.chunk_id:
+        metadata.append(f"chunk_id={raw_item.chunk_id}")
+    return f"[{'; '.join(metadata)}] {compact(item.clean_text)}"
+
+
 class SkillContextBuilderAgent:
     def __init__(self, registry: SkillRegistry):
         self.registry = registry
@@ -58,15 +74,45 @@ class SkillContextBuilderAgent:
             metric_items = (
                 [] if narrative_only else list(normalized.get("metric_items", []))
             )
-            narrative_items = list(normalized.get("narrative_items", []))
+            curation_present = planned.id in state.get("curated_qualitative_evidence", {})
+            prepared_items = (
+                list(state.get("curated_qualitative_evidence", {}).get(planned.id, []))
+                if curation_present
+                else []
+            )
+            narrative_items = (
+                [item.raw_item for item in prepared_items]
+                if curation_present
+                else list(normalized.get("narrative_items", []))
+            )
             if metric_audit.get("numeric_withheld"):
                 metric_items = []
             evidence_items = [*metric_items[:5], *narrative_items[:5]]
-            evidence_lines = [
+            metric_evidence_lines = [
                 _format_evidence_line(item)
-                for item in evidence_items
+                for item in metric_items[:5]
                 if compact(item.raw_evidence_ko)
             ]
+            qualitative_evidence_lines = (
+                [
+                    _format_prepared_evidence_line(item)
+                    for item in prepared_items[:5]
+                    if compact(item.clean_text)
+                ]
+                if curation_present
+                else [
+                    _format_evidence_line(item)
+                    for item in narrative_items[:5]
+                    if compact(item.raw_evidence_ko)
+                ]
+            )
+            evidence_lines = [*metric_evidence_lines, *qualitative_evidence_lines]
+            curation_result = state.get("evidence_curation_results", {}).get(planned.id)
+            qualitative_answerability = state.get("qualitative_answerability", {}).get(
+                planned.id,
+                "SUFFICIENT" if evidence_lines else "INSUFFICIENT",
+            )
+            curator_enforced = getattr(curation_result, "mode", "") == "enforced"
             contexts[planned.id] = {
                 "qid": planned.id,
                 "pillar": planned.pillar,
@@ -90,6 +136,8 @@ class SkillContextBuilderAgent:
                         f"Required facets: {', '.join(contract.required_facets) or 'none'}",
                         f"Expected facets: {', '.join(contract.expected_facets) or 'none'}",
                         f"Evidence gate: {gate.get('reason', '')}",
+                        f"Qualitative evidence route: {normalized.get('qualitative_evidence_route', 'legacy_items')}",
+                        f"Qualitative answerability: {qualitative_answerability}",
                         "Accepted structured metric facts:",
                         *(metric_lines or ["- none"]),
                         "Conflicting metric facts (do not use):",
@@ -97,7 +145,7 @@ class SkillContextBuilderAgent:
                             f"- {item.get('metric', '')} | {item.get('period', '')} | values={item.get('values', [])}"
                             for item in metric_audit.get("conflicts", [])
                         ),
-                        "Evidence:",
+                        "Curated qualitative evidence:",
                         *(f"- {line}" for line in evidence_lines),
                         "Source-use policy: Keep customer-facing Final Answer clean; do not add draft/proposal/consultant attribution phrases to final_answer. Draft/proposal/consultant source limits are carried by quality_flags and review metadata. External assessments support the assessment result and assessed content, not an unstated detailed policy.",
                         "Coverage policy: For metric_status=found_table, the metric table is handled separately from metric_evidence; write Final Answer only from narrative_evidence for context, formulas, boundary changes, accounting-method changes, and comparability caveats. For metric_status=not_found, leave numeric cells empty and use only content routed from non-metric items[]; do not infer, calculate, or move prose numbers into the metric table, but keep inline figures in Final Answer when the exact claim is directly supported by items[].",
@@ -105,16 +153,27 @@ class SkillContextBuilderAgent:
                         "Conflict policy: Never use a metric-period pair listed as conflicting. Keep other non-conflicting supported facts.",
                         "Length policy: Let the answer length be determined by the question and accepted evidence. Cover every directly supported facet needed to answer the question, including relevant policies, governance, processes, actions, metrics, targets, periods, scope, and caveats when evidenced. Use a shorter answer when evidence supports only one narrow claim, and a longer answer when multiple distinct supported facts are needed. Never pad the answer with repetition, generic ESG language, or unsupported context.",
                         "Customer-answer policy: State only supported answer content. Do not mention missing evidence, document scope, partial coverage, review status, additional confirmation, or requests for more information in final_answer; record such gaps only in quality_flags. If no supported answer content remains, return an empty final_answer.",
-                        "Return only an evidence-grounded final_answer and concise quality_flags.",
+                        "When evidence_id values are present, also return sentences with sentence_id, text, and the supporting evidence_ids. Every factual sentence must reference at least one supplied evidence_id. Return an evidence-grounded final_answer and concise quality_flags.",
                     ]
                 ),
                 "evidence_lines": evidence_lines,
                 "evidence_items": evidence_items,
+                "prepared_evidence": prepared_items,
+                "curation_result": curation_result,
+                "qualitative_answerability": qualitative_answerability,
+                "curator_enforced": curator_enforced,
                 "metric_audit": metric_audit,
                 "metric_status": metric_audit.get("metric_status"),
                 "metric_confidence": metric_audit.get("metric_confidence"),
                 "metric_absence": metric_audit.get("metric_absence", {}),
-                "accepted": bool(gate.get("accepted")) and bool(evidence_lines),
+                "accepted": bool(gate.get("accepted"))
+                and qualitative_answerability != "INSUFFICIENT"
+                and bool(evidence_lines),
+                "acceptance_reason": (
+                    "curator_insufficient"
+                    if qualitative_answerability == "INSUFFICIENT"
+                    else gate.get("reason", "")
+                ),
                 "skill": selection,
             }
         return {"skill_contexts": contexts}

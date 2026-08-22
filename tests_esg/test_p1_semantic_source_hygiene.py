@@ -12,6 +12,7 @@ from esgagents.agents.answering.question_contracts import (
     build_question_contract,
 )
 from esgagents.agents.answering.semantic_critic import SemanticCompletenessCriticAgent
+from esgagents.agents.answering.revision import RevisionAgent
 from esgagents.agents.answering.text_quality import (
     non_narrative_reason,
     normalize_answer_coherence,
@@ -87,7 +88,7 @@ def test_metrics_frequency_without_kpi_and_period_fails(qid):
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][qid].status == "failed"
-    assert result["final_answers"][qid] == ""
+    assert result["final_answers"][qid] == state["draft_answers"][qid]
     assert "missing required facet: metric_result" in result["qa_results"][qid].notes
     assert "missing required facet: reporting_period" in result["qa_results"][qid].notes
 
@@ -132,7 +133,7 @@ def test_metrics_keep_a_direct_supported_result_as_partial(answer, missing_note,
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][planned.id].status == expected_status
-    assert bool(result["final_answers"][planned.id]) is (expected_status == "passed")
+    assert result["final_answers"][planned.id] == answer
     expected_note = (
         missing_note
         if expected_status == "failed"
@@ -171,7 +172,7 @@ def test_disclosed_gap_only_passes_when_a_direct_metric_result_remains(answer, e
         assert "disclosed_data_gap" in result["quality_flags"][planned.id]
         assert "missing data disclosed" in result["qa_results"][planned.id].notes
     else:
-        assert result["final_answers"][planned.id] == ""
+        assert result["final_answers"][planned.id] == answer
 
 
 def test_metrics_gap_only_answer_is_not_usable():
@@ -183,7 +184,7 @@ def test_metrics_gap_only_answer_is_not_usable():
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
 
 
 @pytest.mark.parametrize(
@@ -202,7 +203,7 @@ def test_gap_only_answer_is_blank_for_every_pillar(pillar, item, answer):
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
 
 
 def test_q023_keeps_supported_metric_and_discloses_missing_dimensions():
@@ -341,7 +342,7 @@ def test_found_table_metric_question_uses_table_for_qa_without_injecting_final_n
     assert "facet_metric_water_reuse_rate: covered" in result["skill_checks"][planned.id]
 
 
-def test_found_table_semantic_critic_does_not_use_accepted_facts_for_final_answer():
+def test_found_table_semantic_critic_reports_unsupported_prose_without_rewriting():
     planned = _planned(
         qid="Q039",
         item="Water use and discharge status",
@@ -377,11 +378,8 @@ def test_found_table_semantic_critic_does_not_use_accepted_facts_for_final_answe
 
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
-    assert "13.56" not in result["final_answers"][planned.id]
-    assert result["final_answers"][planned.id] == (
-        "The company manages water risks through site-level monitoring."
-    )
-    assert "claim_salvage_applied" in result["quality_flags"][planned.id]
+    assert result["final_answers"][planned.id] == state["draft_answers"][planned.id]
+    assert result["qa_results"][planned.id].status == "passed"
 
 
 def test_q067_managed_supplier_count_is_valid_partial_metric_dimension():
@@ -546,7 +544,7 @@ def test_q074_internal_transaction_controls_are_valid_committee_operation_risk()
     assert result["final_answers"][planned.id] == answer
 
 
-def test_q004_achieved_status_is_not_downgraded_to_target_set():
+def test_q004_critic_reports_status_mismatch_without_rewriting():
     planned = _planned(
         qid="Q004",
         pillar="Strategy",
@@ -559,6 +557,33 @@ def test_q004_achieved_status_is_not_downgraded_to_target_set():
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(
         _semantic_state(planned, answer, evidence_text=evidence)
     )
+
+    assert result["final_answers"][planned.id] == answer
+    assert result["qa_results"][planned.id].status == "failed"
+    assert any(
+        issue.issue_type == "STATUS_MISMATCH"
+        for issue in result["semantic_reviews"][planned.id].issues
+    )
+    assert result["sanitizer_actions"].get(planned.id, []) == []
+
+
+def test_q004_revision_applies_supported_status_repair():
+    planned = _planned(
+        qid="Q004",
+        pillar="Strategy",
+        item="Safety policy and target",
+        description="Safety policy and target achievement",
+    )
+    answer = "2025년에는 무재해 달성을 목표로 설정하였으며, 안전보건 활동을 운영하고 있습니다."
+    evidence = "2025년 무재해 목표를 달성하였으며 안전보건 활동을 운영하였습니다."
+    state = _semantic_state(planned, answer, evidence_text=evidence)
+    state["evidence_gate"] = {planned.id: {"accepted": True, "reason": "accepted"}}
+    state["revision_counts"] = {}
+    state.update(
+        SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
+    )
+
+    result = RevisionAgent({"max_revision_rounds": 1}, None).run(state)
 
     assert "무재해를 달성하였으며" in result["final_answers"][planned.id]
     assert "normalized_status:target_to_achieved" in result["sanitizer_actions"][planned.id]
@@ -580,7 +605,7 @@ def test_metric_dimension_contract_rejects_wrong_subject_proxy(qid, item, answer
     )
 
     assert result["qa_results"][qid].status == "failed"
-    assert result["final_answers"][qid] == ""
+    assert result["final_answers"][qid] == answer
 
 
 @pytest.mark.parametrize(
@@ -744,7 +769,7 @@ class _StructuredLLM:
 
 
 @pytest.mark.parametrize("qid", ["Q082", "Q085"])
-def test_llm_misalignment_clears_answer_for_revision(qid):
+def test_llm_misalignment_creates_revision_plan_without_mutating_answer(qid):
     planned = _planned(qid=qid, pillar="Risk Management", item="Risk controls", description="Identify and control risks")
     state = _semantic_state(planned, "The company identifies risk and applies control actions.")
     llm = _StructuredLLM(SemanticReview(alignment="misaligned", notes=["wrong topic"]))
@@ -752,7 +777,7 @@ def test_llm_misalignment_clears_answer_for_revision(qid):
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, llm).run(state)
 
     assert result["qa_results"][qid].status == "failed"
-    assert result["final_answers"][qid] == ""
+    assert result["final_answers"][qid] == state["draft_answers"][qid]
     assert "semantic misalignment" in result["qa_results"][qid].notes
 
 
@@ -772,7 +797,7 @@ def test_compliance_governance_question_rejects_security_only_proxy_answer():
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
@@ -851,7 +876,7 @@ def test_metric_not_found_still_rejects_deterministic_wrong_topic_answer():
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, llm).run(state)
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
 
 
 def test_q091_style_related_party_metrics_do_not_satisfy_shareholder_question():
@@ -870,7 +895,7 @@ def test_q091_style_related_party_metrics_do_not_satisfy_shareholder_question():
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
@@ -1130,7 +1155,7 @@ def test_assessment_only_source_cannot_prove_operating_policy_without_attributio
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == state["draft_answers"][planned.id]
     assert "source usage overstated" in result["qa_results"][planned.id].notes
 
 
@@ -1154,7 +1179,7 @@ def test_korean_assessment_checklist_cannot_prove_environmental_system_operation
     result = SemanticCompletenessCriticAgent({"semantic_qa_enabled": True}, None).run(state)
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == state["draft_answers"][planned.id]
     assert "source usage overstated" in result["qa_results"][planned.id].notes
 
 
@@ -1482,7 +1507,7 @@ def test_q062_generic_external_assessment_criteria_is_thematic_mismatch():
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
@@ -1503,7 +1528,7 @@ def test_q087_security_training_is_thematic_mismatch_for_compliance_incident_sta
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
@@ -1524,7 +1549,7 @@ def test_q093_human_rights_proxy_is_thematic_mismatch_for_stakeholder_communicat
     )
 
     assert result["qa_results"][planned.id].status == "failed"
-    assert result["final_answers"][planned.id] == ""
+    assert result["final_answers"][planned.id] == answer
     assert "semantic thematic mismatch" in result["qa_results"][planned.id].notes
 
 
@@ -1608,6 +1633,30 @@ def test_pii_redaction_preserves_q087_new_hire_compound_word():
 
     assert result["final_answers"][planned.id] == answer
     assert "pii_redacted" not in result["quality_flags"][planned.id]
+
+
+def test_output_hygiene_fail_closes_answer_still_failed_after_revision_limit():
+    planned = _planned(qid="Q031", pillar="Metrics", item="GHG emissions")
+    answer = "The company achieved an unsupported 30% net-zero result."
+
+    result = OutputHygieneAgent({"output_hygiene_enabled": True}).run(
+        {
+            "planned_questions": [planned],
+            "final_answers": {planned.id: answer},
+            "qa_results": {
+                planned.id: QAResult(
+                    status="failed",
+                    notes=["unsupported numeric claim: 30%"],
+                )
+            },
+            "quality_flags": {planned.id: []},
+            "sanitizer_actions": {planned.id: []},
+        }
+    )
+
+    assert result["final_answers"][planned.id] == ""
+    assert "failed_qa_answer_removed" in result["quality_flags"][planned.id]
+    assert "removed_answer_after_failed_qa" in result["sanitizer_actions"][planned.id]
 
 
 @pytest.mark.parametrize("qid", ["Q019", "Q055"])

@@ -22,6 +22,7 @@ from .metric_routing import (
     routed_writer_items,
     valid_primary_metric_items,
 )
+from .evidence_preparation import prepare_qualitative_evidence
 from .policy import is_usable_evidence, resolve_provenance, source_name_from_path
 from .upstream_audit import (
     excluded_topic_dimensions,
@@ -330,6 +331,11 @@ class EvidenceNormalizerAgent:
                             update={"facts": inferred_facts}
                         )
                 all_metric_evidence.append(normalized_metric_item)
+            prepared_qualitative_items = prepare_qualitative_evidence(
+                qid,
+                rag,
+                [item for item in ranked if not is_metric_row(item)],
+            )
             normalized[qid] = {
                 "items": ranked,
                 "metric_items": (
@@ -338,6 +344,20 @@ class EvidenceNormalizerAgent:
                     else [item for item in ranked if is_metric_row(item)]
                 ),
                 "narrative_items": [item for item in ranked if not is_metric_row(item)],
+                "qualitative_items": [item for item in ranked if not is_metric_row(item)],
+                "prepared_qualitative_items": prepared_qualitative_items,
+                "qualitative_evidence_route": (
+                    prepared_qualitative_items[0].origin
+                    if prepared_qualitative_items
+                    else (
+                        "narrative_evidence"
+                        if rag.metric_status == "found_table"
+                        else "items"
+                        if rag.metric_status in {"not_expected", "not_found"}
+                        or rag.metric_expected is False
+                        else "legacy_items"
+                    )
+                ),
                 "evidence_summary": "\n".join(summary_parts),
                 "sources": sources,
                 "metric_audit": metric_audit,

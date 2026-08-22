@@ -19,6 +19,8 @@ class ESGPropagator:
             "semantic_reviews": {},
             "semantic_llm_reviews": {},
             "semantic_review_fingerprints": {},
+            "curator_fingerprints": {},
+            "curator_llm_results": {},
         }
 
     def graph_config(self, thread_id_value: str | None = None) -> dict[str, Any]:
